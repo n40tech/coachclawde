@@ -146,8 +146,9 @@ export function Settings() {
               <p className="text-xs text-[#6a6a6a] leading-relaxed">
                 Saved to your account and included in the plan prompt so Clawde can program around your details.
               </p>
-              <Field label="Name">
+              <Field label="Name" htmlFor="settings-name">
                 <input
+                  id="settings-name"
                   placeholder="Your name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
@@ -155,8 +156,9 @@ export function Settings() {
                 />
               </Field>
               <div className="grid grid-cols-2 gap-2">
-                <Field label={`Weight (${units.weight})`}>
+                <Field label={`Weight (${units.weight})`} htmlFor="settings-weight">
                   <input
+                    id="settings-weight"
                     inputMode="decimal"
                     placeholder={units.weight === 'lb' ? '180' : '81'}
                     value={weight}
@@ -164,8 +166,9 @@ export function Settings() {
                     className={inputClass}
                   />
                 </Field>
-                <Field label="Height (cm)">
+                <Field label="Height (cm)" htmlFor="settings-height">
                   <input
+                    id="settings-height"
                     inputMode="numeric"
                     placeholder="184"
                     value={height}
@@ -176,9 +179,11 @@ export function Settings() {
               </div>
               <Field
                 label="Date of birth"
+                htmlFor="settings-birth-date"
                 hint={age !== undefined ? `${age} years old. Clawde uses this to pitch your training.` : 'Optional. Clawde uses your age to pitch your training.'}
               >
                 <input
+                  id="settings-birth-date"
                   type="date"
                   value={birthDate}
                   onChange={(e) => setBirthDate(e.target.value)}
@@ -458,10 +463,15 @@ function RestAlertsSetting() {
   )
 }
 
-function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
+/** A labelled row. Pass `htmlFor` (the control's id) when it wraps a single input. */
+function Field({ label, hint, htmlFor, children }: { label: string; hint?: string; htmlFor?: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <p className="text-xs font-medium text-[#a8a29e]">{label}</p>
+      {htmlFor ? (
+        <label htmlFor={htmlFor} className="text-xs font-medium text-[#a8a29e]">{label}</label>
+      ) : (
+        <p className="text-xs font-medium text-[#a8a29e]">{label}</p>
+      )}
       {hint && <p className="text-2xs text-[#4a4a4a]">{hint}</p>}
       {children}
     </div>

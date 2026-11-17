@@ -268,10 +268,10 @@ function InlineInput({
       <p className="text-xs text-[#a8a29e]">{option.label}</p>
       {option.input === 'duration' && <TimeInput seconds={seconds} showHours={option.hours} onChange={setSeconds} label={option.label} />}
       {option.input === 'date' && (
-        <input type="date" value={text} min={today} onChange={(e) => setText(e.target.value)} className={inputClass} style={{ colorScheme: 'dark' }} autoFocus />
+        <input type="date" value={text} min={today} onChange={(e) => setText(e.target.value)} className={inputClass} style={{ colorScheme: 'dark' }} aria-label={option.label} autoFocus />
       )}
       {option.input === 'text' && (
-        <input value={text} onChange={(e) => setText(e.target.value)} placeholder={option.placeholder} className={inputClass} autoFocus />
+        <input value={text} onChange={(e) => setText(e.target.value)} placeholder={option.placeholder} className={inputClass} aria-label={option.label} autoFocus />
       )}
       <div className="flex gap-2">
         <Button variant="ghost" onClick={onBack}>Back</Button>

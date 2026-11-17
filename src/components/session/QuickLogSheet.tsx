@@ -118,9 +118,10 @@ export function QuickLogSheet({
 
         {showDistance && (
           <div className="flex items-center justify-between gap-3">
-            <p className="text-sm font-medium text-[#a8a29e]">Distance <span className="text-[#4a4a4a]">(optional)</span></p>
+            <label htmlFor="quicklog-distance" className="text-sm font-medium text-[#a8a29e]">Distance <span className="text-[#4a4a4a]">(optional)</span></label>
             <div className="flex items-center gap-1.5 w-32">
               <input
+                id="quicklog-distance"
                 value={distance}
                 onChange={(e) => setDistance(e.target.value.replace(/[^0-9.]/g, ''))}
                 inputMode="decimal"
@@ -139,8 +140,9 @@ export function QuickLogSheet({
 
         {!plannedTitle && (
           <div>
-            <p className="text-sm font-medium text-[#a8a29e] mb-2">When?</p>
+            <label htmlFor="quicklog-date" className="block text-sm font-medium text-[#a8a29e] mb-2">When?</label>
             <input
+              id="quicklog-date"
               type="date"
               value={date}
               max={toLocalISODate(new Date())}

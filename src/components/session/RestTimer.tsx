@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRestTimer } from '../../hooks/useRestTimer'
 import { secondsToDisplay } from '../../lib/dateUtils'
 import { Bell, CheckCircle, ChevronDown, ChevronUp, SkipForward } from 'lucide-react'
@@ -16,15 +16,48 @@ export function RestTimerOverlay() {
   const { remaining, progress, isActive, label, skipTimer } = useRestTimer()
   const minimised = useSettingsStore((s) => s.restTimerMinimised)
   const setMinimised = useSettingsStore((s) => s.setRestTimerMinimised)
+  const fullScreen = isActive && !minimised
+  const dialogRef = useRef<HTMLDivElement>(null)
+  const barRef = useRef<HTMLButtonElement>(null)
+  const focusBar = useRef(false)
 
   useEffect(() => {
-    if (!isActive || minimised) return
+    if (!fullScreen) return
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setMinimised(true)
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [isActive, minimised, setMinimised])
+  }, [fullScreen, setMinimised])
+
+  // Full screen it's modal: focus moves into the card and the rest of the app
+  // is inert (keyboard and screen readers can't wander behind the backdrop).
+  // On close, focus goes back to what had it (usually the set's tick), or to
+  // the minimised bar when that's gone (the timer was opened from the bar).
+  useEffect(() => {
+    const dialog = dialogRef.current
+    if (!fullScreen || !dialog) return
+    const opener = document.activeElement instanceof HTMLElement && document.activeElement !== document.body
+      ? document.activeElement
+      : null
+    dialog.focus()
+    const restore = inertOutside(dialog)
+    return () => {
+      restore()
+      // Never hand focus back to a text field: on a phone that pops the
+      // keyboard up when the rest ends.
+      const typing = opener?.matches('input, textarea, select, [contenteditable]')
+      if (opener?.isConnected && !typing) opener.focus({ preventScroll: true })
+      else if (!opener?.isConnected) focusBar.current = true
+    }
+  }, [fullScreen])
+
+  // Runs after the cleanup above in the same commit, once the bar is mounted.
+  useEffect(() => {
+    if (!focusBar.current) return
+    focusBar.current = false
+    if (isActive && minimised) barRef.current?.focus()
+  }, [isActive, minimised])
 
   if (!isActive) return null
 
@@ -42,6 +75,7 @@ export function RestTimerOverlay() {
         >
           <div className="max-w-md @3xl/app:max-w-xl @5xl/app:max-w-2xl mx-auto pointer-events-auto flex items-center gap-1 bg-[#161616]/95 backdrop-blur-xl border border-[#2a2a2a] rounded-2xl p-1.5 shadow-lg shadow-black/40 slide-up">
             <button
+              ref={barRef}
               onClick={() => setMinimised(false)}
               aria-label={`Rest, ${time} left. Show the timer`}
               className="flex-1 min-w-0 flex items-center gap-3 rounded-xl px-2 py-1.5 text-left hover:bg-[#1f1f1f] transition-colors"
@@ -73,9 +107,12 @@ export function RestTimerOverlay() {
         {/* Tapping outside the card tucks the timer away. */}
         <div aria-hidden className="absolute inset-0 bg-black/70 backdrop-blur-md" onClick={() => setMinimised(true)} />
         <div
+          ref={dialogRef}
           role="dialog"
+          aria-modal="true"
           aria-label="Rest timer"
-          className="relative bg-[#111] rounded-3xl border border-[#2a2a2a] p-8 short:p-5 w-72 flex flex-col items-center gap-5 short:gap-3 slide-up"
+          tabIndex={-1}
+          className="relative bg-[#111] rounded-3xl border border-[#2a2a2a] p-8 short:p-5 w-72 flex flex-col items-center gap-5 short:gap-3 slide-up outline-none"
         >
           <button
             onClick={() => setMinimised(true)}
@@ -108,6 +145,22 @@ export function RestTimerOverlay() {
       </div>
     </FixedLayer>
   )
+}
+
+/**
+ * Makes everything outside `keep` inert: the app root and the other
+ * screen-anchored UI (the Session action bar). Returns the undo. Only touches
+ * elements it changed, so anything already inert stays that way.
+ */
+function inertOutside(keep: Element): () => void {
+  const layer = document.getElementById('fixed-layer')
+  const outside = [document.getElementById('root'), ...(layer ? Array.from(layer.children) : [])].filter(
+    (el): el is HTMLElement => el instanceof HTMLElement && !el.contains(keep) && !el.inert,
+  )
+  for (const el of outside) el.inert = true
+  return () => {
+    for (const el of outside) el.inert = false
+  }
 }
 
 function Ring({ elapsed, className, strokeWidth }: { elapsed: number; className: string; strokeWidth: number }) {

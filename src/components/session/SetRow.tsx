@@ -53,6 +53,7 @@ function RepSetRow({ setIndex, plannedSet, loggedSet, onUpdate, onComplete, onUn
         inputMode="numeric"
         enterKeyHint="next"
         onKeyDown={(e) => { if (e.key === 'Enter') weightRef.current?.focus() }}
+        aria-label={`Set ${setIndex + 1} reps`}
         placeholder={plannedSet.reps}
         value={repsText}
         onChange={(e) => {
@@ -73,6 +74,7 @@ function RepSetRow({ setIndex, plannedSet, loggedSet, onUpdate, onComplete, onUn
           inputMode="decimal"
           enterKeyHint="done"
           onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur() }}
+          aria-label={`Set ${setIndex + 1} weight in ${unit}`}
           placeholder={unit}
           value={weightText}
           onChange={(e) => {
@@ -89,6 +91,7 @@ function RepSetRow({ setIndex, plannedSet, loggedSet, onUpdate, onComplete, onUn
       </div>
 
       <CompleteButton
+        setIndex={setIndex}
         completed={completed}
         onClick={() => {
           // An empty-reps tick is usually a mis-tap; ticking a done set means
@@ -179,7 +182,7 @@ function TimedSetRow({ setIndex, plannedSet, loggedSet, onComplete, onUncomplete
 
       {/* Start / Stop */}
       {completed ? (
-        <CompleteButton completed onClick={() => setConfirmEdit(true)} />
+        <CompleteButton setIndex={setIndex} completed onClick={() => setConfirmEdit(true)} />
       ) : running ? (
         <button
           onClick={stop}
@@ -241,11 +244,11 @@ function rowClass(completed: boolean, skipped: boolean): string {
   }`
 }
 
-function CompleteButton({ completed, onClick }: { completed: boolean; onClick: () => void }) {
+function CompleteButton({ setIndex, completed, onClick }: { setIndex: number; completed: boolean; onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      aria-label={completed ? 'Edit completed set' : 'Complete set'}
+      aria-label={completed ? `Edit set ${setIndex + 1}` : `Complete set ${setIndex + 1}`}
       className={`w-8 h-8 rounded-nested flex items-center justify-center transition-all shrink-0 ${
         completed
           ? 'bg-emerald-500 text-white active:scale-90'

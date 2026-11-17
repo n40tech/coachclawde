@@ -180,6 +180,9 @@ are marked as seen when they finish onboarding.
 
 - Match the style of the file you're editing (functional components + hooks
   throughout; `import type` for type-only imports).
+- [`WEB-AUDIT.md`](WEB-AUDIT.md) is the web-platform audit (accessibility,
+  overlays, PWA, performance) with a prioritised backlog: check it before
+  touching dialogs, sheets, forms or the bundle.
 - Use `lucide-react` for icons and the existing `shared/` primitives for UI —
   don't introduce a new component library or CSS framework.
 - IDs are generated with `src/lib/nanoid.ts`; dates are local-ISO via

@@ -98,7 +98,7 @@ are marked as seen when they finish onboarding.
   `Progress`, `History`, `Settings`), wired in `src/App.tsx` with `BottomNav` (floating tab bar, phones) and
   `SideNav` (sidebar, when the `app` container is 48rem+ — iPad / landscape).
   Edge offsets come from the layout tokens in `src/index.css` (`--safe-*`,
-  `--tabbar-*`): use `pb-tabbar` / `pb-action-bar` / `pb-edge` / `pt-safe` /
+  `--tabbar-*`): use `pb-tabbar` / `pb-edge` / `pt-safe` /
   `px-safe` instead of hardcoding `pb-24`-style guesses. See `docs/DEVICE-FIT.md`.
 - **Device-fit conventions** (see `docs/DEVICE-FIT.md`): new sheets use the
   shared `BottomSheet` (keyboard-aware, safe-area padded). Text fields use
@@ -166,8 +166,9 @@ are marked as seen when they finish onboarding.
     Push (VAPID + RFC 8291, checked against the RFC's worked example). It's
     type-checked by `tsconfig.functions.json` (part of `npm run build`);
     `deno.d.ts` stands in for the Deno globals.
-  - `RestTimerOverlay` minimises to a bar above the action bar; the choice is
-    remembered in the settings store.
+  - `RestTimerOverlay` minimises to a pill in the tab bar's dock
+    (`tabbar-dock`); the choice is remembered in the settings store. Session
+    has no pinned bar: "Complete Session" sits at the end of the workout.
 - `scripts/create-beta-user.mjs` — provisions beta accounts (email + password,
   pre-confirmed) with the service-role key. `scripts/check-setup.mjs` is a
   read-only status report (env vars, schema, accounts and their onboarding

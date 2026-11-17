@@ -8,9 +8,9 @@ import { useSettingsStore } from '../../store/useSettingsStore'
 import { enableRestAlerts, prepareRestAlerts, restAlertSupport } from '../../lib/restAlerts'
 
 /**
- * The rest timer: a full-screen countdown, or (minimised) a slim bar above
- * the Session action bar so the athlete can keep logging, read a movement
- * guide or scroll while resting. The choice sticks for the next rest.
+ * The rest timer: a full-screen countdown, or (minimised) a pill docked where
+ * the tab bar sits on other screens, so the athlete can keep logging, read a
+ * movement guide or scroll while resting. The choice sticks for the next rest.
  */
 export function RestTimerOverlay() {
   const { remaining, progress, isActive, label, skipTimer } = useRestTimer()
@@ -69,33 +69,31 @@ export function RestTimerOverlay() {
   if (minimised) {
     return (
       <FixedLayer>
-        <div
-          className="absolute inset-x-0 z-40 px-safe pointer-events-none"
-          style={{ bottom: 'calc(var(--action-bar-h) + max(1rem, var(--safe-bottom)) + 0.5rem)' }}
-        >
-          <div className="max-w-md @3xl/app:max-w-xl @5xl/app:max-w-2xl mx-auto pointer-events-auto flex items-center gap-1 bg-[#161616]/95 backdrop-blur-xl border border-[#2a2a2a] rounded-2xl p-1.5 shadow-lg shadow-black/40 slide-up">
-            <button
-              ref={barRef}
-              onClick={() => setMinimised(false)}
-              aria-label={`Rest, ${time} left. Show the timer`}
-              className="flex-1 min-w-0 flex items-center gap-3 rounded-xl px-2 py-1.5 text-left hover:bg-[#1f1f1f] transition-colors"
-            >
-              <Ring elapsed={elapsed} className="w-9 h-9 shrink-0" strokeWidth={12} />
-              <span className="flex-1 min-w-0">
-                <span className={`block text-lg font-bold text-[#f5f5f0] tabular-nums leading-tight ${pulse}`}>{time}</span>
-                <span className="block text-xs text-[#6a6a6a] truncate">{label}</span>
-              </span>
-              <ChevronUp size={18} className="text-[#6a6a6a] shrink-0" />
-            </button>
-            <button
-              onClick={skipTimer}
-              aria-label="Skip rest"
-              title="Skip rest"
-              className="w-11 h-11 shrink-0 rounded-xl flex items-center justify-center text-[#a8a29e] hover:text-[#d97756] hover:bg-[#d97756]/10 transition-colors"
-            >
-              <SkipForward size={18} />
-            </button>
-          </div>
+        {/* Same dock, height and pill as the tab bar (index.css tabbar-dock),
+            so it sits concentric with the screen's rounded corners. The ring
+            and Skip are inset so their curves follow the pill's ends. */}
+        <div className="absolute tabbar-dock z-40 flex items-center gap-1 rounded-(--tabbar-radius) p-(--tabbar-pad) bg-[#161616]/95 backdrop-blur-xl ring-1 ring-inset ring-[#2a2a2a] shadow-lg shadow-black/50 slide-up">
+          <button
+            ref={barRef}
+            onClick={() => setMinimised(false)}
+            aria-label={`Rest, ${time} left. Show the timer`}
+            className="flex-1 min-w-0 h-full flex items-center gap-3 rounded-(--tabbar-item-radius) pl-2 pr-3 text-left hover:bg-[#1f1f1f] transition-colors"
+          >
+            <Ring elapsed={elapsed} className="w-9 h-9 shrink-0" strokeWidth={12} />
+            <span className="flex-1 min-w-0">
+              <span className={`block text-lg font-bold text-[#f5f5f0] tabular-nums leading-tight ${pulse}`}>{time}</span>
+              <span className="block text-xs text-[#6a6a6a] truncate">{label}</span>
+            </span>
+            <ChevronUp size={18} className="text-[#6a6a6a] shrink-0" />
+          </button>
+          <button
+            onClick={skipTimer}
+            aria-label="Skip rest"
+            title="Skip rest"
+            className="h-full aspect-square shrink-0 rounded-(--tabbar-item-radius) flex items-center justify-center text-[#a8a29e] hover:text-[#d97756] hover:bg-[#d97756]/10 transition-colors"
+          >
+            <SkipForward size={18} />
+          </button>
         </div>
       </FixedLayer>
     )
@@ -149,7 +147,7 @@ export function RestTimerOverlay() {
 
 /**
  * Makes everything outside `keep` inert: the app root and the other
- * screen-anchored UI (the Session action bar). Returns the undo. Only touches
+ * screen-anchored UI. Returns the undo. Only touches
  * elements it changed, so anything already inert stays that way.
  */
 function inertOutside(keep: Element): () => void {

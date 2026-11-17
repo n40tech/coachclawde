@@ -94,6 +94,8 @@ export default defineConfig(({ mode, command }) => {
         // injectRegister off the plugin otherwise waits for a prompt.
         skipWaiting: true,
         clientsClaim: true,
+        // Rest-alert push and notification-click handlers (src/lib/restAlerts).
+        importScripts: ['push-sw.js'],
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         runtimeCaching: [
           {

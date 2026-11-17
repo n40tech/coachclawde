@@ -72,6 +72,15 @@ async function main() {
       console.log(`  ✓ ${'profiles.goal_profile'}`)
     }
   }
+  // v1.0.6: rest-timer alerts (migration 0007). Optional: only the alerts need it.
+  {
+    const r = await countRows('rest_alarms')
+    console.log(
+      r.error
+        ? `  – ${'rest_alarms'.padEnd(16)} not set up, so rest alerts are off (docs/DEPLOYMENT.md §7)`
+        : `  ✓ ${'rest_alarms'.padEnd(16)} ${r.count} pending alert(s)`,
+    )
+  }
   if (!schemaOk) {
     console.log('\n  → Run the files in supabase/migrations/ in order (0001 … 0006)')
     console.log('    in the Supabase SQL editor, then re-run this check.\n')

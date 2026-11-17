@@ -41,6 +41,23 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: '1.0.6',
+    date: '2026-11-17',
+    headline: 'Know when rest is over, even with your phone locked.',
+    fromFeedback: [
+      'Rest alerts: get a notification when rest is over, even if your phone is locked or you’re in another app. Turn them on from the rest timer or in Settings → Notifications. On iPhone, open Coach Clawde from your Home Screen to use them.',
+      'Minimise the rest timer to a slim bar (tap the arrow, or anywhere outside the timer) and keep logging, reading movement guides or scrolling while you rest. It stays minimised for your next rests until you open it again.',
+    ],
+    alsoNew: [
+      'Coming back to the app mid-rest no longer plays a late “rest over” beep partway through your next set.',
+    ],
+    action: {
+      label: 'Set up rest alerts',
+      to: '/settings',
+      note: 'Rest alerts are off until you turn them on.',
+    },
+  },
+  {
     version: '1.0.5',
     date: '2026-10-20',
     headline: 'Pounds and miles, if that’s how you train.',

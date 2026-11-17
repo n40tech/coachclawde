@@ -15,7 +15,8 @@ installable PWA via `vite-plugin-pwa` (`registerType: 'autoUpdate'`).
 **Backend:** Supabase provides Postgres + auth (email + password and magic-link;
 Google is wired in `AuthProvider` but not yet surfaced in the UI) + Row-Level
 Security. The app talks to it directly with
-`@supabase/supabase-js` from the browser — there is no custom server. Requires
+`@supabase/supabase-js` from the browser. The only server code is one Edge
+Function, `supabase/functions/rest-alarm` (rest-timer push notifications). Requires
 `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY`; when those are absent the app runs
 in offline single-user "local mode" (no login), so `npm run dev` works without a
 backend. See [`DEPLOYMENT.md`](DEPLOYMENT.md) for setup and the DB schema in
@@ -36,8 +37,9 @@ of the bundle.
 - `npm run lint` — ESLint. Must pass clean.
 - `npm run build` — `tsc -b && vite build`. **This is the only typecheck gate**
   (there is no separate `typecheck` script).
-- `npm test` — Vitest, for the pure logic in `src/lib` (`*.test.ts` next to the
-  module). Tests run in Node; there are no component tests.
+- `npm test` — Vitest, for the pure logic in `src/lib` and the Edge Function in
+  `supabase/functions` (`*.test.ts` next to the module). Tests run in Node;
+  there are no component tests.
 
 **Before committing any code change, run `npm run lint`, `npm run build` and
 `npm test` and make sure all three are green.** On Claude Code on the web,
@@ -46,7 +48,7 @@ work out of the box.
 
 ## Shipping a beta update (versions & release notes)
 
-The app version lives in `package.json` (currently **1.0.5**) and is injected
+The app version lives in `package.json` (currently **1.0.6**) and is injected
 into the bundle as `__APP_VERSION__` (read it via `APP_VERSION` in
 `src/lib/appVersion.ts`). The first time a tester opens a new version, a
 "What's new" sheet lists the changes; it's also reachable from Settings →
@@ -87,7 +89,8 @@ are marked as seen when they finish onboarding.
   sessions, active session, rest timer). Persisted to `localStorage` under
   `coach-clawde-store` via `partialize` (timer/active session are intentionally
   not persisted) — this is the offline working cache; Supabase is the source of
-  truth. `src/store/useSettingsStore.ts` — sync status only.
+  truth. `src/store/useSettingsStore.ts` — per-device settings: sync status,
+  display units, rest alerts and the minimised rest timer.
 - `src/auth/` — `AuthProvider` (Supabase session + `useAuth()`), `RequireAuth`
   (route guard that pulls the signed-in user's data on sign-in and resets the
   store on sign-out). `src/pages/Login.tsx` is the sign-in screen.
@@ -147,6 +150,24 @@ are marked as seen when they finish onboarding.
   - `lib/coachingConfig` — **every coaching number** (min weeks, ambition
     thresholds, zones, tapers, deloads). Must be reviewed by a qualified coach.
   - `lib/quickLog` — "Did something else?" and "Log a session".
+- **Rest alerts (v1.0.6)** — a push notification when a rest ends with the app
+  in the background (setup: `docs/DEPLOYMENT.md` §7):
+  - `lib/restAlerts` — device support, turning alerts on (permission + push
+    subscription), the test alert, and the wired-up controller.
+    `lib/restAlarmController` decides when to arm and cancel (pure, tested):
+    only while the app is hidden mid-rest, armed by beacon, cancelled on return.
+  - `public/push-sw.js` — the service worker's push and notification-click
+    handlers, pulled into the generated worker by `workbox.importScripts`.
+    Push only works in a build (`npm run build && npm run preview`), never
+    `npm run dev`, which registers no service worker.
+  - `supabase/functions/rest-alarm` — arms, cancels and (from the pg_cron
+    ticker in migration `0007`) sends due alarms. `handler.ts` uses web APIs
+    only so it's tested in Node; `_shared/webpush.ts` is dependency-free Web
+    Push (VAPID + RFC 8291, checked against the RFC's worked example). It's
+    type-checked by `tsconfig.functions.json` (part of `npm run build`);
+    `deno.d.ts` stands in for the Deno globals.
+  - `RestTimerOverlay` minimises to a bar above the action bar; the choice is
+    remembered in the settings store.
 - `scripts/create-beta-user.mjs` — provisions beta accounts (email + password,
   pre-confirmed) with the service-role key. `scripts/check-setup.mjs` is a
   read-only status report (env vars, schema, accounts and their onboarding

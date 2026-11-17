@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useSettingsStore } from '../store/useSettingsStore'
 import { useAppStore } from '../store/useAppStore'
@@ -8,7 +8,7 @@ import { PageHeader } from '../components/layout/PageHeader'
 import { Button } from '../components/shared/Button'
 import { Card, CardSection } from '../components/shared/Card'
 import { SyncIndicator } from '../components/shared/SyncIndicator'
-import { UserCircle, CheckCircle, AlertCircle, RefreshCw, LogOut, Sparkles, ChevronRight, Gift, MessageCircle, ShieldCheck } from 'lucide-react'
+import { UserCircle, CheckCircle, AlertCircle, RefreshCw, LogOut, Sparkles, ChevronRight, Gift, MessageCircle, ShieldCheck, Bell } from 'lucide-react'
 import { ConfirmDialog } from '../components/shared/ConfirmDialog'
 import { goalOrLegacy } from '../lib/goalProfile'
 import { WhatsNewSheet } from '../components/shared/WhatsNew'
@@ -18,6 +18,7 @@ import { RELEASES } from '../lib/releaseNotes'
 import { ageFromBirthDate, isValidBirthDate } from '../lib/dateUtils'
 import { toLocalISODate } from '../lib/weekUtils'
 import { fromWeight, toWeight, type DistanceUnit, type WeightUnit } from '../lib/units'
+import { checkRestAlerts, disableRestAlerts, enableRestAlerts, prepareRestAlerts, restAlertSupport, sendTestAlert } from '../lib/restAlerts'
 
 export function Settings() {
   const navigate = useNavigate()
@@ -231,6 +232,8 @@ export function Settings() {
           </Card>
         </div>
 
+        <RestAlertsSetting />
+
         {/* Check-ins & health */}
         <div>
           <p className="text-xs text-[#4a4a4a] uppercase tracking-widest font-medium px-1 mb-3">Check-ins & privacy</p>
@@ -357,6 +360,102 @@ function DisplayInfo() {
     shape.standalone ? `app${shape.viewportGap ? ` +${shape.viewportGap}` : ''}` : 'browser',
   ]
   return <p className="text-2xs text-[#3a3a3a] text-center mt-3 tabular-nums">Display: {parts.join(' · ')}</p>
+}
+
+/** Rest alerts: push notifications when a rest ends with the app in the background. */
+function RestAlertsSetting() {
+  const restAlerts = useSettingsStore((s) => s.restAlerts)
+  const [support, setSupport] = useState(restAlertSupport)
+  const [busy, setBusy] = useState(false)
+  const [message, setMessage] = useState<{ error: boolean; text: string } | null>(null)
+
+  // Notice permission withdrawn in iOS Settings since the switch was turned on,
+  // and get ready to subscribe within the tap.
+  useEffect(() => {
+    void checkRestAlerts()
+    void prepareRestAlerts()?.catch(() => {})
+  }, [])
+
+  if (support === 'unsupported') return null
+
+  async function toggle() {
+    setMessage(null)
+    setBusy(true)
+    // enableRestAlerts must be the first thing awaited: Safari only allows
+    // subscribing (and its permission prompt) inside the tap.
+    const result = restAlerts ? (await disableRestAlerts(), { ok: true as const }) : await enableRestAlerts()
+    setBusy(false)
+    setSupport(restAlertSupport())
+    if (!result.ok) setMessage({ error: true, text: result.message })
+  }
+
+  async function test() {
+    setMessage(null)
+    setBusy(true)
+    const result = await sendTestAlert()
+    setBusy(false)
+    setMessage(
+      result.ok
+        ? { error: false, text: 'Sent. It arrives in about 5 seconds: lock your phone to see it as you would mid-workout.' }
+        : { error: true, text: result.message },
+    )
+  }
+
+  return (
+    <div>
+      <p className="text-xs text-[#4a4a4a] uppercase tracking-widest font-medium px-1 mb-3">Notifications</p>
+      <Card>
+        <CardSection className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-[#d97756]/15 flex items-center justify-center shrink-0">
+            <Bell size={18} className="text-[#d97756]" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-[#f5f5f0]">Rest alerts</p>
+            <p className="text-xs text-[#6a6a6a] mt-0.5">A notification when rest is over, even with your phone locked.</p>
+          </div>
+          {support === 'available' && (
+            <button
+              role="switch"
+              aria-checked={restAlerts}
+              aria-label="Rest alerts"
+              disabled={busy}
+              onClick={toggle}
+              className={`w-12 h-7 rounded-full p-0.5 transition-colors shrink-0 disabled:opacity-50 ${restAlerts ? 'bg-[#d97756]' : 'bg-[#2a2a2a]'}`}
+            >
+              <span className={`block w-6 h-6 rounded-full bg-white transition-transform ${restAlerts ? 'translate-x-5' : ''}`} />
+            </button>
+          )}
+        </CardSection>
+        {(support !== 'available' || (restAlerts && support === 'available') || message) && (
+          <>
+            <div className="border-t border-[#2a2a2a]" />
+            <CardSection className="flex flex-col gap-3">
+              {support === 'install' && (
+                <p className="text-xs text-[#6a6a6a] leading-relaxed">
+                  On iPhone and iPad, add Coach Clawde to your Home Screen first (Share → Add to Home Screen), then open it
+                  from there and turn this on.
+                </p>
+              )}
+              {support === 'blocked' && (
+                <p className="text-xs text-[#6a6a6a] leading-relaxed">
+                  Notifications are turned off for Coach Clawde. Turn them on in your phone’s Settings → Notifications →
+                  Coach Clawde, then come back here.
+                </p>
+              )}
+              {support === 'available' && restAlerts && (
+                <Button variant="secondary" size="sm" onClick={test} loading={busy} className="self-start">
+                  Send a test alert
+                </Button>
+              )}
+              {message && (
+                <p className={`text-xs leading-relaxed ${message.error ? 'text-red-400' : 'text-[#a8a29e]'}`}>{message.text}</p>
+              )}
+            </CardSection>
+          </>
+        )}
+      </Card>
+    </div>
+  )
 }
 
 function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {

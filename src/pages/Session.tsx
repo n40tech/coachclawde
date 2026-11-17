@@ -30,7 +30,7 @@ import type { CardioType, Intensity, LoggedExercise, LoggedInterval, LoggedSessi
 import type { IntervalRowSpec } from '../components/session/IntervalRow'
 import { Dumbbell, Waves, Clock, CheckCircle2, AlertTriangle, Shuffle, Play } from 'lucide-react'
 import { nanoid } from '../lib/nanoid'
-import { useUnits } from '../store/useSettingsStore'
+import { useSettingsStore, useUnits } from '../store/useSettingsStore'
 import { localize, type DistanceUnit } from '../lib/units'
 
 function usePlannedSession(sessionId: string | undefined): PlannedSession | undefined {
@@ -60,7 +60,8 @@ export function Session() {
   const [showRun, setShowRun] = useState(false)
   // The log Run Mode started, if it started one (so discarding can undo it).
   const [runLogId, setRunLogId] = useState<string | null>(null)
-  const { startTimer } = useRestTimer()
+  const { startTimer, isActive: resting } = useRestTimer()
+  const restBarShowing = useSettingsStore((s) => s.restTimerMinimised) && resting
   const units = useUnits()
   const { syncSession, removeSession } = useAutoSync()
   const [activeExerciseIdx, setActiveExerciseIdx] = useState(0)
@@ -500,6 +501,9 @@ export function Session() {
             <DidSomethingElse onClick={() => setShowQuickLog(true)} />
           </div>
         )}
+
+        {/* Room to scroll the last set clear of the minimised rest timer. */}
+        {restBarShowing && <div aria-hidden className="h-20" />}
       </div>
 
       {/* Bottom action */}

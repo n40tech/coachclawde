@@ -1,43 +1,97 @@
+import { useEffect, useState } from 'react'
 import { useRestTimer } from '../../hooks/useRestTimer'
 import { secondsToDisplay } from '../../lib/dateUtils'
-import { SkipForward } from 'lucide-react'
+import { Bell, CheckCircle, ChevronDown, ChevronUp, SkipForward } from 'lucide-react'
 import { FixedLayer } from '../layout/FixedLayer'
+import { Button } from '../shared/Button'
+import { useSettingsStore } from '../../store/useSettingsStore'
+import { enableRestAlerts, prepareRestAlerts, restAlertSupport } from '../../lib/restAlerts'
 
+/**
+ * The rest timer: a full-screen countdown, or (minimised) a slim bar above
+ * the Session action bar so the athlete can keep logging, read a movement
+ * guide or scroll while resting. The choice sticks for the next rest.
+ */
 export function RestTimerOverlay() {
   const { remaining, progress, isActive, label, skipTimer } = useRestTimer()
+  const minimised = useSettingsStore((s) => s.restTimerMinimised)
+  const setMinimised = useSettingsStore((s) => s.setRestTimerMinimised)
+
+  useEffect(() => {
+    if (!isActive || minimised) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMinimised(true)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [isActive, minimised, setMinimised])
 
   if (!isActive) return null
 
-  const circumference = 2 * Math.PI * 44
   // Draining ring: full at the start of the rest, empty when it runs out.
-  // `progress` is the elapsed fraction, so the offset grows as time depletes.
-  const strokeDashoffset = circumference * Math.min(1, Math.max(0, progress))
+  const elapsed = Math.min(1, Math.max(0, progress))
+  const time = secondsToDisplay(remaining)
+  const pulse = remaining <= 5 ? 'timer-pulse' : ''
+
+  if (minimised) {
+    return (
+      <FixedLayer>
+        <div
+          className="absolute inset-x-0 z-40 px-safe pointer-events-none"
+          style={{ bottom: 'calc(var(--action-bar-h) + max(1rem, var(--safe-bottom)) + 0.5rem)' }}
+        >
+          <div className="max-w-md @3xl/app:max-w-xl @5xl/app:max-w-2xl mx-auto pointer-events-auto flex items-center gap-1 bg-[#161616]/95 backdrop-blur-xl border border-[#2a2a2a] rounded-2xl p-1.5 shadow-lg shadow-black/40 slide-up">
+            <button
+              onClick={() => setMinimised(false)}
+              aria-label={`Rest, ${time} left. Show the timer`}
+              className="flex-1 min-w-0 flex items-center gap-3 rounded-xl px-2 py-1.5 text-left hover:bg-[#1f1f1f] transition-colors"
+            >
+              <Ring elapsed={elapsed} className="w-9 h-9 shrink-0" strokeWidth={12} />
+              <span className="flex-1 min-w-0">
+                <span className={`block text-lg font-bold text-[#f5f5f0] tabular-nums leading-tight ${pulse}`}>{time}</span>
+                <span className="block text-xs text-[#6a6a6a] truncate">{label}</span>
+              </span>
+              <ChevronUp size={18} className="text-[#6a6a6a] shrink-0" />
+            </button>
+            <button
+              onClick={skipTimer}
+              aria-label="Skip rest"
+              title="Skip rest"
+              className="w-11 h-11 shrink-0 rounded-xl flex items-center justify-center text-[#a8a29e] hover:text-[#d97756] hover:bg-[#d97756]/10 transition-colors"
+            >
+              <SkipForward size={18} />
+            </button>
+          </div>
+        </div>
+      </FixedLayer>
+    )
+  }
 
   return (
     <FixedLayer>
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-md z-50 flex items-end short:items-center justify-center pb-edge short:pt-safe">
-        <div className="bg-[#111] rounded-3xl border border-[#2a2a2a] p-8 short:p-5 w-72 flex flex-col items-center gap-5 short:gap-3 slide-up">
+      <div className="absolute inset-0 z-50 flex items-end short:items-center justify-center pb-edge short:pt-safe">
+        {/* Tapping outside the card tucks the timer away. */}
+        <div aria-hidden className="absolute inset-0 bg-black/70 backdrop-blur-md" onClick={() => setMinimised(true)} />
+        <div
+          role="dialog"
+          aria-label="Rest timer"
+          className="relative bg-[#111] rounded-3xl border border-[#2a2a2a] p-8 short:p-5 w-72 flex flex-col items-center gap-5 short:gap-3 slide-up"
+        >
+          <button
+            onClick={() => setMinimised(true)}
+            aria-label="Minimise rest timer"
+            title="Minimise"
+            className="absolute top-3 right-3 w-10 h-10 rounded-xl flex items-center justify-center text-[#6a6a6a] hover:text-[#f5f5f0] hover:bg-[#1a1a1a] transition-colors"
+          >
+            <ChevronDown size={20} />
+          </button>
           <p className="text-xs text-[#6a6a6a] uppercase tracking-widest font-medium">Rest</p>
-          <p className="text-sm text-[#a8a29e]">{label}</p>
+          <p className="text-sm text-[#a8a29e] text-center">{label}</p>
 
           <div className="relative w-32 h-32 short:w-24 short:h-24">
-            <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
-              <circle cx="50" cy="50" r="44" fill="none" stroke="#1a1a1a" strokeWidth="8" />
-              <circle
-                cx="50" cy="50" r="44"
-                fill="none"
-                stroke="#d97756"
-                strokeWidth="8"
-                strokeLinecap="round"
-                strokeDasharray={circumference}
-                strokeDashoffset={strokeDashoffset}
-                className="transition-[stroke-dashoffset] duration-200 ease-linear"
-              />
-            </svg>
+            <Ring elapsed={elapsed} className="w-full h-full" strokeWidth={8} />
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className={`text-4xl short:text-3xl font-bold text-[#f5f5f0] tabular-nums ${remaining <= 5 ? 'timer-pulse' : ''}`}>
-                {secondsToDisplay(remaining)}
-              </span>
+              <span className={`text-4xl short:text-3xl font-bold text-[#f5f5f0] tabular-nums ${pulse}`}>{time}</span>
             </div>
           </div>
 
@@ -48,8 +102,92 @@ export function RestTimerOverlay() {
             <SkipForward size={16} />
             Skip rest
           </button>
+
+          <RestAlertOffer />
         </div>
       </div>
     </FixedLayer>
+  )
+}
+
+function Ring({ elapsed, className, strokeWidth }: { elapsed: number; className: string; strokeWidth: number }) {
+  const r = 50 - strokeWidth / 2
+  const circumference = 2 * Math.PI * r
+  return (
+    <svg className={`${className} -rotate-90`} viewBox="0 0 100 100" aria-hidden>
+      <circle cx="50" cy="50" r={r} fill="none" stroke="#1f1f1f" strokeWidth={strokeWidth} />
+      <circle
+        cx="50" cy="50" r={r}
+        fill="none"
+        stroke="#d97756"
+        strokeWidth={strokeWidth}
+        strokeLinecap="round"
+        strokeDasharray={circumference}
+        strokeDashoffset={circumference * elapsed}
+        className="transition-[stroke-dashoffset] duration-200 ease-linear"
+      />
+    </svg>
+  )
+}
+
+/**
+ * Offers rest alerts once, where they're most obviously useful. Only when the
+ * device can do them and the athlete hasn't answered the permission prompt:
+ * afterwards it's a Settings switch.
+ */
+function RestAlertOffer() {
+  const restAlerts = useSettingsStore((s) => s.restAlerts)
+  const dismissed = useSettingsStore((s) => s.restAlertsOfferDismissed)
+  const dismiss = useSettingsStore((s) => s.dismissRestAlertsOffer)
+  const [busy, setBusy] = useState(false)
+  const [justEnabled, setJustEnabled] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  // Captured once: answering the prompt changes the permission mid-render.
+  const [offer] = useState(
+    () => !restAlerts && !dismissed && restAlertSupport() === 'available' && Notification.permission === 'default',
+  )
+
+  useEffect(() => {
+    if (offer) void prepareRestAlerts()?.catch(() => {})
+  }, [offer])
+
+  if (!offer || (dismissed && !justEnabled)) return null
+
+  if (justEnabled) {
+    return (
+      <div className="w-full border-t border-[#2a2a2a] pt-4 short:pt-3 flex items-start gap-2 text-xs text-[#a8a29e] leading-relaxed">
+        <CheckCircle size={14} className="text-emerald-400 shrink-0 mt-0.5" />
+        <p>Rest alerts are on. Lock your phone and you’ll still get a notification when rest is over.</p>
+      </div>
+    )
+  }
+
+  async function turnOn() {
+    setBusy(true)
+    setError(null)
+    const result = await enableRestAlerts()
+    setBusy(false)
+    if (result.ok) setJustEnabled(true)
+    else setError(result.message)
+  }
+
+  return (
+    <div className="w-full border-t border-[#2a2a2a] pt-4 short:pt-3 flex flex-col items-center gap-3 text-center">
+      <p className="text-xs text-[#6a6a6a] leading-relaxed">
+        Get a notification when rest is over, even with your phone locked.
+      </p>
+      {error && <p className="text-xs text-red-400 leading-relaxed">{error}</p>}
+      <div className="flex gap-2 whitespace-nowrap">
+        <Button size="sm" variant="secondary" onClick={turnOn} loading={busy}>
+          {!busy && <Bell size={14} />}
+          Turn on
+        </Button>
+        {!busy && (
+          <Button size="sm" variant="ghost" onClick={dismiss}>
+            Not now
+          </Button>
+        )}
+      </div>
+    </div>
   )
 }

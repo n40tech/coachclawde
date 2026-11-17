@@ -7,21 +7,28 @@ import { RequireAuth } from './auth/RequireAuth'
 import { BottomNav } from './components/layout/BottomNav'
 import { SideNav } from './components/layout/SideNav'
 import { FixedLayer } from './components/layout/FixedLayer'
+import { PageSuspense } from './components/layout/PageSuspense'
 import { useAppStore } from './store/useAppStore'
-import { Login } from './pages/Login'
-import { Onboarding } from './pages/Onboarding'
-import { CheckIn } from './pages/CheckIn'
 import { Home } from './pages/Home'
-import { WeekPlanner } from './pages/WeekPlanner'
 import { Session } from './pages/Session'
-import { History } from './pages/History'
-import { Progress } from './pages/Progress'
-import { Program } from './pages/Program'
-import { ProgramEdit } from './pages/ProgramEdit'
-import { BestEfforts } from './pages/BestEfforts'
-import { Settings } from './pages/Settings'
 import { ReleaseNotesGate } from './components/shared/WhatsNew'
 import { useKeyboardInset } from './hooks/useKeyboardInset'
+import { lazyPage } from './lib/lazyPage'
+
+// Home and Session (with Run Mode and the movement guides) are in the entry
+// chunk: the workout path never waits on a chunk, and an update can't pull a
+// chunk out from under a workout (see lib/lazyPage). Everything else loads on
+// first visit.
+const Login = lazyPage(() => import('./pages/Login'), 'Login')
+const Onboarding = lazyPage(() => import('./pages/Onboarding'), 'Onboarding')
+const CheckIn = lazyPage(() => import('./pages/CheckIn'), 'CheckIn')
+const WeekPlanner = lazyPage(() => import('./pages/WeekPlanner'), 'WeekPlanner')
+const History = lazyPage(() => import('./pages/History'), 'History')
+const Progress = lazyPage(() => import('./pages/Progress'), 'Progress')
+const Program = lazyPage(() => import('./pages/Program'), 'Program')
+const ProgramEdit = lazyPage(() => import('./pages/ProgramEdit'), 'ProgramEdit')
+const BestEfforts = lazyPage(() => import('./pages/BestEfforts'), 'BestEfforts')
+const Settings = lazyPage(() => import('./pages/Settings'), 'Settings')
 
 function App() {
   useKeyboardInset()
@@ -93,7 +100,11 @@ function UpdateOnNavigate() {
 
 /** Single centred phone-width column, for the screens without navigation. */
 function PhoneColumn({ children }: { children: ReactNode }) {
-  return <div className="w-full max-w-md mx-auto min-h-svh relative">{children}</div>
+  return (
+    <div className="w-full max-w-md mx-auto min-h-svh relative">
+      <PageSuspense>{children}</PageSuspense>
+    </div>
+  )
 }
 
 /**
@@ -106,17 +117,19 @@ function MainApp() {
       <SideNav />
       <main className="app-main flex-1 min-w-0 @3xl/app:pr-(--safe-right)">
         <div className="w-full max-w-md @3xl/app:max-w-xl @5xl/app:max-w-2xl mx-auto min-h-svh relative">
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/plan" element={<WeekPlanner />} />
-            <Route path="/session/:id" element={<Session />} />
-            <Route path="/history" element={<History />} />
-            <Route path="/progress" element={<Progress />} />
-            <Route path="/progress/best-efforts" element={<BestEfforts />} />
-            <Route path="/program" element={<Program />} />
-            <Route path="/program/edit" element={<ProgramEdit />} />
-            <Route path="/settings" element={<Settings />} />
-          </Routes>
+          <PageSuspense>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/plan" element={<WeekPlanner />} />
+              <Route path="/session/:id" element={<Session />} />
+              <Route path="/history" element={<History />} />
+              <Route path="/progress" element={<Progress />} />
+              <Route path="/progress/best-efforts" element={<BestEfforts />} />
+              <Route path="/program" element={<Program />} />
+              <Route path="/program/edit" element={<ProgramEdit />} />
+              <Route path="/settings" element={<Settings />} />
+            </Routes>
+          </PageSuspense>
         </div>
       </main>
       <BottomNav />

@@ -25,7 +25,7 @@ Only clearly broken, low-risk things were fixed; everything else is below.
 Browser targets: iPhone Home Screen app (iOS 16.4+ for push, iOS 18 / Safari
 26 seen in traffic) and Android Chrome.
 
-## Fixed in this pass
+## Fixed in the first pass (v1.0.6)
 
 1. **Rest timer dialog focus.** `src/components/session/RestTimer.tsx:19-57`,
    `:75`, `:107-112`, `:147-161`. The full-screen timer had `role="dialog"`
@@ -63,49 +63,89 @@ action bar are inert while open and released after, Escape / chevron /
 backdrop / Skip all close cleanly, focus returns to "Edit set 1" or to the bar,
 and a pointer close doesn't leave a focus ring on the bar.
 
+## Fixed in the second pass (v1.0.7)
+
+The five High items from the backlog below.
+
+5. **Every overlay is modal, through one hook.** `src/hooks/useModal.ts` is
+   the rest timer's logic made shared: focus moves to the panel (unless an
+   `autoFocus` child already took it; the opener is captured during the first
+   render, before that can happen), everything outside is `inert`, Escape
+   calls `onEscape`, and on close focus returns to the opener (never to a
+   text field, and `onOpenerGone` when the opener was removed). The inert
+   walk covers the siblings of the panel and of each ancestor up to `<body>`,
+   so it also works for a modal nested inside another (the Run Mode tour,
+   the end-run confirm), skips `aria-hidden` backdrops so tap-outside still
+   works, and reference-counts what it makes inert, so overlapping modals can
+   close in any order. Only the topmost modal answers Escape. Used by
+   `BottomSheet` (Escape = the ✕, also for sheets with
+   `dismissOnBackdrop={false}`: a key press is deliberate, a backdrop tap may
+   not be), `ConfirmDialog` (Escape cancels; now named and described by its
+   title and body via `aria-labelledby`/`aria-describedby`), `RestTimer`
+   (the full-screen card is now its own `RestCard` component so the hook is
+   mount-based), and Run Mode: `Shell` (Escape closes from the sound check,
+   asks before ending a run, does nothing on the review), `RunTour` (no
+   Escape, because leaving the tour starts the run; the lifted LAP/Lock
+   controls are inert while it's up, so they're shown, not pressed) and the
+   end-run confirm, which is now a named `alertdialog` (`EndConfirm`).
+   Guides: `accessibility` (custom overlays), `dialog`, `html`.
+6. **Placeholder-only labels.** `Login` (below), `QuickLogSheet` (Other
+   activity, Note), `CompleteFlow` (pain, notes), `RunMode` review (pain,
+   notes: `aria-label`, there's no visible heading), `WeekPlanner` (the
+   notes/paste box and the import box, now `<label for>`), `Onboarding` "About
+   you" (`FieldLabel` renders a `<label>` when given `htmlFor`; name and date
+   of birth also get `autocomplete`, as do Settings' name and date of birth),
+   and `ChatFlow`'s free-text reply, named by Clawde's question bubble
+   (`aria-labelledby`). Guides: `accessibility`, `forms`.
+7. **Status and error messages are announced.** Always-present
+   `role="status"` / `role="alert"` containers that the text is put into:
+   Settings → Notifications (`RestAlertsSetting`; restructured so the
+   containers exist before a message does), the rest timer's `RestAlertOffer`
+   ("Turn on" error and the "Rest alerts are on" line), a visually hidden
+   "Profile saved" for Save profile, the plan-import error in `WeekPlanner`
+   (also `aria-invalid` + `aria-describedby` on the box) and the sign-in
+   error. Guides: `accessibility` (Live regions),
+   `accessible-error-announcement`.
+8. **Code-split the main chunk.** `src/App.tsx` loads every page except
+   `Home` and `Session` with `lib/lazyPage` (`React.lazy` + `import()`), under
+   `components/layout/PageSuspense` (a `Suspense` with no fallback, since
+   in-app navigation keeps the previous screen up, and an error boundary that
+   offers Reload). `vite.config.ts` also puts React (+ router) and Supabase in
+   chunks of their own, so a deploy that only changes app code no longer
+   re-downloads them. Entry chunk 799 kB → 179 kB (237 → 57 kB gzip), plus
+   `react` 232 kB and `supabase` 201 kB; no build warning. Two departures from
+   the recommendation: `RunMode` and `MovementGuide` stay in the entry chunk,
+   because they're the workout path, and an update that lands mid-workout
+   deletes the old version's chunks while the page can't reload (that would
+   lose the session in progress). For the same reason `lazyPage` reloads
+   into the new version when a chunk is missing, once per 10 s so a broken
+   deploy or being offline can't loop. Guide: `performance` (code-splitting,
+   bundler chunking).
+9. **Sign-in is a real form.** `pages/Login.tsx`: `<form onSubmit>` with
+   `type="submit"` buttons (Enter works natively, the `onKeyDown` is gone),
+   visible `<label>`s, `name`/`id`, `required`, `autocomplete="username"` and
+   `spellcheck="false"` on the email, `enterkeyhint`, and the error in an
+   always-present `role="alert"`. The magic-link "Check your inbox" card takes
+   focus when it replaces the form. Guides: `autofill-sign-in-form`, `forms`.
+
+Verified with Playwright (Chromium, 390×844) on production builds (local
+mode, and a build with a dummy Supabase URL for sign-in): every lazy route
+renders directly and from the tab bar; the What's new sheet, import sheet,
+"No reps entered" confirm, rest timer, Run Mode (sound check, tour, end-run
+confirm, review) and the discard confirm stacked over Run Mode each take
+focus, keep Tab inside (bar the browser-chrome stop, as with `<dialog>`),
+make the rest inert, close on Escape as described and return focus (to the
+opener, "Edit set 1", the bar, or "Don't save" with Run Mode live again),
+leaving nothing inert; the import error and sign-in error land in their
+alert regions; Enter submits sign-in; a missing Settings chunk reloads into a
+working page, and a second failure shows the error boundary; the injury
+question names the chat's reply box.
+
 ## Backlog
 
 ### High
 
-- **Other overlays have the same focus problem as the rest timer had.**
-  `components/shared/BottomSheet.tsx`, `components/shared/ConfirmDialog.tsx`,
-  and `components/session/RunMode.tsx` (`Shell`, `RunTour`) declare
-  `aria-modal` but never move focus in, never make the page inert, ignore
-  Escape and don't return focus. Because they portal to `#fixed-layer` (after
-  `#root`), a keyboard user has to Tab through the whole page to reach them.
-  Recommended: extract the RestTimer logic into a shared hook (focus the panel
-  unless an `autoFocus` child already has focus, `inert` everything outside,
-  Escape calls `onClose`, restore focus) and use it in all three. Longer term,
-  consider native `<dialog>` + `showModal()` (see Medium). Guides:
-  `accessibility`, `dialog`, `html`. Effort: M.
-- **Placeholder-only labels across the rest of the app.** `pages/Login.tsx`
-  (email, password), `components/session/QuickLogSheet.tsx` (custom activity,
-  notes), `components/session/CompleteFlow.tsx`, `components/session/RunMode.tsx`
-  (notes), `pages/WeekPlanner.tsx` (paste box, notes),
-  `components/onboarding/ChatFlow.tsx:334-340`, `pages/Onboarding.tsx:221`.
-  Most have a visible `<p>` heading next to them; turn it into a `<label for>`
-  (or add `aria-label` where there is none). Guides: `accessibility`, `forms`.
-  Effort: S–M.
-- **Status and error messages aren't announced.** Settings → Notifications
-  (`RestAlertsSetting` message, `pages/Settings.tsx:455`), the rest-timer
-  "Turn on" error and success line (`RestTimer.tsx` `RestAlertOffer`), and
-  "Saved" on Save profile. Screen-reader users hear nothing when turning
-  alerts on fails or the test alert is sent. Render an always-present
-  `role="status"` container (errors: `role="alert"`) and put the text in it.
-  Guides: `accessibility` (Live regions), `accessible-error-announcement`.
-  Effort: S.
-- **Code-split the 800 kB main chunk.** `src/App.tsx` imports every page
-  eagerly; the build warns and the precache is ~1 MB. Lazy-load routes off the
-  workout path (`Onboarding`, `CheckIn`, `WeekPlanner`, `Progress`,
-  `Program`, `ProgramEdit`, `BestEfforts`, `History`, `Settings`, `Login`) and
-  heavy components (`RunMode`, `MovementGuide`) with `React.lazy` + `import()`.
-  Keep `Home` and `Session` in the entry chunk so the offline workout path never
-  waits on a chunk. Guide: `performance` (JavaScript code-splitting). Effort: M.
-- **Sign-in form isn't a form.** `pages/Login.tsx:124-150`: no `<form>`, no
-  labels, Enter handled by `onKeyDown`, email lacks `spellcheck="false"`. Wrap
-  in `<form onSubmit>` with a submit button, add labels. Password managers and
-  iOS autofill work better with a real form. Guides: `autofill-sign-in-form`,
-  `forms`. Effort: S.
+All done (items 5–9 above).
 
 ### Medium
 

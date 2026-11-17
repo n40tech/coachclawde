@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRestTimer } from '../../hooks/useRestTimer'
+import { useModal } from '../../hooks/useModal'
 import { secondsToDisplay } from '../../lib/dateUtils'
 import { Bell, CheckCircle, ChevronDown, ChevronUp, SkipForward } from 'lucide-react'
 import { FixedLayer } from '../layout/FixedLayer'
@@ -16,43 +17,13 @@ export function RestTimerOverlay() {
   const { remaining, progress, isActive, label, skipTimer } = useRestTimer()
   const minimised = useSettingsStore((s) => s.restTimerMinimised)
   const setMinimised = useSettingsStore((s) => s.setRestTimerMinimised)
-  const fullScreen = isActive && !minimised
-  const dialogRef = useRef<HTMLDivElement>(null)
   const barRef = useRef<HTMLButtonElement>(null)
   const focusBar = useRef(false)
 
-  useEffect(() => {
-    if (!fullScreen) return
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setMinimised(true)
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [fullScreen, setMinimised])
-
-  // Full screen it's modal: focus moves into the card and the rest of the app
-  // is inert (keyboard and screen readers can't wander behind the backdrop).
-  // On close, focus goes back to what had it (usually the set's tick), or to
-  // the minimised bar when that's gone (the timer was opened from the bar).
-  useEffect(() => {
-    const dialog = dialogRef.current
-    if (!fullScreen || !dialog) return
-    const opener = document.activeElement instanceof HTMLElement && document.activeElement !== document.body
-      ? document.activeElement
-      : null
-    dialog.focus()
-    const restore = inertOutside(dialog)
-    return () => {
-      restore()
-      // Never hand focus back to a text field: on a phone that pops the
-      // keyboard up when the rest ends.
-      const typing = opener?.matches('input, textarea, select, [contenteditable]')
-      if (opener?.isConnected && !typing) opener.focus({ preventScroll: true })
-      else if (!opener?.isConnected) focusBar.current = true
-    }
-  }, [fullScreen])
-
-  // Runs after the cleanup above in the same commit, once the bar is mounted.
+  // Full screen it's modal (RestCard): on close, focus goes back to what had
+  // it (usually the set's tick), or to the minimised bar when that's gone
+  // (the timer was opened from the bar). This runs after the card's cleanup
+  // in the same commit, once the bar is mounted.
   useEffect(() => {
     if (!focusBar.current) return
     focusBar.current = false
@@ -102,10 +73,40 @@ export function RestTimerOverlay() {
   }
 
   return (
+    <RestCard
+      label={label}
+      time={time}
+      elapsed={elapsed}
+      pulse={pulse}
+      onMinimise={() => setMinimised(true)}
+      onSkip={skipTimer}
+      onOpenerGone={() => { focusBar.current = true }}
+    />
+  )
+}
+
+/**
+ * The full-screen timer. Modal for keyboard and screen readers (see
+ * `useModal`); Escape, the chevron and a tap outside all minimise it.
+ */
+function RestCard({
+  label, time, elapsed, pulse, onMinimise, onSkip, onOpenerGone,
+}: {
+  label: string
+  time: string
+  elapsed: number
+  pulse: string
+  onMinimise: () => void
+  onSkip: () => void
+  onOpenerGone: () => void
+}) {
+  const dialogRef = useRef<HTMLDivElement>(null)
+  useModal(dialogRef, { onEscape: onMinimise, onOpenerGone })
+  return (
     <FixedLayer>
       <div className="absolute inset-0 z-50 flex items-end short:items-center justify-center pb-edge short:pt-safe">
         {/* Tapping outside the card tucks the timer away. */}
-        <div aria-hidden className="absolute inset-0 bg-black/70 backdrop-blur-md" onClick={() => setMinimised(true)} />
+        <div aria-hidden className="absolute inset-0 bg-black/70 backdrop-blur-md" onClick={onMinimise} />
         <div
           ref={dialogRef}
           role="dialog"
@@ -115,7 +116,7 @@ export function RestTimerOverlay() {
           className="relative bg-[#111] rounded-3xl border border-[#2a2a2a] p-8 short:p-5 w-72 flex flex-col items-center gap-5 short:gap-3 slide-up outline-none"
         >
           <button
-            onClick={() => setMinimised(true)}
+            onClick={onMinimise}
             aria-label="Minimise rest timer"
             title="Minimise"
             className="absolute top-3 right-3 w-10 h-10 rounded-xl flex items-center justify-center text-[#6a6a6a] hover:text-[#f5f5f0] hover:bg-[#1a1a1a] transition-colors"
@@ -133,7 +134,7 @@ export function RestTimerOverlay() {
           </div>
 
           <button
-            onClick={skipTimer}
+            onClick={onSkip}
             className="flex items-center gap-2 text-sm text-[#6a6a6a] hover:text-[#d97756] transition-colors py-2 px-4 rounded-xl hover:bg-[#d97756]/10"
           >
             <SkipForward size={16} />
@@ -145,22 +146,6 @@ export function RestTimerOverlay() {
       </div>
     </FixedLayer>
   )
-}
-
-/**
- * Makes everything outside `keep` inert: the app root and the other
- * screen-anchored UI (the Session action bar). Returns the undo. Only touches
- * elements it changed, so anything already inert stays that way.
- */
-function inertOutside(keep: Element): () => void {
-  const layer = document.getElementById('fixed-layer')
-  const outside = [document.getElementById('root'), ...(layer ? Array.from(layer.children) : [])].filter(
-    (el): el is HTMLElement => el instanceof HTMLElement && !el.contains(keep) && !el.inert,
-  )
-  for (const el of outside) el.inert = true
-  return () => {
-    for (const el of outside) el.inert = false
-  }
 }
 
 function Ring({ elapsed, className, strokeWidth }: { elapsed: number; className: string; strokeWidth: number }) {
@@ -206,15 +191,6 @@ function RestAlertOffer() {
 
   if (!offer || (dismissed && !justEnabled)) return null
 
-  if (justEnabled) {
-    return (
-      <div className="w-full border-t border-[#2a2a2a] pt-4 short:pt-3 flex items-start gap-2 text-xs text-[#a8a29e] leading-relaxed">
-        <CheckCircle size={14} className="text-emerald-400 shrink-0 mt-0.5" />
-        <p>Rest alerts are on. Lock your phone and you’ll still get a notification when rest is over.</p>
-      </div>
-    )
-  }
-
   async function turnOn() {
     setBusy(true)
     setError(null)
@@ -224,23 +200,41 @@ function RestAlertOffer() {
     else setError(result.message)
   }
 
+  // The status and alert containers stay in the page while the offer shows,
+  // so the outcome of "Turn on" is announced.
   return (
-    <div className="w-full border-t border-[#2a2a2a] pt-4 short:pt-3 flex flex-col items-center gap-3 text-center">
-      <p className="text-xs text-[#6a6a6a] leading-relaxed">
-        Get a notification when rest is over, even with your phone locked.
-      </p>
-      {error && <p className="text-xs text-red-400 leading-relaxed">{error}</p>}
-      <div className="flex gap-2 whitespace-nowrap">
-        <Button size="sm" variant="secondary" onClick={turnOn} loading={busy}>
-          {!busy && <Bell size={14} />}
-          Turn on
-        </Button>
-        {!busy && (
-          <Button size="sm" variant="ghost" onClick={dismiss}>
-            Not now
-          </Button>
+    <div className="w-full border-t border-[#2a2a2a] pt-4 short:pt-3">
+      <div role="status">
+        {justEnabled && (
+          <div className="flex items-start gap-2 text-xs text-[#a8a29e] leading-relaxed">
+            <CheckCircle size={14} className="text-emerald-400 shrink-0 mt-0.5" aria-hidden />
+            <p>Rest alerts are on. Lock your phone and you’ll still get a notification when rest is over.</p>
+          </div>
         )}
       </div>
+      {!justEnabled && (
+        <div className="flex flex-col items-center gap-3 text-center">
+          <div>
+            <p className="text-xs text-[#6a6a6a] leading-relaxed">
+              Get a notification when rest is over, even with your phone locked.
+            </p>
+            <div role="alert">
+              {error && <p className="text-xs text-red-400 leading-relaxed mt-3">{error}</p>}
+            </div>
+          </div>
+          <div className="flex gap-2 whitespace-nowrap">
+            <Button size="sm" variant="secondary" onClick={turnOn} loading={busy}>
+              {!busy && <Bell size={14} />}
+              Turn on
+            </Button>
+            {!busy && (
+              <Button size="sm" variant="ghost" onClick={dismiss}>
+                Not now
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -149,6 +149,7 @@ export function Settings() {
               <Field label="Name" htmlFor="settings-name">
                 <input
                   id="settings-name"
+                  autoComplete="name"
                   placeholder="Your name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
@@ -184,6 +185,7 @@ export function Settings() {
               >
                 <input
                   id="settings-birth-date"
+                  autoComplete="bday"
                   type="date"
                   value={birthDate}
                   onChange={(e) => setBirthDate(e.target.value)}
@@ -215,6 +217,8 @@ export function Settings() {
                 {profileSaved ? <CheckCircle size={16} /> : null}
                 {profileSaved ? 'Saved' : 'Save profile'}
               </Button>
+              {/* The button's label change isn't reliably read out; this is. */}
+              <p role="status" className="sr-only">{profileSaved ? 'Profile saved' : ''}</p>
             </CardSection>
           </Card>
         </div>
@@ -382,6 +386,9 @@ function RestAlertsSetting() {
   }, [])
 
   if (support === 'unsupported') return null
+  const showInfo = support !== 'available' || restAlerts
+  // Under the info section (sharing its padding) or in a section of its own.
+  const messageClass = `px-5 pb-4 text-xs leading-relaxed ${showInfo ? '-mt-1' : 'pt-4'}`
 
   async function toggle() {
     setMessage(null)
@@ -431,33 +438,35 @@ function RestAlertsSetting() {
             </button>
           )}
         </CardSection>
-        {(support !== 'available' || (restAlerts && support === 'available') || message) && (
-          <>
-            <div className="border-t border-[#2a2a2a]" />
-            <CardSection className="flex flex-col gap-3">
-              {support === 'install' && (
-                <p className="text-xs text-[#6a6a6a] leading-relaxed">
-                  On iPhone and iPad, add Coach Clawde to your Home Screen first (Share → Add to Home Screen), then open it
-                  from there and turn this on.
-                </p>
-              )}
-              {support === 'blocked' && (
-                <p className="text-xs text-[#6a6a6a] leading-relaxed">
-                  Notifications are turned off for Coach Clawde. Turn them on in your phone’s Settings → Notifications →
-                  Coach Clawde, then come back here.
-                </p>
-              )}
-              {support === 'available' && restAlerts && (
-                <Button variant="secondary" size="sm" onClick={test} loading={busy} className="self-start">
-                  Send a test alert
-                </Button>
-              )}
-              {message && (
-                <p className={`text-xs leading-relaxed ${message.error ? 'text-red-400' : 'text-[#a8a29e]'}`}>{message.text}</p>
-              )}
-            </CardSection>
-          </>
+        {(showInfo || message) && <div className="border-t border-[#2a2a2a]" />}
+        {showInfo && (
+          <CardSection className="flex flex-col gap-3">
+            {support === 'install' && (
+              <p className="text-xs text-[#6a6a6a] leading-relaxed">
+                On iPhone and iPad, add Coach Clawde to your Home Screen first (Share → Add to Home Screen), then open it
+                from there and turn this on.
+              </p>
+            )}
+            {support === 'blocked' && (
+              <p className="text-xs text-[#6a6a6a] leading-relaxed">
+                Notifications are turned off for Coach Clawde. Turn them on in your phone’s Settings → Notifications →
+                Coach Clawde, then come back here.
+              </p>
+            )}
+            {support === 'available' && restAlerts && (
+              <Button variant="secondary" size="sm" onClick={test} loading={busy} className="self-start">
+                Send a test alert
+              </Button>
+            )}
+          </CardSection>
         )}
+        {/* Always in the page, so a new message is announced (errors interrupt). */}
+        <div role="status">
+          {message && !message.error && <p className={`${messageClass} text-[#a8a29e]`}>{message.text}</p>}
+        </div>
+        <div role="alert">
+          {message?.error && <p className={`${messageClass} text-red-400`}>{message.text}</p>}
+        </div>
       </Card>
     </div>
   )

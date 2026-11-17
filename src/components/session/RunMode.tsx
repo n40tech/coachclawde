@@ -18,6 +18,7 @@ import {
 import { describeDistance, resolveTarget, type RunZones } from '../../lib/zones'
 import { computeSplit, distanceToMeters, distanceUnit, formatClock, metersToDistance } from '../../lib/cardioUtils'
 import { useWakeLock } from '../../hooks/useWakeLock'
+import { useModal } from '../../hooks/useModal'
 import { useUnits } from '../../store/useSettingsStore'
 import { localize } from '../../lib/units'
 import { markRunTourSeen, runTourSeen } from '../../lib/tutorials'
@@ -275,7 +276,7 @@ export function RunMode({
 
   if (phase === 'check') {
     return (
-      <Shell>
+      <Shell onEscape={onClose}>
         <div className="flex-1 flex flex-col px-5 pt-safe pb-edge">
           <div className="flex justify-end pt-3">
             <CloseButton onClick={onClose} />
@@ -335,7 +336,7 @@ export function RunMode({
     : resolveTarget(step.step.effort, modality, zones, meters, units.distance)
 
   return (
-    <Shell>
+    <Shell onEscape={() => setConfirmEnd(true)}>
       <div className="flex-1 flex flex-col px-5 pt-safe pb-edge gap-2 min-h-0">
         <div className="h-1.5 rounded-full mt-3 shrink-0" style={{ background: color }} />
         <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-[#a8a29e] tabular-nums">
@@ -404,27 +405,55 @@ export function RunMode({
         <RunTour step={tourStep} onStep={setTourStep} onDone={endTour} />
       )}
 
-      {confirmEnd && (
-        <div className="absolute inset-0 z-10 bg-black/80 flex items-center justify-center px-6">
-          <div className="w-full max-w-sm rounded-3xl bg-[#111] border border-[#2a2a2a] p-5 flex flex-col gap-3">
-            <p className="text-base font-semibold text-[#f5f5f0]">End the session here?</p>
-            <p className="text-sm text-[#a8a29e]">You'll review what you've done so far before saving.</p>
-            <Button onClick={endNow} fullWidth>End and review</Button>
-            <Button variant="ghost" onClick={() => setConfirmEnd(false)} fullWidth>Keep going</Button>
-          </div>
-        </div>
-      )}
+      {confirmEnd && <EndConfirm onEnd={endNow} onKeepGoing={() => setConfirmEnd(false)} />}
     </Shell>
   )
 }
 
-function Shell({ children }: { children: React.ReactNode }) {
+/**
+ * Run Mode's full-screen layer, modal for keyboard and screen readers (see
+ * `useModal`). It stays mounted across phases; `onEscape` changes with them
+ * (close from the sound check, ask before ending a run, nothing on review).
+ */
+function Shell({ children, onEscape }: { children: React.ReactNode; onEscape?: () => void }) {
+  const panel = useRef<HTMLDivElement>(null)
+  useModal(panel, { onEscape })
   return (
     <FixedLayer>
-      <div className="absolute inset-0 z-50 bg-[#0a0a0a] flex flex-col overflow-y-auto" role="dialog" aria-modal="true" aria-label="Run Mode">
+      <div
+        ref={panel}
+        tabIndex={-1}
+        className="absolute inset-0 z-50 bg-[#0a0a0a] flex flex-col overflow-y-auto outline-none"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Run Mode"
+      >
         <div className="w-full max-w-md mx-auto flex-1 flex flex-col relative min-h-0">{children}</div>
       </div>
     </FixedLayer>
+  )
+}
+
+function EndConfirm({ onEnd, onKeepGoing }: { onEnd: () => void; onKeepGoing: () => void }) {
+  const panel = useRef<HTMLDivElement>(null)
+  useModal(panel, { onEscape: onKeepGoing })
+  return (
+    <div className="absolute inset-0 z-10 bg-black/80 flex items-center justify-center px-6">
+      <div
+        ref={panel}
+        tabIndex={-1}
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="run-end-title"
+        aria-describedby="run-end-body"
+        className="w-full max-w-sm rounded-3xl bg-[#111] border border-[#2a2a2a] p-5 flex flex-col gap-3 outline-none"
+      >
+        <p id="run-end-title" className="text-base font-semibold text-[#f5f5f0]">End the session here?</p>
+        <p id="run-end-body" className="text-sm text-[#a8a29e]">You'll review what you've done so far before saving.</p>
+        <Button onClick={onEnd} fullWidth>End and review</Button>
+        <Button variant="ghost" onClick={onKeepGoing} fullWidth>Keep going</Button>
+      </div>
+    </div>
   )
 }
 
@@ -465,13 +494,25 @@ const TOUR = [
 
 /**
  * Clawde's first-interval tour, over the frozen first step. The highlighted
- * control is lifted above the dimmed backdrop (z-40 over this z-30 layer).
+ * control is lifted above the dimmed backdrop (z-40 over this z-30 layer) to
+ * show it, and is inert with the rest of the screen while the tour is up (see
+ * `useModal`). Escape does nothing: leaving the tour starts the run, so that
+ * stays on the buttons.
  */
 function RunTour({ step, onStep, onDone }: { step: number; onStep: (n: number) => void; onDone: () => void }) {
   const s = TOUR[step]
   const last = step === TOUR.length - 1
+  const panel = useRef<HTMLDivElement>(null)
+  useModal(panel)
   return (
-    <div className="absolute inset-0 z-30 bg-black/70 px-5 pt-safe" role="dialog" aria-modal="true" aria-label="How Run Mode works">
+    <div
+      ref={panel}
+      tabIndex={-1}
+      className="absolute inset-0 z-30 bg-black/70 px-5 pt-safe outline-none"
+      role="dialog"
+      aria-modal="true"
+      aria-label="How Run Mode works"
+    >
       <div className="mt-6 rounded-3xl bg-[#161616] border border-[#2a2a2a] p-4 flex flex-col gap-3 fade-in" key={step}>
         <div className="flex items-start gap-3">
           <ClawdeMark size={44} className="shrink-0" />
@@ -634,6 +675,7 @@ function RunReview({
           value={pain}
           onChange={(e) => setPain(e.target.value)}
           rows={1}
+          aria-label="Any pain or discomfort? (optional)"
           placeholder="Any pain or discomfort? (optional)"
           className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl px-4 py-3 text-base text-[#f5f5f0] placeholder-[#4a4a4a] resize-none focus:outline-none focus:border-[#d97756]/50"
         />
@@ -641,6 +683,7 @@ function RunReview({
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           rows={1}
+          aria-label={outcome === 'modified' ? 'What changed?' : 'Anything else? (optional)'}
           placeholder={outcome === 'modified' ? 'What changed? (Clawde reads this)' : 'Anything else? (optional)'}
           className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl px-4 py-3 text-base text-[#f5f5f0] placeholder-[#4a4a4a] resize-none focus:outline-none focus:border-[#d97756]/50"
         />

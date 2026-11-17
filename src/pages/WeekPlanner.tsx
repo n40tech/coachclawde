@@ -355,8 +355,9 @@ export function WeekPlanner() {
         {/* Notes (tracker mode: the pasted plan) */}
         <Card>
           <CardSection>
-            <p className="text-sm font-medium text-[#a8a29e] mb-3">{tracker ? 'Paste this week of your plan' : 'Any extra context for Clawde?'}</p>
+            <label htmlFor="plan-notes" className="block text-sm font-medium text-[#a8a29e] mb-3">{tracker ? 'Paste this week of your plan' : 'Any extra context for Clawde?'}</label>
             <textarea
+              id="plan-notes"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder={tracker
@@ -475,23 +476,29 @@ export function WeekPlanner() {
             <h3 className="text-base font-semibold text-[#f5f5f0]">Import Plan</h3>
             <SheetCloseButton onClose={() => setShowImport(false)} />
           </div>
-          <p className="text-xs text-[#6a6a6a] px-5 pb-3">
+          <label htmlFor="import-json" className="block text-xs text-[#6a6a6a] px-5 pb-3">
             Paste the JSON block from Claude's response below.
-          </p>
+          </label>
           <div className="flex-1 px-4 overflow-y-auto">
             <textarea
+              id="import-json"
+              aria-invalid={importError ? true : undefined}
+              aria-describedby={importError ? 'import-error' : undefined}
               value={importJson}
               onChange={(e) => { setImportJson(e.target.value); setImportError('') }}
               placeholder='Paste the JSON block here... (the content between ```json and ```)'
               rows={10}
               className="w-full min-h-24 bg-[#0a0a0a] border border-[#2a2a2a] rounded-2xl px-4 py-3 text-base text-[#f5f5f0] placeholder-[#2a2a2a] resize-none focus:outline-none focus:border-[#d97756]/50 font-mono"
             />
-            {importError && (
-              <div className="mt-2 flex items-start gap-2 text-red-400 bg-red-500/10 rounded-xl p-3">
-                <AlertCircle size={14} className="shrink-0 mt-0.5" />
-                <p className="text-xs">{importError}</p>
-              </div>
-            )}
+            {/* Always in the page so a failed import is announced. */}
+            <div role="alert">
+              {importError && (
+                <div className="mt-2 flex items-start gap-2 text-red-400 bg-red-500/10 rounded-xl p-3">
+                  <AlertCircle size={14} className="shrink-0 mt-0.5" aria-hidden />
+                  <p id="import-error" className="text-xs">{importError}</p>
+                </div>
+              )}
+            </div>
           </div>
           <div className="px-4 pb-edge pt-3 flex gap-3">
             <Button variant="secondary" onClick={() => setShowImport(false)} fullWidth>Cancel</Button>

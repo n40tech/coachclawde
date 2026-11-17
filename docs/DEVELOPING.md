@@ -48,7 +48,7 @@ work out of the box.
 
 ## Shipping a beta update (versions & release notes)
 
-The app version lives in `package.json` (currently **1.0.6**) and is injected
+The app version lives in `package.json` (currently **1.0.7**) and is injected
 into the bundle as `__APP_VERSION__` (read it via `APP_VERSION` in
 `src/lib/appVersion.ts`). The first time a tester opens a new version, a
 "What's new" sheet lists the changes; it's also reachable from Settings →
@@ -95,13 +95,18 @@ are marked as seen when they finish onboarding.
   (route guard that pulls the signed-in user's data on sign-in and resets the
   store on sign-out). `src/pages/Login.tsx` is the sign-in screen.
 - `src/pages/` — one component per tab (`Home`, `WeekPlanner`, `Session`,
-  `Progress`, `History`, `Settings`), wired in `src/App.tsx` with `BottomNav` (floating tab bar, phones) and
+  `Progress`, `History`, `Settings`), wired in `src/App.tsx` (every page but
+  `Home` and `Session` loads on first visit via `lib/lazyPage`; keep anything
+  a workout needs out of lazy chunks, see `WEB-AUDIT.md`) with `BottomNav` (floating tab bar, phones) and
   `SideNav` (sidebar, when the `app` container is 48rem+ — iPad / landscape).
   Edge offsets come from the layout tokens in `src/index.css` (`--safe-*`,
   `--tabbar-*`): use `pb-tabbar` / `pb-edge` / `pt-safe` /
   `px-safe` instead of hardcoding `pb-24`-style guesses. See `docs/DEVICE-FIT.md`.
 - **Device-fit conventions** (see `docs/DEVICE-FIT.md`): new sheets use the
-  shared `BottomSheet` (keyboard-aware, safe-area padded). Text fields use
+  shared `BottomSheet` (keyboard-aware, safe-area padded). Any other overlay
+  calls `hooks/useModal` on its panel (`tabIndex={-1}`): focus in, the rest
+  `inert`, Escape, focus back afterwards. Messages that appear after an
+  action go in an always-present `role="status"` / `role="alert"` container. Text fields use
   `text-base` (16 px; smaller makes iOS zoom in on focus). Use `text-2xs`, not
   `text-[10px]`. Nested rounded boxes use `rounded-nested` with the parent's
   `--nest-radius` / `--nest-inset`. Row layouts that must survive large text

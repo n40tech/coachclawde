@@ -66,8 +66,11 @@ describe('base64url', () => {
 
 describe('encryptPayload', () => {
   it('reproduces the worked example in RFC 8291 §5', async () => {
+    // Every key, secret and salt below is the RFC's published example (a public
+    // test vector, not a credential), so the expected bytes can be checked
+    // against the RFC itself. Secret scanners flag them: they are safe to ignore.
     const asPublic = 'BP4z9KsN6nGRTbVYI_c7VJSPQTBtkgcy27mlmlMoZIIgDll6e3vCYLocInmYWAmS6TlzAC8wEqKK6PBru3jl7A8'
-    const asPrivate = 'yfWPiYE-n46HLnH0KqZOF1fJJU3MYrct3AELtAQ-oRw'
+    const asPrivate = 'yfWPiYE-n46HLnH0KqZOF1fJJU3MYrct3AELtAQ-oRw' // ggignore: RFC 8291 §5 example key
     const pub = b64urlDecode(asPublic)
     const jwk = { kty: 'EC', crv: 'P-256', x: b64urlEncode(pub.slice(1, 33)), y: b64urlEncode(pub.slice(33)), d: asPrivate }
     const senderKeys: CryptoKeyPair = {
@@ -78,7 +81,7 @@ describe('encryptPayload', () => {
       endpoint: 'https://push.example.net/push/JzLQ3raZJfFBR0aqvOMsLrt54w4rJUsV',
       keys: {
         p256dh: 'BCVxsr7N_eNgVRqvHtD0zTZsEc6-VV-JvLexhqUzORcxaOzi6-AYWXvTBHm4bjyPjs7Vd8pZGH6SRpkNtoIAiw4',
-        auth: 'BTBZMqHH6r4Tts7J_aSIgg',
+        auth: 'BTBZMqHH6r4Tts7J_aSIgg', // ggignore: RFC 8291 §5 example auth secret
       },
     }
     const message = await encryptPayload(sub, utf8.encode('When I grow up, I want to be a watermelon'), {

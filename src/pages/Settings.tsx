@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useSettingsStore } from '../store/useSettingsStore'
 import { useAppStore } from '../store/useAppStore'
@@ -8,7 +8,7 @@ import { PageHeader } from '../components/layout/PageHeader'
 import { Button } from '../components/shared/Button'
 import { Card, CardSection } from '../components/shared/Card'
 import { SyncIndicator } from '../components/shared/SyncIndicator'
-import { UserCircle, CheckCircle, AlertCircle, RefreshCw, LogOut, Sparkles, ChevronRight, Gift, MessageCircle, ShieldCheck } from 'lucide-react'
+import { UserCircle, CheckCircle, AlertCircle, RefreshCw, LogOut, Sparkles, ChevronRight, Gift, MessageCircle, ShieldCheck, Bell } from 'lucide-react'
 import { ConfirmDialog } from '../components/shared/ConfirmDialog'
 import { goalOrLegacy } from '../lib/goalProfile'
 import { WhatsNewSheet } from '../components/shared/WhatsNew'
@@ -18,6 +18,7 @@ import { RELEASES } from '../lib/releaseNotes'
 import { ageFromBirthDate, isValidBirthDate } from '../lib/dateUtils'
 import { toLocalISODate } from '../lib/weekUtils'
 import { fromWeight, toWeight, type DistanceUnit, type WeightUnit } from '../lib/units'
+import { checkRestAlerts, disableRestAlerts, enableRestAlerts, prepareRestAlerts, restAlertSupport, sendTestAlert } from '../lib/restAlerts'
 
 export function Settings() {
   const navigate = useNavigate()
@@ -145,8 +146,10 @@ export function Settings() {
               <p className="text-xs text-[#6a6a6a] leading-relaxed">
                 Saved to your account and included in the plan prompt so Clawde can program around your details.
               </p>
-              <Field label="Name">
+              <Field label="Name" htmlFor="settings-name">
                 <input
+                  id="settings-name"
+                  autoComplete="name"
                   placeholder="Your name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
@@ -154,8 +157,9 @@ export function Settings() {
                 />
               </Field>
               <div className="grid grid-cols-2 gap-2">
-                <Field label={`Weight (${units.weight})`}>
+                <Field label={`Weight (${units.weight})`} htmlFor="settings-weight">
                   <input
+                    id="settings-weight"
                     inputMode="decimal"
                     placeholder={units.weight === 'lb' ? '180' : '81'}
                     value={weight}
@@ -163,8 +167,9 @@ export function Settings() {
                     className={inputClass}
                   />
                 </Field>
-                <Field label="Height (cm)">
+                <Field label="Height (cm)" htmlFor="settings-height">
                   <input
+                    id="settings-height"
                     inputMode="numeric"
                     placeholder="184"
                     value={height}
@@ -175,9 +180,12 @@ export function Settings() {
               </div>
               <Field
                 label="Date of birth"
+                htmlFor="settings-birth-date"
                 hint={age !== undefined ? `${age} years old. Clawde uses this to pitch your training.` : 'Optional. Clawde uses your age to pitch your training.'}
               >
                 <input
+                  id="settings-birth-date"
+                  autoComplete="bday"
                   type="date"
                   value={birthDate}
                   onChange={(e) => setBirthDate(e.target.value)}
@@ -209,6 +217,8 @@ export function Settings() {
                 {profileSaved ? <CheckCircle size={16} /> : null}
                 {profileSaved ? 'Saved' : 'Save profile'}
               </Button>
+              {/* The button's label change isn't reliably read out; this is. */}
+              <p role="status" className="sr-only">{profileSaved ? 'Profile saved' : ''}</p>
             </CardSection>
           </Card>
         </div>
@@ -230,6 +240,8 @@ export function Settings() {
             </CardSection>
           </Card>
         </div>
+
+        <RestAlertsSetting />
 
         {/* Check-ins & health */}
         <div>
@@ -359,10 +371,116 @@ function DisplayInfo() {
   return <p className="text-2xs text-[#3a3a3a] text-center mt-3 tabular-nums">Display: {parts.join(' · ')}</p>
 }
 
-function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
+/** Rest alerts: push notifications when a rest ends with the app in the background. */
+function RestAlertsSetting() {
+  const restAlerts = useSettingsStore((s) => s.restAlerts)
+  const [support, setSupport] = useState(restAlertSupport)
+  const [busy, setBusy] = useState(false)
+  const [message, setMessage] = useState<{ error: boolean; text: string } | null>(null)
+
+  // Notice permission withdrawn in iOS Settings since the switch was turned on,
+  // and get ready to subscribe within the tap.
+  useEffect(() => {
+    void checkRestAlerts()
+    void prepareRestAlerts()?.catch(() => {})
+  }, [])
+
+  if (support === 'unsupported') return null
+  const showInfo = support !== 'available' || restAlerts
+  // Under the info section (sharing its padding) or in a section of its own.
+  const messageClass = `px-5 pb-4 text-xs leading-relaxed ${showInfo ? '-mt-1' : 'pt-4'}`
+
+  async function toggle() {
+    setMessage(null)
+    setBusy(true)
+    // enableRestAlerts must be the first thing awaited: Safari only allows
+    // subscribing (and its permission prompt) inside the tap.
+    const result = restAlerts ? (await disableRestAlerts(), { ok: true as const }) : await enableRestAlerts()
+    setBusy(false)
+    setSupport(restAlertSupport())
+    if (!result.ok) setMessage({ error: true, text: result.message })
+  }
+
+  async function test() {
+    setMessage(null)
+    setBusy(true)
+    const result = await sendTestAlert()
+    setBusy(false)
+    setMessage(
+      result.ok
+        ? { error: false, text: 'Sent. It arrives in about 5 seconds: lock your phone to see it as you would mid-workout.' }
+        : { error: true, text: result.message },
+    )
+  }
+
+  return (
+    <div>
+      <p className="text-xs text-[#4a4a4a] uppercase tracking-widest font-medium px-1 mb-3">Notifications</p>
+      <Card>
+        <CardSection className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-[#d97756]/15 flex items-center justify-center shrink-0">
+            <Bell size={18} className="text-[#d97756]" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-[#f5f5f0]">Rest alerts</p>
+            <p className="text-xs text-[#6a6a6a] mt-0.5">A notification when rest is over, even with your phone locked.</p>
+          </div>
+          {support === 'available' && (
+            <button
+              role="switch"
+              aria-checked={restAlerts}
+              aria-label="Rest alerts"
+              disabled={busy}
+              onClick={toggle}
+              className={`w-12 h-7 rounded-full p-0.5 transition-colors shrink-0 disabled:opacity-50 ${restAlerts ? 'bg-[#d97756]' : 'bg-[#2a2a2a]'}`}
+            >
+              <span className={`block w-6 h-6 rounded-full bg-white transition-transform ${restAlerts ? 'translate-x-5' : ''}`} />
+            </button>
+          )}
+        </CardSection>
+        {(showInfo || message) && <div className="border-t border-[#2a2a2a]" />}
+        {showInfo && (
+          <CardSection className="flex flex-col gap-3">
+            {support === 'install' && (
+              <p className="text-xs text-[#6a6a6a] leading-relaxed">
+                On iPhone and iPad, add Coach Clawde to your Home Screen first (Share → Add to Home Screen), then open it
+                from there and turn this on.
+              </p>
+            )}
+            {support === 'blocked' && (
+              <p className="text-xs text-[#6a6a6a] leading-relaxed">
+                Notifications are turned off for Coach Clawde. Turn them on in your phone’s Settings → Notifications →
+                Coach Clawde, then come back here.
+              </p>
+            )}
+            {support === 'available' && restAlerts && (
+              <Button variant="secondary" size="sm" onClick={test} loading={busy} className="self-start">
+                Send a test alert
+              </Button>
+            )}
+          </CardSection>
+        )}
+        {/* Always in the page, so a new message is announced (errors interrupt). */}
+        <div role="status">
+          {message && !message.error && <p className={`${messageClass} text-[#a8a29e]`}>{message.text}</p>}
+        </div>
+        <div role="alert">
+          {message?.error && <p className={`${messageClass} text-red-400`}>{message.text}</p>}
+        </div>
+      </Card>
+    </div>
+  )
+}
+
+/** A labelled row. Pass `htmlFor` (the control's id) when it wraps a single input. */
+function Field({ label, hint, htmlFor, children }: { label: string; hint?: string; htmlFor?: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <p className="text-xs font-medium text-[#a8a29e]">{label}</p>
+      {htmlFor ? (
+        <label htmlFor={htmlFor} className="text-xs font-medium text-[#a8a29e]">{label}</label>
+      ) : (
+        <p className="text-xs font-medium text-[#a8a29e]">{label}</p>
+      )}
       {hint && <p className="text-2xs text-[#4a4a4a]">{hint}</p>}
       {children}
     </div>

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type FormEvent } from 'react'
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider'
 import { Button } from '../components/shared/Button'
@@ -75,6 +75,12 @@ export function Login() {
     }
   }
 
+  function submit(e: FormEvent) {
+    e.preventDefault()
+    if (busy) return
+    void (mode === 'password' ? handlePassword() : handleMagicLink())
+  }
+
   function switchMode(next: 'password' | 'magic-link') {
     setMode(next)
     setError('')
@@ -114,18 +120,27 @@ export function Login() {
         {sent ? (
           <div className="w-full flex flex-col items-center gap-3 bg-[#161616] border border-[#2a2a2a] rounded-2xl p-6 text-center">
             <CheckCircle size={28} className="text-emerald-500" />
-            <p className="text-sm font-medium text-[#f5f5f0]">Check your inbox</p>
+            {/* The form it replaces had focus: move it here so it isn't lost. */}
+            <h2 tabIndex={-1} autoFocus className="text-sm font-medium text-[#f5f5f0] outline-none">Check your inbox</h2>
             <p className="text-xs text-[#6a6a6a]">
               We sent a sign-in link to <span className="text-[#a8a29e]">{email.trim()}</span>. Open it on this device to finish signing in.
             </p>
             <Button variant="ghost" size="sm" onClick={() => setSent(false)}>Use a different email</Button>
           </div>
         ) : (
-          <div className="w-full flex flex-col gap-2">
+          // A real form so Enter submits and password managers and iOS
+          // autofill recognise the sign-in (see docs/WEB-AUDIT.md).
+          <form className="w-full flex flex-col gap-2" onSubmit={submit} aria-label="Sign in">
+            <label htmlFor="email" className="text-xs font-medium text-[#a8a29e] px-1">Email</label>
             <input
+              id="email"
+              name="email"
               type="email"
               inputMode="email"
-              autoComplete="email"
+              autoComplete="username"
+              spellCheck={false}
+              enterKeyHint={mode === 'password' ? 'next' : 'send'}
+              required
               placeholder="you@example.com"
               value={email}
               onChange={(e) => { setEmail(e.target.value); setError('') }}
@@ -134,20 +149,24 @@ export function Login() {
 
             {mode === 'password' ? (
               <>
+                <label htmlFor="current-password" className="text-xs font-medium text-[#a8a29e] px-1 mt-2">Password</label>
                 <input
+                  id="current-password"
+                  name="password"
                   type="password"
                   autoComplete="current-password"
-                  placeholder="Password"
+                  enterKeyHint="go"
+                  required
                   value={password}
                   onChange={(e) => { setPassword(e.target.value); setError('') }}
-                  onKeyDown={(e) => { if (e.key === 'Enter' && email.includes('@') && password) void handlePassword() }}
                   className={inputClass}
                 />
                 <Button
-                  onClick={handlePassword}
+                  type="submit"
                   loading={busy}
                   disabled={!email.includes('@') || !password}
                   fullWidth
+                  className="mt-2"
                 >
                   <LogIn size={16} />
                   Sign in
@@ -155,22 +174,26 @@ export function Login() {
               </>
             ) : (
               <Button
-                onClick={handleMagicLink}
+                type="submit"
                 loading={busy}
                 disabled={!email.includes('@')}
                 fullWidth
+                className="mt-2"
               >
                 <Mail size={16} />
                 Email me a sign-in link
               </Button>
             )}
 
-            {error && (
-              <div className="flex items-start gap-2 text-red-400 bg-red-500/10 rounded-xl p-3 mt-2">
-                <AlertCircle size={14} className="shrink-0 mt-0.5" />
-                <p className="text-xs">{error}</p>
-              </div>
-            )}
+            {/* Always in the page so a failed sign-in is announced. */}
+            <div role="alert">
+              {error && (
+                <div className="flex items-start gap-2 text-red-400 bg-red-500/10 rounded-xl p-3 mt-2">
+                  <AlertCircle size={14} className="shrink-0 mt-0.5" aria-hidden />
+                  <p className="text-xs">{error}</p>
+                </div>
+              )}
+            </div>
 
             {MAGIC_LINK_ENABLED && (
               <button
@@ -181,7 +204,7 @@ export function Login() {
                 {mode === 'password' ? 'Email me a sign-in link instead' : 'Sign in with a password instead'}
               </button>
             )}
-          </div>
+          </form>
         )}
 
         <p className="text-2xs text-[#3a3a3a] text-center leading-relaxed">

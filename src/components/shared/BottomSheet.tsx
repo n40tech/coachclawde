@@ -1,11 +1,14 @@
-import type { ReactNode } from 'react'
+import { useRef, type ReactNode } from 'react'
 import { X } from 'lucide-react'
 import { FixedLayer } from '../layout/FixedLayer'
+import { useModal } from '../../hooks/useModal'
 
 /**
  * Slide-up bottom sheet over a dimmed backdrop. Tapping the backdrop closes it
  * unless `dismissOnBackdrop` is false (use that when the sheet holds typed
- * input that a stray tap shouldn't throw away).
+ * input that a stray tap shouldn't throw away). It's modal (see `useModal`):
+ * focus moves in, the page behind is inert, Escape closes it (a deliberate
+ * key, like the ✕) and focus goes back to the opener afterwards.
  *
  * Rendered into the fixed layer (see FixedLayer) so it can be opened from
  * inside tiles, rows and other overflow-hidden containers, and so it anchors
@@ -26,6 +29,8 @@ export function BottomSheet({
   children: ReactNode
   dismissOnBackdrop?: boolean
 }) {
+  const panel = useRef<HTMLDivElement>(null)
+  useModal(panel, { onEscape: onClose })
   return (
     <FixedLayer>
       <div
@@ -33,10 +38,12 @@ export function BottomSheet({
         onClick={dismissOnBackdrop ? onClose : undefined}
       >
         <div
+          ref={panel}
           role="dialog"
           aria-modal="true"
           aria-label={label}
-          className="sheet-panel mt-auto w-full max-w-md md:max-w-lg mx-auto bg-[#111] rounded-t-3xl border-t border-[#2a2a2a] flex flex-col slide-up"
+          tabIndex={-1}
+          className="sheet-panel outline-none mt-auto w-full max-w-md md:max-w-lg mx-auto bg-[#111] rounded-t-3xl border-t border-[#2a2a2a] flex flex-col slide-up"
           onClick={(e) => e.stopPropagation()}
         >
           {children}

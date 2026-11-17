@@ -58,6 +58,21 @@ export default defineConfig(({ mode, command }) => {
   }
 
   return {
+  build: {
+    rolldownOptions: {
+      output: {
+        // Framework and Supabase in chunks of their own: they change far less
+        // often than the app, so an update only re-downloads the app's code.
+        // Pages off the workout path are split out in App.tsx (lib/lazyPage).
+        codeSplitting: {
+          groups: [
+            { name: 'react', test: /node_modules[\\/](react|react-dom|scheduler|react-router|react-router-dom)[\\/]/ },
+            { name: 'supabase', test: /node_modules[\\/](@supabase[\\/][^\\/]+|iceberg-js)[\\/]/ },
+          ],
+        },
+      },
+    },
+  },
   define: {
     __APP_VERSION__: JSON.stringify(APP_VERSION),
     'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(SUPABASE_URL),
@@ -94,6 +109,8 @@ export default defineConfig(({ mode, command }) => {
         // injectRegister off the plugin otherwise waits for a prompt.
         skipWaiting: true,
         clientsClaim: true,
+        // Rest-alert push and notification-click handlers (src/lib/restAlerts).
+        importScripts: ['push-sw.js'],
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         runtimeCaching: [
           {

@@ -41,6 +41,36 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: '1.0.7',
+    date: '2026-11-17',
+    headline: 'Easier with a keyboard, a screen reader or a password manager.',
+    fromFeedback: [],
+    alsoNew: [
+      'Sheets, pop-ups, Run Mode and the rest timer now take keyboard and screen-reader focus when they open, keep it until they close (Esc closes them) and hand it back afterwards.',
+      'Every text box has a name your screen reader reads out, and sign-in, plan import and rest-alert messages are announced.',
+      'Sign-in is a proper form, so your password manager or iPhone Passwords can fill it in.',
+      'The app starts faster: screens you don’t need mid-workout load the first time you open them, and updates download less.',
+    ],
+  },
+  {
+    version: '1.0.6',
+    date: '2026-11-17',
+    headline: 'Know when rest is over, even with your phone locked.',
+    fromFeedback: [
+      'Rest alerts: get a notification when rest is over, even if your phone is locked or you’re in another app. Turn them on from the rest timer or in Settings → Notifications. On iPhone, open Coach Clawde from your Home Screen to use them.',
+      'Minimise the rest timer (tap the arrow, or anywhere outside the timer) and it tucks into the bottom of the screen, so you can keep logging, reading movement guides or scrolling while you rest. It stays minimised for your next rests until you open it again.',
+      '“Complete Session” now waits at the end of your workout instead of sitting on screen the whole time.',
+    ],
+    alsoNew: [
+      'Coming back to the app mid-rest no longer plays a late “rest over” beep partway through your next set.',
+    ],
+    action: {
+      label: 'Set up rest alerts',
+      to: '/settings',
+      note: 'Rest alerts are off until you turn them on.',
+    },
+  },
+  {
     version: '1.0.5',
     date: '2026-10-20',
     headline: 'Pounds and miles, if that’s how you train.',

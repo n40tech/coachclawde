@@ -2,8 +2,8 @@ import type { ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 
 /**
- * Renders screen-anchored UI (tab bar, sheets, dialogs, Session action bar,
- * rest timer, status-bar strip) into `#fixed-layer`, a fixed layer outside the
+ * Renders screen-anchored UI (tab bar, sheets, dialogs, the rest timer,
+ * status-bar strip) into `#fixed-layer`, a fixed layer outside the
  * app root (see index.html / index.css). Children position themselves with
  * `absolute` against the layer, which stands in for the screen.
  *

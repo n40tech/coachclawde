@@ -107,7 +107,7 @@ export function QuickLogSheet({
             ))}
           </div>
           {isOther && (
-            <input value={custom} onChange={(e) => setCustom(e.target.value)} placeholder="e.g. Spin class" className={`${field} mt-2`} autoFocus />
+            <input value={custom} onChange={(e) => setCustom(e.target.value)} placeholder="e.g. Spin class" aria-label="Other activity" className={`${field} mt-2`} autoFocus />
           )}
         </div>
 
@@ -118,9 +118,10 @@ export function QuickLogSheet({
 
         {showDistance && (
           <div className="flex items-center justify-between gap-3">
-            <p className="text-sm font-medium text-[#a8a29e]">Distance <span className="text-[#4a4a4a]">(optional)</span></p>
+            <label htmlFor="quicklog-distance" className="text-sm font-medium text-[#a8a29e]">Distance <span className="text-[#4a4a4a]">(optional)</span></label>
             <div className="flex items-center gap-1.5 w-32">
               <input
+                id="quicklog-distance"
                 value={distance}
                 onChange={(e) => setDistance(e.target.value.replace(/[^0-9.]/g, ''))}
                 inputMode="decimal"
@@ -139,8 +140,9 @@ export function QuickLogSheet({
 
         {!plannedTitle && (
           <div>
-            <p className="text-sm font-medium text-[#a8a29e] mb-2">When?</p>
+            <label htmlFor="quicklog-date" className="block text-sm font-medium text-[#a8a29e] mb-2">When?</label>
             <input
+              id="quicklog-date"
               type="date"
               value={date}
               max={toLocalISODate(new Date())}
@@ -152,8 +154,8 @@ export function QuickLogSheet({
         )}
 
         <div>
-          <p className="text-sm font-medium text-[#a8a29e] mb-2">Note <span className="text-[#4a4a4a]">(optional)</span></p>
-          <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} placeholder="e.g. Gym was packed, went for a ride instead" className={`${field} resize-none`} />
+          <label htmlFor="quicklog-note" className="block text-sm font-medium text-[#a8a29e] mb-2">Note <span className="text-[#4a4a4a]">(optional)</span></label>
+          <textarea id="quicklog-note" value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} placeholder="e.g. Gym was packed, went for a ride instead" className={`${field} resize-none`} />
         </div>
       </div>
       <div className="px-5 pb-edge pt-3">

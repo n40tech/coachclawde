@@ -225,8 +225,10 @@ function TextInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
   )
 }
 
-function FieldLabel({ children }: { children: React.ReactNode }) {
-  return <p className="text-xs font-medium text-[#a8a29e] mb-2">{children}</p>
+/** A field's visible label: a real `<label>` when it names one input (`htmlFor`). */
+function FieldLabel({ htmlFor, children }: { htmlFor?: string; children: React.ReactNode }) {
+  const className = 'block text-xs font-medium text-[#a8a29e] mb-2'
+  return htmlFor ? <label htmlFor={htmlFor} className={className}>{children}</label> : <p className={className}>{children}</p>
 }
 
 function AboutStep({
@@ -243,8 +245,9 @@ function AboutStep({
   const [more, setMore] = useState(!!(heightCm || sex))
   const weightField = (
     <div>
-      <FieldLabel>Weight (kg) <span className="text-[#4a4a4a]">opt.</span></FieldLabel>
+      <FieldLabel htmlFor="about-weight">Weight (kg) <span className="text-[#4a4a4a]">opt.</span></FieldLabel>
       <TextInput
+        id="about-weight"
         value={weightKg}
         onChange={(e) => setWeightKg(e.target.value.replace(/[^0-9.]/g, ''))}
         placeholder="75"
@@ -257,8 +260,10 @@ function AboutStep({
       <StepHeading title="A bit about you" subtitle="Only your name is required. The rest helps Clawde pitch your weights and pacing." />
       <div className="flex flex-col gap-5">
         <div>
-          <FieldLabel>What should I call you? *</FieldLabel>
+          <FieldLabel htmlFor="about-name">What should I call you? *</FieldLabel>
           <TextInput
+            id="about-name"
+            autoComplete="given-name"
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Your name"
@@ -268,8 +273,10 @@ function AboutStep({
         </div>
 
         <div>
-          <FieldLabel>Date of birth <span className="text-[#4a4a4a]">(optional)</span></FieldLabel>
+          <FieldLabel htmlFor="about-dob">Date of birth <span className="text-[#4a4a4a]">(optional)</span></FieldLabel>
           <TextInput
+            id="about-dob"
+            autoComplete="bday"
             type="date"
             value={birthDate}
             onChange={(e) => setBirthDate(e.target.value)}
@@ -293,8 +300,9 @@ function AboutStep({
           <div className="flex flex-col gap-5 fade-in">
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <FieldLabel>Height (cm) <span className="text-[#4a4a4a]">opt.</span></FieldLabel>
+                <FieldLabel htmlFor="about-height">Height (cm) <span className="text-[#4a4a4a]">opt.</span></FieldLabel>
                 <TextInput
+                  id="about-height"
                   value={heightCm}
                   onChange={(e) => setHeightCm(e.target.value.replace(/[^0-9.]/g, ''))}
                   placeholder="180"

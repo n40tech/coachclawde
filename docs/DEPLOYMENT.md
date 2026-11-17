@@ -7,7 +7,8 @@ with Supabase for the database, sign-in and per-user access control.
 > **Supabase** provides Postgres, authentication and Row-Level Security, so each
 > athlete only ever sees their own rows. There is no custom server: the browser
 > talks to Supabase directly with the public anon key, and RLS does the access
-> control.
+> control. The one exception is optional: a small Supabase Edge Function for
+> rest-timer push notifications (§7).
 
 The steps:
 
@@ -17,6 +18,7 @@ The steps:
 4. Set environment variables and redeploy
 5. Create beta accounts
 6. Smoke-test
+7. Rest-timer alerts (optional)
 
 `node --env-file=.env.local scripts/check-setup.mjs` reports where a project
 stands at any point: which variables are set, whether the schema is in place,
@@ -49,7 +51,7 @@ of the remaining steps happen.
 
 1. Supabase → **SQL Editor** → **New query**.
 2. Run **every file in [`supabase/migrations/`](../supabase/migrations/) in
-   numerical order** (`0001` … `0006`): paste each one's contents, **Run**.
+   numerical order** (`0001` … `0007`): paste each one's contents, **Run**.
 3. Check under **Table Editor** that `profiles`, `week_plans`,
    `logged_sessions` and `check_ins` exist, and under **Authentication →
    Policies** that each has an owner-only RLS policy.
@@ -64,6 +66,7 @@ Why each one matters:
 | `0004_profile_birth_date` | The `birth_date` column. Every profile save writes it, so saves fail without it. |
 | `0005_goal_profile` | The `goal_profile` column (goal, event, constraints, health flags). Same failure mode as `0004`. |
 | `0006_check_ins` | The weekly check-ins table. Without it check-ins stay on the device and the sync indicator shows an error. |
+| `0007_rest_alarms` | Rest-timer alerts: the alarm table and its pg_cron ticker (enables `pg_cron` and `pg_net`). Harmless on its own; the alerts also need [§7](#7-rest-timer-alerts-optional). |
 
 *(Prefer the CLI? `npm i -g supabase`, `supabase link --project-ref <ref>`,
 then `supabase db push`.)*
@@ -202,6 +205,59 @@ sessions and check-ins cascade away with them.
 - [ ] Sign out → back to login, local data cleared.
 - [ ] A second test account sees an empty app (RLS isolation works). Delete it
       afterwards.
+- [ ] With rest alerts set up (§7): Settings → Notifications → **Send a test
+      alert** arrives on a locked phone.
+
+---
+
+## 7. Rest-timer alerts (optional)
+
+A push notification when a rest ends while the app is in the background
+(phone locked, another app open), where the in-app tone can't play. Athletes
+turn it on in **Settings → Notifications** or from the rest timer. On iPhone it
+needs iOS 16.4+ and the app opened from the Home Screen.
+
+**How it works.** The app arms an alarm only when it's hidden mid-rest (a
+beacon to the `rest-alarm` Edge Function) and cancels it on return. Alarms are
+rows in `rest_alarms`. While any exist, a pg_cron job runs every second and,
+once one is due, calls the function, which sends it as Web Push (VAPID,
+encrypted per RFC 8291, no dependencies) and deletes it. The job removes
+itself when the table is empty, so nothing runs between workouts. Code:
+`supabase/functions/rest-alarm`, `src/lib/restAlerts.ts`, `public/push-sw.js`.
+
+1. **Keys.** `node scripts/gen-vapid-keys.mjs` prints a VAPID key pair and a
+   ticker secret. Generate them once: new keys break every device's
+   subscription until the athlete turns alerts off and on.
+2. **Schema.** Run `0007_rest_alarms.sql` if you haven't (§2).
+3. **Function.** Deploy it with JWT checks off (it verifies the athlete's
+   token itself, because beacons can't send headers), then set its secrets:
+
+   ```bash
+   supabase functions deploy rest-alarm --no-verify-jwt
+   supabase secrets set \
+     VAPID_PUBLIC_KEY=… VAPID_PRIVATE_KEY=… REST_ALARM_TICK_SECRET=… \
+     VAPID_SUBJECT=https://coachclawde.vercel.app
+   ```
+
+   `VAPID_SUBJECT` is a contact for the push services: your app's URL or a
+   `mailto:` address.
+4. **Vault.** In the SQL Editor, tell the ticker where to call and with what:
+
+   ```sql
+   select vault.create_secret('https://<project-ref>.supabase.co/functions/v1/rest-alarm', 'rest_alarm_function_url');
+   select vault.create_secret('<REST_ALARM_TICK_SECRET>', 'rest_alarm_tick_secret');
+   ```
+
+5. **Test.** On a phone with the app on its Home Screen: Settings → Rest
+   alerts on → **Send a test alert**, then lock the phone. It arrives in about
+   5 seconds.
+
+**Troubleshooting.** `select * from cron.job` shows `rest-alarm-tick` only
+while an alarm is pending. `select status_code, content from
+net._http_response order by created desc limit 5` shows the ticker's calls to
+the function. The function's logs (Supabase → Edge Functions → rest-alarm)
+report `sent`, `gone` (the device unsubscribed) and `failed` per tick. Alarms
+nobody could deliver are dropped two minutes late.
 
 ---
 

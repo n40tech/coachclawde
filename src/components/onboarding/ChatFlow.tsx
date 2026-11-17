@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { Check, Send } from 'lucide-react'
 import { ClawdeMark } from '../shared/ClawdeMark'
 import { Button } from '../shared/Button'
@@ -45,6 +45,8 @@ export function ChatFlow({ flow, answers, ctx, onAnswer, onRewind, endLines, end
   const current: FlowNode | undefined = flow.nodes[next]
   const currentId = current?.id ?? DONE_ID
   const currentLines = current ? current.coach(answers, ctx) : endLines
+  // The last bubble of the current turn is the question: it names the reply box.
+  const questionId = useId()
 
   // How many of each node's coach bubbles have been revealed. Once shown, a
   // node stays shown, so rewinding to it doesn't replay the typing.
@@ -96,7 +98,13 @@ export function ChatFlow({ flow, answers, ctx, onAnswer, onRewind, endLines, end
 
         <div key={currentId} className="flex flex-col gap-2">
           {currentLines.slice(0, shownCount).map((line, i) => (
-            <CoachBubble key={i} text={line} showAvatar={!typing && i === shownCount - 1} animate />
+            <CoachBubble
+              key={i}
+              id={i === currentLines.length - 1 ? questionId : undefined}
+              text={line}
+              showAvatar={!typing && i === shownCount - 1}
+              animate
+            />
           ))}
           {typing && <TypingBubble />}
           {!current && !typing && endContent && <div className="fade-in">{endContent}</div>}
@@ -112,7 +120,7 @@ export function ChatFlow({ flow, answers, ctx, onAnswer, onRewind, endLines, end
         {typing ? (
           <div className="h-12" aria-hidden />
         ) : current ? (
-          <Composer key={current.id} node={current} answers={answers} draft={drafts[current.id]} onSubmit={(a) => onAnswer(current.id, a)} />
+          <Composer key={current.id} node={current} answers={answers} draft={drafts[current.id]} questionId={questionId} onSubmit={(a) => onAnswer(current.id, a)} />
         ) : (
           <div className="pb-2 fade-in">{endAction}</div>
         )}
@@ -132,12 +140,12 @@ function Avatar({ visible }: { visible: boolean }) {
   )
 }
 
-function CoachBubble({ text, showAvatar, animate }: { text: string; showAvatar: boolean; animate?: boolean }) {
+function CoachBubble({ id, text, showAvatar, animate }: { id?: string; text: string; showAvatar: boolean; animate?: boolean }) {
   return (
     <div className={`flex items-end gap-2 pr-10 ${animate ? 'fade-in' : ''}`}>
       <Avatar visible={showAvatar} />
       <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl rounded-bl-md px-3.5 py-2.5">
-        <p className="text-sm text-[#e5e5e0] leading-relaxed">{text}</p>
+        <p id={id} className="text-sm text-[#e5e5e0] leading-relaxed">{text}</p>
       </div>
     </div>
   )
@@ -192,11 +200,13 @@ function SkipChip({ label, onClick }: { label: string; onClick: () => void }) {
 }
 
 function Composer({
-  node, answers, draft, onSubmit,
+  node, answers, draft, questionId, onSubmit,
 }: {
   node: FlowNode
   answers: FlowAnswers
   draft: FlowValue | undefined
+  /** Id of the question bubble, which names a free-text reply. */
+  questionId: string
   onSubmit: (answer: FlowValue) => void
 }) {
   switch (node.kind) {
@@ -213,7 +223,7 @@ function Composer({
     case 'compound':
       return <CompoundReply node={node} fields={fieldsOf(node, answers)} initial={draft && typeof draft === 'object' && !Array.isArray(draft) ? draft : undefined} onSubmit={onSubmit} />
     default:
-      return <TextReply node={node} initial={typeof draft === 'string' ? draft : ''} onSubmit={onSubmit} />
+      return <TextReply node={node} initial={typeof draft === 'string' ? draft : ''} questionId={questionId} onSubmit={onSubmit} />
   }
 }
 
@@ -268,10 +278,10 @@ function InlineInput({
       <p className="text-xs text-[#a8a29e]">{option.label}</p>
       {option.input === 'duration' && <TimeInput seconds={seconds} showHours={option.hours} onChange={setSeconds} label={option.label} />}
       {option.input === 'date' && (
-        <input type="date" value={text} min={today} onChange={(e) => setText(e.target.value)} className={inputClass} style={{ colorScheme: 'dark' }} autoFocus />
+        <input type="date" value={text} min={today} onChange={(e) => setText(e.target.value)} className={inputClass} style={{ colorScheme: 'dark' }} aria-label={option.label} autoFocus />
       )}
       {option.input === 'text' && (
-        <input value={text} onChange={(e) => setText(e.target.value)} placeholder={option.placeholder} className={inputClass} autoFocus />
+        <input value={text} onChange={(e) => setText(e.target.value)} placeholder={option.placeholder} className={inputClass} aria-label={option.label} autoFocus />
       )}
       <div className="flex gap-2">
         <Button variant="ghost" onClick={onBack}>Back</Button>
@@ -319,7 +329,9 @@ function MultiChoice({
   )
 }
 
-function TextReply({ node, initial, onSubmit }: { node: FlowNode; initial: string; onSubmit: (a: FlowValue) => void }) {
+function TextReply({
+  node, initial, questionId, onSubmit,
+}: { node: FlowNode; initial: string; questionId: string; onSubmit: (a: FlowValue) => void }) {
   const [value, setValue] = useState(initial)
   const trimmed = value.trim()
 
@@ -331,7 +343,7 @@ function TextReply({ node, initial, onSubmit }: { node: FlowNode; initial: strin
     <div className="fade-in flex flex-col gap-2 pb-2">
       <div className="flex items-end gap-2">
         {node.multiline ? (
-          <textarea value={value} onChange={(e) => setValue(e.target.value)} placeholder={node.placeholder} rows={3} autoFocus className={`${inputClass} resize-none`} />
+          <textarea value={value} onChange={(e) => setValue(e.target.value)} placeholder={node.placeholder} rows={3} autoFocus aria-labelledby={questionId} className={`${inputClass} resize-none`} />
         ) : (
           <input
             value={value}
@@ -340,6 +352,7 @@ function TextReply({ node, initial, onSubmit }: { node: FlowNode; initial: strin
             placeholder={node.placeholder}
             inputMode={node.kind === 'number' ? 'numeric' : 'text'}
             autoFocus
+            aria-labelledby={questionId}
             className={inputClass}
           />
         )}

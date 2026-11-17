@@ -8,7 +8,6 @@ import { resolveTarget, type RunZones } from '../lib/zones'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useAppStore } from '../store/useAppStore'
 import { PageHeader } from '../components/layout/PageHeader'
-import { FixedLayer } from '../components/layout/FixedLayer'
 import { Badge } from '../components/shared/Badge'
 import { Button } from '../components/shared/Button'
 import { ExerciseTile } from '../components/session/ExerciseTile'
@@ -30,7 +29,7 @@ import type { CardioType, Intensity, LoggedExercise, LoggedInterval, LoggedSessi
 import type { IntervalRowSpec } from '../components/session/IntervalRow'
 import { Dumbbell, Waves, Clock, CheckCircle2, AlertTriangle, Shuffle, Play } from 'lucide-react'
 import { nanoid } from '../lib/nanoid'
-import { useUnits } from '../store/useSettingsStore'
+import { useSettingsStore, useUnits } from '../store/useSettingsStore'
 import { localize, type DistanceUnit } from '../lib/units'
 
 function usePlannedSession(sessionId: string | undefined): PlannedSession | undefined {
@@ -60,7 +59,8 @@ export function Session() {
   const [showRun, setShowRun] = useState(false)
   // The log Run Mode started, if it started one (so discarding can undo it).
   const [runLogId, setRunLogId] = useState<string | null>(null)
-  const { startTimer } = useRestTimer()
+  const { startTimer, isActive: resting } = useRestTimer()
+  const restBarShowing = useSettingsStore((s) => s.restTimerMinimised) && resting
   const units = useUnits()
   const { syncSession, removeSession } = useAutoSync()
   const [activeExerciseIdx, setActiveExerciseIdx] = useState(0)
@@ -346,7 +346,7 @@ export function Session() {
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto pb-action-bar">
+      <div className="flex-1 overflow-y-auto pb-edge">
         {/* Session meta */}
         <div className="px-4 py-4 flex items-center gap-4">
           <div className="flex items-center gap-1.5 text-xs text-[#6a6a6a]">
@@ -495,28 +495,22 @@ export function Session() {
           </div>
         )}
 
+        {/* Finishing lives at the end of the workout, not pinned over it:
+            the screen's bottom stays free for the minimised rest timer. */}
         {loggedSession && !isAlreadyComplete && (
-          <div className="flex justify-center mt-4">
+          <div className="px-4 mt-6 flex flex-col items-center gap-3">
+            <Button onClick={() => setShowComplete(true)} fullWidth size="lg">
+              <CheckCircle2 size={18} />
+              Complete Session
+            </Button>
             <DidSomethingElse onClick={() => setShowQuickLog(true)} />
           </div>
         )}
-      </div>
 
-      {/* Bottom action */}
-      {loggedSession && !isAlreadyComplete && (
-        <FixedLayer>
-          <div className="absolute bottom-0 inset-x-0 bg-[#0a0a0a]/95 backdrop-blur-xl border-t border-[#1a1a1a] px-safe pb-safe pt-3">
-            {/* Match the content column so the button doesn't stretch across
-                landscape phones and iPads (or under the landscape notch). */}
-            <div className="max-w-md @3xl/app:max-w-xl @5xl/app:max-w-2xl mx-auto">
-              <Button onClick={() => setShowComplete(true)} fullWidth size="lg">
-                <CheckCircle2 size={18} />
-                Complete Session
-              </Button>
-            </div>
-          </div>
-        </FixedLayer>
-      )}
+        {/* Room to scroll the end of the session clear of the minimised rest
+            timer, which docks where the tab bar sits on other screens. */}
+        {restBarShowing && <div aria-hidden className="h-[calc(var(--tabbar-h)+var(--tabbar-gap))]" />}
+      </div>
 
       {/* Rest timer overlay */}
       <RestTimerOverlay />

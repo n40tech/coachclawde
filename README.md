@@ -35,7 +35,7 @@
 
 - **Chat onboarding.** Clawde asks what you're training for (a race, fitness, physique, strength, a sport, or your own plan), then your time, kit and health. Ten questions at most.
 - **One-tap weekly plans.** The app builds a prompt from your goal, injuries, working weights and recent sessions and opens it in Claude. Paste the JSON back and the week is set, with warm-ups, cool-downs and progressive overload.
-- **Guided lifting.** Log reps and weight per set; the rest timer starts itself and every exercise has a movement guide.
+- **Guided lifting.** Log reps and weight per set; the rest timer starts itself (minimise it to keep logging) and every exercise has a movement guide. Rest alerts notify you when rest is over, even with your phone locked.
 - **Run Mode.** Audio cues for every rep, a LAP button for distance work, pace zones from a recent race time, and a log that fills itself in.
 - **Weekly check-ins** feed straight into the next plan: shorter sessions, a lighter week, a sore knee.
 - **Progress and PRs** across the block, plus full history. Installable PWA, offline-ready, synced across devices.
@@ -57,6 +57,7 @@ flowchart LR
 | Per-athlete prompt (only the rules and kit that apply) | `src/lib/promptBuilder.ts`, `src/lib/historySummary.ts` |
 | Coaching numbers: VDOT pace zones, tapers, deloads | `src/lib/coachingConfig.ts` |
 | Per-user data with owner-only RLS | `supabase/migrations/` |
+| Rest alerts: dependency-free Web Push, timed by a pg_cron ticker | `supabase/functions/rest-alarm/`, `src/lib/restAlerts.ts` |
 
 Without Supabase env vars the app runs in an offline single-user "local mode".
 

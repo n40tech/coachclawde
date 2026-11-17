@@ -119,9 +119,6 @@ html {
      anchored to. */
   --tabbar-clearance: calc(var(--tabbar-offset) + var(--tabbar-h) + var(--tabbar-gap) - var(--viewport-gap, 0px));
 
-  /* Session's pinned "Complete Session" bar, excluding its safe-area padding. */
-  --action-bar-h: 4.5rem;
-
   /* iPad / wide layout: sidebar navigation replaces the tab bar. */
   --sidebar-w: 14rem;
 
@@ -173,11 +170,6 @@ html {
 /* Bottom of a page that sits above the tab bar. */
 @utility pb-tabbar {
   padding-bottom: var(--tabbar-clearance);
-}
-
-/* Bottom of a page that sits above Session's pinned action bar. */
-@utility pb-action-bar {
-  padding-bottom: calc(var(--action-bar-h) + max(1rem, var(--safe-bottom)) + 1rem);
 }
 
 /* Anything that ends at the screen's bottom edge with nothing pinned below

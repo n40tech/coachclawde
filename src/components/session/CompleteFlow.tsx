@@ -89,8 +89,9 @@ export function CompleteFlow({ sessionTitle, isLastSessionOfWeek, onSave, onChec
 
               {/* Pain notes */}
               <div>
-                <p className="text-sm font-medium text-[#a8a29e] mb-2">Any pain or discomfort?</p>
+                <label htmlFor="complete-pain" className="block text-sm font-medium text-[#a8a29e] mb-2">Any pain or discomfort?</label>
                 <textarea
+                  id="complete-pain"
                   value={painNotes}
                   onChange={(e) => setPainNotes(e.target.value)}
                   placeholder="e.g. Left shoulder clicking on overhead movements, right knee aching on leg press"
@@ -101,8 +102,9 @@ export function CompleteFlow({ sessionTitle, isLastSessionOfWeek, onSave, onChec
 
               {/* General notes */}
               <div>
-                <p className="text-sm font-medium text-[#a8a29e] mb-2">Anything else to note?</p>
+                <label htmlFor="complete-notes" className="block text-sm font-medium text-[#a8a29e] mb-2">Anything else to note?</label>
                 <textarea
+                  id="complete-notes"
                   value={generalNotes}
                   onChange={(e) => setGeneralNotes(e.target.value)}
                   placeholder="e.g. Felt strong on bench, could increase weight next session. Ran out of time for cooldown."

@@ -22,7 +22,7 @@
  *
  * Plain web APIs only (no Deno globals), so the tests run it in Node.
  */
-import { isP256PublicKey, b64urlDecode, sendWebPush, type PushSubscriptionJSON, type VapidKeys } from '../_shared/webpush.ts'
+import { isP256PublicKey, b64urlDecode, sendWebPush, type PushResult, type PushSubscriptionJSON, type VapidKeys } from '../_shared/webpush.ts'
 
 export interface Config {
   supabaseUrl: string
@@ -185,13 +185,18 @@ export async function handle(req: Request, cfg: Config): Promise<Response> {
             ttlSeconds: PUSH_TTL_SECONDS,
             urgency: 'high',
             fetchImpl: f,
-          }).catch(() => ({ status: 0, ok: false, gone: false })),
+          }).catch((err): PushResult => ({ status: 0, ok: false, gone: false, detail: String(err).slice(0, 200) })),
         ),
       )
+      // Why sends failed, for the logs and net._http_response (status and the
+      // push service's reason only, never the subscription).
+      const errors = results.filter((r) => !r.ok && !r.gone).map((r) => ({ status: r.status, detail: r.detail ?? '' }))
+      for (const e of errors) console.error('rest-alarm push failed', e.status, e.detail)
       return json({
         sent: results.filter((r) => r.ok).length,
         gone: results.filter((r) => r.gone).length,
-        failed: results.filter((r) => !r.ok && !r.gone).length,
+        failed: errors.length,
+        ...(errors.length ? { errors } : {}),
       })
     }
 

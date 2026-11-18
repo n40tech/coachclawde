@@ -25,6 +25,8 @@ export interface PushResult {
   ok: boolean
   /** 404/410: the subscription has expired or been revoked. */
   gone: boolean
+  /** On failure: the push service's reason (e.g. Apple's {"reason":"BadJwtToken"}). */
+  detail?: string
 }
 
 const utf8 = new TextEncoder()
@@ -153,9 +155,13 @@ export async function sendWebPush(
     },
     body,
   })
-  // Drain the body so the connection can be reused.
-  await res.arrayBuffer().catch(() => undefined)
-  return { status: res.status, ok: res.status >= 200 && res.status < 300, gone: res.status === 404 || res.status === 410 }
+  const ok = res.status >= 200 && res.status < 300
+  // Read the body either way (so the connection can be reused); on failure it
+  // says why, e.g. Apple's {"reason":"BadJwtToken"}.
+  const text = await res.text().catch(() => '')
+  const result: PushResult = { status: res.status, ok, gone: res.status === 404 || res.status === 410 }
+  if (!ok && text) result.detail = text.slice(0, 200)
+  return result
 }
 
 /** A fresh VAPID key pair (scripts/gen-vapid-keys.mjs does the same in Node). */

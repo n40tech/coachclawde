@@ -157,6 +157,17 @@ describe('rest-alarm handler', () => {
     expect(pushes[0].headers.TTL).toBe('60')
   })
 
+  it('reports why a push service refused a send', async () => {
+    const rows = [{ user_id: USER, alarm_id: 'a1', fire_at: new Date(NOW).toISOString(), subscription, payload: parsePayload({}) }]
+    const base = fakeBackend({ rows })
+    const impl = (async (input: string | URL | Request, init?: RequestInit) =>
+      String(input) === subscription.endpoint
+        ? Response.json({ reason: 'BadJwtToken' }, { status: 403 })
+        : base.impl(input, init)) as typeof fetch
+    const res = await handle(post({ action: 'tick' }, { 'x-rest-alarm-secret': 'tick-secret' }), config(impl))
+    expect(await res.json()).toEqual({ sent: 0, gone: 0, failed: 1, errors: [{ status: 403, detail: '{"reason":"BadJwtToken"}' }] })
+  })
+
   it('counts expired subscriptions separately', async () => {
     const rows = [{ user_id: USER, alarm_id: 'a1', fire_at: new Date(NOW).toISOString(), subscription, payload: parsePayload({}) }]
     const { impl } = fakeBackend({ rows, pushStatus: 410 })

@@ -21,6 +21,14 @@ export function isWeekScoped(id: string, weekStartDate: string): boolean {
   return id.endsWith(`${SEP}${weekStartDate}`) || new RegExp(`${SEP}${weekStartDate}-\\d+$`).test(id)
 }
 
+/**
+ * A session id without its week suffix(es): "session-mon-upper--2026-10-05-2"
+ * → "session-mon-upper". Used when a session is copied into another week.
+ */
+export function baseSessionId(id: string): string {
+  return id.replace(/(--\d{4}-\d{2}-\d{2}(-\d+)?)+$/, '')
+}
+
 /** Scopes every session id in a plan to its week. Returns the same plan when nothing changes. */
 export function scopeSessionIds(plan: WeekPlan): WeekPlan {
   const seen = new Set<string>()

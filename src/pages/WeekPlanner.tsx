@@ -9,8 +9,10 @@ import { Card, CardSection } from '../components/shared/Card'
 import { buildConvertPlanPrompt, buildWeekPlanPrompt } from '../lib/promptBuilder'
 import { applyCheckIn, plannerPrefill } from '../lib/checkIn'
 import { plannerInvitation } from '../lib/checkInTriggers'
-import type { CheckIn, RunsWith, UserProfile } from '../types'
+import type { CheckIn, RunsWith, UserProfile, WeekPlan } from '../types'
 import { importPlanFromJson } from '../lib/export'
+import { dropPastSessions, placePlan, previousPlan, repeatPlan } from '../lib/planImport'
+import { PLAN_TEMPLATES, planFromTemplate, type PlanTemplate } from '../lib/planTemplates'
 import { useAutoSync } from '../hooks/useAutoSync'
 import {
   WEEK_DAYS_MON,
@@ -18,11 +20,13 @@ import {
   getMonday,
   getNextMonday,
   isDayPastThisWeek,
+  parseLocalISODate,
   resolveWeekStart,
   toLocalISODate,
 } from '../lib/weekUtils'
 import type { DayOfWeek } from '../types'
-import { Copy, Check, Download, AlertCircle, CalendarClock, ExternalLink, MessageCircle, Sparkles } from 'lucide-react'
+import { Badge } from '../components/shared/Badge'
+import { Copy, Check, Download, AlertCircle, CalendarClock, Dumbbell, ExternalLink, MessageCircle, Repeat, Sparkles } from 'lucide-react'
 import { OpenClaudeButton } from '../components/shared/OpenClaudeButton'
 import { openClaudeApp } from '../lib/openClaude'
 import { format } from 'date-fns'
@@ -84,6 +88,10 @@ export function WeekPlanner() {
   const [launching, setLaunching] = useState(false)
   const [appMissing, setAppMissing] = useState(false)
   const [awaitingImport, setAwaitingImport] = useState(false)
+  // A plan waiting on "Replace your plan?" / "Plan the rest of this week?".
+  const [pending, setPending] = useState<PendingPlan | null>(null)
+  // "Every day has passed" for Repeat or a prewritten plan, shown by that control.
+  const [quickError, setQuickError] = useState<{ source: string; week: string; text: string } | null>(null)
   const { sync } = useAutoSync()
 
   // Coming back from the Claude app with a plan to paste: open the import
@@ -103,11 +111,18 @@ export function WeekPlanner() {
   // The Monday the plan targets. Days already past this week force next week;
   // otherwise the plan stays in the current week.
   const weekStart = resolveWeekStart(selectedDays, today, planNextWeek)
-  const weekEnd = addDays(weekStart, 6)
-  const weekLabel = `${format(weekStart, 'dd MMM')} – ${format(weekEnd, 'dd MMM')}`
   const weekStartISO = toLocalISODate(weekStart)
+  const weekLabel = weekRange(weekStartISO)
+  const todayISO = toLocalISODate(today)
   // A plan already exists for the *target* week — importing replaces it.
   const existingPlan = weekPlans.find((p) => p.weekStartDate === weekStartISO)
+  // The plan "Repeat" copies: the latest one before the target week.
+  const lastPlan = previousPlan(weekPlans, weekStartISO)
+  const lastPlanName = lastPlan
+    ? lastPlan.weekStartDate === toLocalISODate(addDays(weekStart, -7))
+      ? 'last week'
+      : `the week of ${format(parseLocalISODate(lastPlan.weekStartDate), 'd MMM')}`
+    : ''
 
   function toggleDay(day: DayOfWeek) {
     const alreadySelected = selectedDays.includes(day)
@@ -202,40 +217,92 @@ export function WeekPlanner() {
     setTimeout(() => setCopied(false), 2000)
   }
 
+  /**
+   * Stores a plan in the week it was written for (see `placePlan`): a plan for
+   * the same week is replaced, keeping its completed sessions; any other week
+   * is left alone.
+   */
+  function commitPlan(plan: WeekPlan) {
+    const { plan: placed, replaces } = placePlan(weekPlans, loggedSessions, plan)
+    if (replaces) updateWeekPlan(replaces.id, placed)
+    else addWeekPlan(placed)
+    setPending(null)
+    // Sync plans in background
+    void sync('plans')
+    navigate('/')
+  }
+
+  /**
+   * Commits a plan, first asking when it would replace a week's plan or leave
+   * out days that have passed. `askBeforeReplacing` is off for an import into
+   * the week on screen, which the banner above the import button already
+   * warns about.
+   */
+  function offerPlan(plan: WeekPlan, what: string, skipped: DayOfWeek[] = [], askBeforeReplacing = true) {
+    const replacing = weekPlans.some((p) => p.weekStartDate === plan.weekStartDate)
+    if ((replacing && askBeforeReplacing) || skipped.length) setPending({ plan, what, skipped, replacing })
+    else commitPlan(plan)
+  }
+
   function handleImport() {
     setImportError('')
     setImporting(true)
     try {
-      const plan = importPlanFromJson(importJson)
-      if (existingPlan) {
-        // Replanning a week shouldn't erase work already done. Carry over the
-        // planned sessions that have a completed log so those days stay on the
-        // week (matched by plannedSessionId) and keep the new plan's sessions
-        // too — completed days and the freshly planned ones both survive. We
-        // keep the existing plan id so the completed logs stay attached to it.
-        const completedPlannedIds = new Set(
-          loggedSessions
-            .filter((ls) => ls.status === 'complete')
-            .map((ls) => ls.plannedSessionId)
-        )
-        const preserved = existingPlan.sessions.filter((s) => completedPlannedIds.has(s.id))
-        updateWeekPlan(existingPlan.id, {
-          ...plan,
-          id: existingPlan.id,
-          sessions: [...preserved, ...plan.sessions],
-        })
-      } else {
-        addWeekPlan({ ...plan, availableDays: selectedDays, userNotes: notes })
-      }
+      const parsed = importPlanFromJson(importJson)
+      // A plan goes into the week it was written for, not the week on screen.
+      // Only a plan for the week on screen takes the planner's days and notes.
+      const forThisScreen = parsed.weekStartDate === weekStartISO
+      const plan = forThisScreen && selectedDays.length ? { ...parsed, availableDays: selectedDays, userNotes: notes } : parsed
       setShowImport(false)
-      // Sync plans in background after import
-      sync('plans')
-      navigate('/')
+      offerPlan(plan, 'The plan you pasted', [], !forThisScreen)
     } catch (e: unknown) {
       setImportError(e instanceof Error ? e.message : 'Invalid JSON')
     } finally {
       setImporting(false)
     }
+  }
+
+  /** Builds this week's plan from another (Repeat, prewritten), minus days already gone. */
+  function offerCopy(full: WeekPlan, source: string, what: string) {
+    const { plan, skipped } = dropPastSessions(full, todayISO)
+    if (!plan.sessions.length) {
+      setQuickError({ source, week: weekStartISO, text: `Every one of those days has already passed this week.` })
+      return
+    }
+    setQuickError(null)
+    offerPlan(plan, what, skipped)
+  }
+
+  function handleRepeat() {
+    if (!lastPlan) return
+    offerCopy(repeatPlan(lastPlan, weekStartISO), 'repeat', `A copy of ${lastPlanName}`)
+  }
+
+  function handleTemplate(t: PlanTemplate) {
+    offerCopy(planFromTemplate(t, weekStartISO), t.id, `The ${t.name}`)
+  }
+
+  function planNextWeekInstead() {
+    setPlanNextWeek(true)
+    setQuickError(null)
+  }
+
+  /** "Every day has passed" for one control, with a way out. Always in the page so it's announced. */
+  function quickAlert(source: string) {
+    const err = quickError?.source === source && quickError.week === weekStartISO ? quickError : null
+    return (
+      <div role="alert">
+        {err && (
+          <div className="mt-2 flex items-start gap-2 text-[#d97756] bg-[#d97756]/10 rounded-xl p-3">
+            <AlertCircle size={14} className="shrink-0 mt-0.5" aria-hidden />
+            <p className="text-xs">
+              {err.text}{' '}
+              <button onClick={planNextWeekInstead} className="font-semibold underline">Plan next week</button>
+            </p>
+          </div>
+        )}
+      </div>
+    )
   }
 
   const dayIndex = (day: DayOfWeek) => WEEK_DAYS_MON.indexOf(day)
@@ -404,7 +471,50 @@ export function WeekPlanner() {
             <Download size={18} />
             Import Plan from Claude
           </Button>
+
+          {lastPlan && (
+            <div>
+              <Button variant="secondary" onClick={handleRepeat} fullWidth>
+                <Repeat size={18} />
+                Repeat {lastPlanName}
+              </Button>
+              {quickAlert('repeat')}
+            </div>
+          )}
         </div>
+
+        {/* Prewritten plans: a ready-made week in one tap */}
+        <section aria-labelledby="prewritten-plans" className="flex flex-col gap-3">
+          <h2 id="prewritten-plans" className="text-xs font-semibold text-[#6a6a6a] uppercase tracking-widest px-1">
+            Prewritten plans
+          </h2>
+          {PLAN_TEMPLATES.map((t) => (
+            <Card key={t.id}>
+              <CardSection>
+                <div className="flex items-start justify-between gap-3">
+                  <h3 className="flex items-center gap-2 text-base font-semibold text-[#f5f5f0]">
+                    <Dumbbell size={16} className="text-[#d97756] shrink-0" aria-hidden />
+                    {t.name}
+                  </h3>
+                  <Badge label={t.equipment} />
+                </div>
+                <p className="text-sm text-[#a8a29e] mt-2">{t.summary}</p>
+                <ul className="mt-3 flex flex-col gap-1.5">
+                  {t.sessions.map((s) => (
+                    <li key={s.slug} className="flex flex-wrap justify-between gap-x-3 text-xs text-[#6a6a6a]">
+                      <span><span className="font-semibold text-[#a8a29e]">{s.dayOfWeek}</span> {s.title}</span>
+                      <span>{s.exercises.length} exercises · {s.estimatedMinutes} min</span>
+                    </li>
+                  ))}
+                </ul>
+                <Button size="sm" variant="secondary" onClick={() => handleTemplate(t)} fullWidth className="mt-4">
+                  Use for {weekLabel}
+                </Button>
+                {quickAlert(t.id)}
+              </CardSection>
+            </Card>
+          ))}
+        </section>
 
         {/* How it works */}
         <div className="rounded-2xl bg-[#161616] border border-[#2a2a2a] p-4">
@@ -522,8 +632,51 @@ export function WeekPlanner() {
           next week instead.
         </ConfirmDialog>
       )}
+
+      {/* Replace a week's plan / leave out days that have passed */}
+      {pending && (
+        <ConfirmDialog
+          icon={pending.replacing ? <AlertCircle size={20} /> : <CalendarClock size={20} />}
+          title={pending.replacing ? `Replace your plan for ${weekRange(pending.plan.weekStartDate)}?` : 'Plan the rest of this week?'}
+          confirmLabel={pending.replacing ? 'Replace plan' : 'Add to this week'}
+          onConfirm={() => commitPlan(pending.plan)}
+          onCancel={() => setPending(null)}
+        >
+          {pending.replacing && (
+            <>{pending.what} takes its place. Sessions you’ve already completed that week stay.{' '}</>
+          )}
+          {pending.skipped.length > 0 && (
+            <>
+              {listDays(pending.skipped)} {pending.skipped.length > 1 ? 'have' : 'has'} already passed, so{' '}
+              {pending.skipped.length > 1 ? 'they’re' : 'it’s'} left out. To get every day, plan next week instead.
+            </>
+          )}
+        </ConfirmDialog>
+      )}
     </div>
   )
+}
+
+/** A plan waiting for the athlete to confirm it. */
+interface PendingPlan {
+  plan: WeekPlan
+  /** What's coming in, as a sentence subject: "The Bond Split", "A copy of last week". */
+  what: string
+  /** Days left out because they've passed. */
+  skipped: DayOfWeek[]
+  /** A plan for that week exists and will be replaced. */
+  replacing: boolean
+}
+
+/** "23 Nov – 29 Nov" for the week starting `weekStart` (local ISO Monday). */
+function weekRange(weekStart: string): string {
+  const monday = parseLocalISODate(weekStart)
+  return `${format(monday, 'dd MMM')} – ${format(addDays(monday, 6), 'dd MMM')}`
+}
+
+/** "Mon", "Mon and Tue", "Mon, Tue and Wed". */
+function listDays(days: DayOfWeek[]): string {
+  return days.length > 1 ? `${days.slice(0, -1).join(', ')} and ${days[days.length - 1]}` : days[0]
 }
 
 /** The newest weekly check-in (not reactive or migration). */

@@ -48,7 +48,7 @@ work out of the box.
 
 ## Shipping a beta update (versions & release notes)
 
-The app version lives in `package.json` (currently **1.0.7**) and is injected
+The app version lives in `package.json` (currently **1.0.8**) and is injected
 into the bundle as `__APP_VERSION__` (read it via `APP_VERSION` in
 `src/lib/appVersion.ts`). The first time a tester opens a new version, a
 "What's new" sheet lists the changes; it's also reachable from Settings →
@@ -136,6 +136,12 @@ are marked as seen when they finish onboarding.
   (push/pull rows), `weekUtils`/`dateUtils`, `cardioUtils`, `units` (kg/lb and km/mi display conversion; data stays metric), `export`, `nanoid`, `programOptions`
   (shared labels for the program preference enums).
   `useAutoSync` (in `src/hooks/`) is the push/pull facade used by pages.
+- **Planning a week without Claude (v1.0.8):** `lib/planImport` decides where
+  a new plan goes (`placePlan`: always the plan's own `weekStartDate`, never the
+  week on screen; same week → replace, keeping completed sessions), copies a
+  previous week (`repeatPlan`) and drops days already gone. `lib/planTemplates`
+  holds the prewritten plans shown under Plan → Prewritten plans. They're
+  shared by every athlete, so no working weights: ramp-ups are percentages.
 - **Runners & athletes (v1.0.2):**
   - `lib/flow` — the flow-as-data engine (`walk`, `rewindTo`, `enumeratePaths`)
     behind every chat. Deterministic, no AI. `components/onboarding/ChatFlow`

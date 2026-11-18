@@ -23,6 +23,12 @@ export function toLocalISODate(date: Date): string {
   return `${y}-${m}-${d}`
 }
 
+/** Parses a local `YYYY-MM-DD` string to local midnight (the inverse of `toLocalISODate`). */
+export function parseLocalISODate(iso: string): Date {
+  const [y, m, d] = iso.split('-').map(Number)
+  return new Date(y, m - 1, d)
+}
+
 /** Returns a new Date `n` days after `date` (n may be negative). */
 export function addDays(date: Date, n: number): Date {
   const d = new Date(date)

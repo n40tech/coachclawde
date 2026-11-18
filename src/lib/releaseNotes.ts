@@ -41,6 +41,17 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: '1.0.8',
+    date: '2026-11-18',
+    headline: 'Plan a week in one tap, and imports land in the right week.',
+    fromFeedback: [
+      'Importing a plan for next week no longer replaces this week’s plan. A plan now always goes into the week it was written for, and you’re asked first before one replaces another.',
+      'Repeat last week: copy your previous week’s plan, weights and all, into the week you’re planning in one tap (Plan → Repeat last week).',
+      'Prewritten plans: start a week from a ready-made plan. First up is the Bond Split, an upper / lower / upper weights week on Mon, Wed and Fri.',
+    ],
+    action: { label: 'Plan a week', to: '/plan', note: 'Try Repeat last week or the Bond Split.' },
+  },
+  {
     version: '1.0.7',
     date: '2026-11-17',
     headline: 'Easier with a keyboard, a screen reader or a password manager.',

@@ -211,7 +211,7 @@ function TimedSetRow({ setIndex, plannedSet, loggedSet, onComplete, onUncomplete
           type="button"
           onClick={stop}
           aria-label={`Stop set ${setIndex + 1}`}
-          className="relative hit-target flex items-center gap-1.5 h-8 px-3 rounded-nested bg-[#d97756] text-white text-xs font-semibold transition-all active:scale-95 shrink-0"
+          className="relative hit-target flex items-center gap-1.5 h-8 px-3 rounded-nested bg-accent-fill text-white text-xs font-semibold transition-all active:scale-95 shrink-0"
         >
           <Square size={13} strokeWidth={2.5} fill="currentColor" aria-hidden />
           Stop
@@ -300,9 +300,9 @@ function CompleteButton({ setIndex, completed, unconfirmed, onClick }: { setInde
       aria-label={completed ? `Edit set ${setIndex + 1}` : unconfirmed ? `Confirm set ${setIndex + 1}` : `Complete set ${setIndex + 1}`}
       className={`relative hit-target w-8 h-8 rounded-nested flex items-center justify-center transition-all shrink-0 ${
         completed
-          ? 'bg-emerald-500 text-white active:scale-90'
+          ? 'bg-emerald-600 text-white active:scale-90'
           : unconfirmed
-          ? 'bg-[#d97756] text-white shadow-md shadow-[#d97756]/30 active:scale-90'
+          ? 'bg-accent-fill text-white shadow-md shadow-[#d97756]/30 active:scale-90'
           : 'bg-[#2a2a2a] text-[#858585] hover:bg-[#d97756]/20 hover:text-[#d97756] active:scale-90'
       }`}
     >

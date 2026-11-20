@@ -82,7 +82,7 @@ export function History() {
             type="button"
             onClick={editing ? stopEditing : () => setEditing(true)}
             className={`relative hit-target h-9 px-3.5 rounded-2xl text-sm font-medium transition-colors ${
-              editing ? 'bg-[#d97756] text-white' : 'bg-[#1a1a1a] text-[#a8a29e] hover:text-[#f5f5f0]'
+              editing ? 'bg-accent-fill text-white' : 'bg-[#1a1a1a] text-[#a8a29e] hover:text-[#f5f5f0]'
             }`}
           >
             {editing ? 'Done' : 'Edit'}
@@ -156,7 +156,7 @@ export function History() {
                         <span
                           aria-hidden
                           className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors ${
-                            isSelected ? 'bg-[#d97756] text-white' : 'border-2 border-[#3a3a3a]'
+                            isSelected ? 'bg-accent-fill text-white' : 'border-2 border-[#3a3a3a]'
                           }`}
                         >
                           {isSelected && <Check size={14} strokeWidth={3} />}

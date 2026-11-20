@@ -464,7 +464,7 @@ const inputClass = 'w-full bg-[#1a1a1a] border border-[#666666] rounded-2xl px-4
 function toggleLook(on: boolean): string {
   return `px-4 py-3 rounded-2xl text-sm font-medium text-center transition-all duration-150 ${
     on
-      ? 'bg-[#d97756] text-white shadow-lg shadow-[#d97756]/20'
+      ? 'bg-accent-fill text-white shadow-lg shadow-[#d97756]/20'
       : 'bg-[#1a1a1a] text-[#949494] border border-[#2a2a2a] hover:text-[#a8a29e]'
   }`
 }

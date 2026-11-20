@@ -480,7 +480,7 @@ export function Session() {
                   type="button"
                   onClick={() => setReordering((r) => !r)}
                   className={`relative hit-target flex items-center gap-1.5 h-8 px-3 rounded-xl text-xs font-medium transition-colors ${
-                    reordering ? 'bg-[#d97756] text-white' : 'bg-[#1a1a1a] text-[#a8a29e] hover:text-[#f5f5f0]'
+                    reordering ? 'bg-accent-fill text-white' : 'bg-[#1a1a1a] text-[#a8a29e] hover:text-[#f5f5f0]'
                   }`}
                 >
                   {reordering ? <Check size={14} aria-hidden /> : <ArrowUpDown size={14} aria-hidden />}

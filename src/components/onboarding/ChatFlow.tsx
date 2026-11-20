@@ -174,7 +174,7 @@ function UserBubble({ text, onClick }: { text: string; onClick: () => void }) {
     <div className="flex justify-end pl-12 mb-2">
       <button
         onClick={onClick}
-        className="bg-[#d97756] text-white rounded-2xl rounded-br-md px-3.5 py-2.5 text-sm text-left leading-relaxed whitespace-pre-wrap active:scale-[0.98] transition-transform"
+        className="bg-accent-fill text-white rounded-2xl rounded-br-md px-3.5 py-2.5 text-sm text-left leading-relaxed whitespace-pre-wrap active:scale-[0.98] transition-transform"
         aria-label={`Change answer: ${text}`}
       >
         {text}
@@ -188,7 +188,7 @@ function UserBubble({ text, onClick }: { text: string; onClick: () => void }) {
 function chipClass(active: boolean): string {
   return `px-3.5 py-2.5 rounded-2xl text-sm font-medium transition-all duration-150 active:scale-95 ${
     active
-      ? 'bg-[#d97756] text-white shadow-lg shadow-[#d97756]/20'
+      ? 'bg-accent-fill text-white shadow-lg shadow-[#d97756]/20'
       : 'bg-[#1a1a1a] text-[#a8a29e] border border-[#2a2a2a] hover:text-[#f5f5f0]'
   }`
 }
@@ -380,7 +380,7 @@ function TextReply({
           type="submit"
           disabled={!trimmed}
           aria-label="Send"
-          className="w-12 h-12 shrink-0 rounded-2xl bg-[#d97756] text-white flex items-center justify-center transition-all active:scale-90 disabled:opacity-30"
+          className="w-12 h-12 shrink-0 rounded-2xl bg-accent-fill text-white flex items-center justify-center transition-all active:scale-90 disabled:opacity-30"
         >
           <Send size={18} aria-hidden />
         </button>
@@ -429,7 +429,7 @@ function DaysReply({ initial, questionId, onSubmit }: { initial: Record<string, 
               onClick={() => cycle(d)}
               aria-label={`${d}: ${kind ?? 'free'}`}
               className={`flex-1 aspect-square max-w-12 rounded-full text-xs font-semibold flex flex-col items-center justify-center ${
-                kind === 'match' ? 'bg-[#d97756] text-white' : kind === 'training' ? 'bg-[#d97756]/25 text-[#f5f5f0] border border-[#d97756]/50' : 'bg-[#1a1a1a] text-[#949494] border border-[#2a2a2a]'
+                kind === 'match' ? 'bg-accent-fill text-white' : kind === 'training' ? 'bg-[#d97756]/25 text-[#f5f5f0] border border-[#d97756]/50' : 'bg-[#1a1a1a] text-[#949494] border border-[#2a2a2a]'
               }`}
             >
               <span aria-hidden>{d[0]}</span>

@@ -9,6 +9,12 @@
      headings, Space Mono for small uppercase labels. */
   --font-pixel: "Tiny5", "Space Mono", ui-monospace, monospace;
   --font-mono: "Space Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  /* Solid accent behind white text or icons (buttons, picked chips, the
+     orange tick): a deeper shade of the brand orange, since white on #d97756
+     is only 3.1:1. 4.6:1, and 5.5:1 on hover. Orange text, icons, borders and
+     tints keep #d97756. */
+  --color-accent-fill: #b85a3a;
+  --color-accent-fill-hover: #a94f30;
 }
 
 @font-face { font-family: "Tiny5"; src: url("/fonts/tiny5.woff2") format("woff2"); font-weight: 400; font-display: swap; }

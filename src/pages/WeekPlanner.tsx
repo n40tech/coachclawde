@@ -375,7 +375,7 @@ export function WeekPlanner() {
                     className={`
                       aspect-square flex-1 flex items-center justify-center rounded-full text-sm font-semibold transition-all duration-150
                       ${selected
-                        ? 'bg-[#d97756] text-white shadow-lg shadow-[#d97756]/25 scale-105'
+                        ? 'bg-accent-fill text-white shadow-lg shadow-[#d97756]/25 scale-105'
                         : past
                           ? 'bg-[#141414] text-[#858585] border border-[#222] hover:text-[#a8a29e]'
                           : 'bg-[#1a1a1a] text-[#949494] border border-[#2a2a2a] hover:bg-[#222] hover:text-[#a8a29e]'
@@ -427,7 +427,7 @@ export function WeekPlanner() {
                   className={`
                     rounded-xl py-2 text-sm font-semibold text-center transition-all duration-150
                     ${sessionMinutes === mins
-                      ? 'bg-[#d97756] text-white shadow-lg shadow-[#d97756]/25'
+                      ? 'bg-accent-fill text-white shadow-lg shadow-[#d97756]/25'
                       : 'bg-[#1a1a1a] text-[#949494] border border-[#2a2a2a] hover:bg-[#222] hover:text-[#a8a29e]'
                     }
                   `}

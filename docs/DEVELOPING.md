@@ -177,6 +177,9 @@ are marked as seen when they finish onboarding.
     (index.css) for a 44px touch area;
   - text colours: `#a8a29e` secondary, `#949494` muted, `#858585` faint (the
     lowest that reads at 4.5:1 on the cards); don't go darker for text;
+  - white text or icons on solid orange use `bg-accent-fill` (hover
+    `bg-accent-fill-hover`), not `bg-[#d97756]`, which is too light for
+    white; keep `#d97756` for orange text, icons, borders and tints;
   - decoration animates only under `prefers-reduced-motion: no-preference`
     (or `motion-safe:`), and nothing loops for more than 5 seconds.
 - `src/lib/` — pure helpers: `promptBuilder` (builds the **self-contained** plan

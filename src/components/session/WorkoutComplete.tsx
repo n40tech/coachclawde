@@ -144,7 +144,7 @@ export function WorkoutComplete({ summary, isLastSessionOfWeek, onSave, onCheckI
                       onChange={() => setFeelings(r)}
                       className={`aspect-square flex items-center justify-center rounded-2xl text-lg font-semibold transition-all duration-150 ${
                         feelings === r
-                          ? 'bg-[#e07f5e] text-white scale-105 shadow-lg shadow-[#d97756]/25'
+                          ? 'bg-accent-fill text-white scale-105 shadow-lg shadow-[#d97756]/25'
                           : 'bg-[#121211] text-[#9a948e] border border-[#272523] hover:text-[#f5f5f0]'
                       }`}
                     >
@@ -247,7 +247,7 @@ function Pill({ ghost, onClick, children }: { ghost?: boolean; onClick: () => vo
       className={`min-h-12 px-6 rounded-full text-base font-medium border-[1.5px] transition-all duration-150 active:scale-[0.98] ${
         ghost
           ? 'bg-transparent text-[#f5f5f0] border-[#3a3735] hover:border-[#f5f5f0]'
-          : 'bg-[#f5f5f0] text-[#050505] border-[#f5f5f0] hover:bg-[#e07f5e] hover:border-[#e07f5e] hover:text-white'
+          : 'bg-[#f5f5f0] text-[#050505] border-[#f5f5f0] hover:bg-accent-fill hover:border-accent-fill hover:text-white'
       }`}
     >
       {children}

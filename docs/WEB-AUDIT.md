@@ -285,12 +285,19 @@ skill version. Extra guides consulted: `card`, `checkbox`, `switch`, `navbar`,
 - **Announce the end of a rest:** a polite "Rest over. Up next: …" when a rest
   runs out on screen (not when it's skipped).
 
+### Brand colour, decided by the owner
+
+26. **White on the accent orange.** `#d97756` with white text is 3.1:1 (needs
+    4.5:1): primary buttons, picked chips, chat answer bubbles, the
+    unconfirmed tick. The owner chose a deeper fill: `--color-accent-fill`
+    `#b85a3a` (4.6:1), hover `--color-accent-fill-hover` `#a94f30` (5.5:1),
+    used as `bg-accent-fill` wherever white sits on solid orange. Orange text,
+    icons, borders and tints stay `#d97756`. The green done tick moved from
+    emerald-500 (2.5:1 with its white check) to emerald-600 (3.8:1, above the
+    3:1 for icons). Guide: `color`.
+
 ### Open
 
-- **White text on the accent orange.** `#d97756` with white text is 3.1:1
-  (needs 4.5:1): primary buttons, selected chips, the unconfirmed tick.
-  Passing needs a darker fill (about `#b85a3a`) or dark text on the orange.
-  That's a brand decision, so it's left for the owner.
 - **Native `<dialog>`: not adopted, by decision.** The `accessibility` guide's
   custom-overlay rules (role, `aria-modal`, focus in, `inert` outside, focus
   back) are what `useModal` does; `<dialog>`'s top layer would escape
@@ -309,8 +316,7 @@ top, Workout complete radios, Settings switches (Space) and unit radios,
 planner day names, History links and edit-mode checkboxes, reduced motion
 (mascot still), no horizontal overflow at 320px on nine routes. axe reports no
 violations on Home, Session (rest timer open), Workout complete, Progress,
-Settings, the planner and History; the only remaining one is the white-on-
-orange contrast above.
+Settings, the planner, History and onboarding (after finding 26).
 
 ## Checked and fine
 

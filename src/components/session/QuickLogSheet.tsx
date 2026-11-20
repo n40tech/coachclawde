@@ -28,7 +28,7 @@ export function RpePicker({
             checked={value === n}
             onChange={() => onChange(n)}
             className={`py-2.5 rounded-xl text-sm font-bold text-center transition-all ${
-              value === n ? 'bg-[#d97756] text-white shadow-lg shadow-[#d97756]/20' : 'bg-[#1a1a1a] text-[#949494] hover:bg-[#2a2a2a]'
+              value === n ? 'bg-accent-fill text-white shadow-lg shadow-[#d97756]/20' : 'bg-[#1a1a1a] text-[#949494] hover:bg-[#2a2a2a]'
             }`}
           >
             {n}<span className="sr-only">, {RPE_HINTS[n]}</span>
@@ -103,7 +103,7 @@ export function QuickLogSheet({
                 checked={activity === a.value}
                 onChange={() => setActivity(a.value)}
                 className={`px-3.5 py-2 rounded-2xl text-sm font-medium transition-all ${
-                  activity === a.value ? 'bg-[#d97756] text-white' : 'bg-[#1a1a1a] text-[#a8a29e] border border-[#2a2a2a]'
+                  activity === a.value ? 'bg-accent-fill text-white' : 'bg-[#1a1a1a] text-[#a8a29e] border border-[#2a2a2a]'
                 }`}
               >
                 {a.label}

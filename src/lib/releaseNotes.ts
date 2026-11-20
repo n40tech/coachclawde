@@ -47,6 +47,7 @@ export const RELEASES: Release[] = [
     fromFeedback: [],
     alsoNew: [
       'Grey labels, hints and text boxes are a little brighter so they’re easier to read, and a text box you’re typing in has a clear orange outline.',
+      'Orange buttons and picked options are a shade deeper, so their white text is easier to read.',
       'Small buttons (the set tick, Start and Stop, the steppers) have bigger tap areas, without looking any different.',
       'Session tiles, the tab bar and the program card are proper links, so they work with a keyboard and screen readers. Choices like days, units, gender and effort are proper radio buttons and checkboxes.',
       'Screen readers now hear Clawde’s chat messages, each screen’s name, “Rest over” when a rest ends, and when you move an exercise.',

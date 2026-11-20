@@ -4,6 +4,7 @@ import type { DockState } from '../../hooks/useWorkoutDock'
 import { useHorizontalDrag } from '../../hooks/useHorizontalDrag'
 import { rubberBand } from '../../lib/swipe'
 import { withViewTransition } from '../../lib/viewTransition'
+import { SessionIcon } from '../shared/SessionIcon'
 
 // All in the app's orange family: the rest and workout clocks in the accent,
 // a set being timed in the brighter amber of its tick.
@@ -14,6 +15,7 @@ const STRETCH = 120
 
 /**
  * The little timer circle that sits left of the tab bar during a workout.
+ * It shows the rest countdown, or the workout's icon between rests.
  * Tap it, or drag it right (it stretches as it goes), to open the workout:
  * it grows back into the workout's timer bar (a view transition).
  */
@@ -32,7 +34,7 @@ export function WorkoutDockButton({ dock }: { dock: DockState }) {
       aria-label={`${dock.label}. Open your workout`}
       title="Open your workout (or drag right)"
       style={{ width: `calc(var(--tabbar-h) + ${stretch}px)` }}
-      className={`vt-workout-timer relative h-full shrink-0 rounded-full bg-[#161616]/90 backdrop-blur-xl ring-1 ring-inset ring-[#2a2a2a] shadow-lg shadow-black/50 flex items-center justify-start overflow-hidden touch-pan-y select-none slide-up ${
+      className={`vt-workout-timer relative h-full shrink-0 rounded-full bg-[#161616]/90 backdrop-blur-xl ring-1 ring-inset ring-[#2a2a2a] shadow-lg shadow-black/50 flex items-center justify-start overflow-hidden touch-pan-y select-none ${
         dragging ? '' : 'transition-[width,transform] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-95'
       }`}
     >
@@ -46,9 +48,14 @@ export function WorkoutDockButton({ dock }: { dock: DockState }) {
             className="transition-[stroke-dashoffset] duration-500 ease-linear"
           />
         </svg>
-        <span className={`relative text-xs font-bold tabular-nums text-[#f5f5f0] ${dock.mode === 'rest' && dock.fill < 0.1 ? 'timer-pulse' : ''}`}>
-          {dock.time}
-        </span>
+        {/* A rest counts down; otherwise the kind of workout under way. */}
+        {dock.mode === 'rest' ? (
+          <span className={`relative text-xs font-bold tabular-nums text-[#f5f5f0] ${dock.fill < 0.1 ? 'timer-pulse' : ''}`}>
+            {dock.time}
+          </span>
+        ) : (
+          <SessionIcon type={dock.type} size={20} className="relative text-[#f5f5f0]" />
+        )}
       </span>
       {/* Revealed by the stretch: where the drag is heading. */}
       <span

@@ -39,7 +39,17 @@ export interface Release {
   }
 }
 
-export const RELEASES: Release[] = [
+export const RELEASES: Release[
+  {
+    version: '1.1.3',
+    date: '2026-11-20',
+    headline: 'A steadier Home and a clearer way back to your workout',
+    fromFeedback: [
+      'Home and Progress no longer fade their cards in as you open them, so nothing looks like it’s still loading.',
+      'The little workout button by the tab bar no longer slides in. Between rests it shows a dumbbell (or your session’s icon) instead of a clock, so it’s obvious what it’s for.',
+      'With a workout under way, Home shows it at the top as “In progress”, with how long you’ve been going. Tap it to pick up where you left off.',
+    ],
+  },] = [
   {
     version: '1.1.2',
     date: '2026-11-20',

@@ -4,7 +4,6 @@ import { useAppStore } from '../store/useAppStore'
 import { HeaderIconLink, PageHeader } from '../components/layout/PageHeader'
 import { Card, CardSection } from '../components/shared/Card'
 import { Badge } from '../components/shared/Badge'
-import { Reveal } from '../components/shared/Reveal'
 import { getMonday, addDays, toLocalISODate } from '../lib/weekUtils'
 import { SlidersHorizontal, ChevronDown, Dumbbell, Waves, Star } from 'lucide-react'
 import { format, parseISO, startOfWeek, isSameWeek } from 'date-fns'
@@ -33,9 +32,7 @@ export function Program() {
       />
 
       <div className="flex flex-col gap-6 px-4 pt-4 pb-tabbar">
-        <Reveal>
-          <ProgramBarChart />
-        </Reveal>
+        <ProgramBarChart />
         <ProgramHistory />
       </div>
     </div>
@@ -188,65 +185,63 @@ function ProgramHistory() {
     <div>
       <h2 className="text-xs text-[#858585] uppercase tracking-widest font-medium px-1 mb-3">Week by week</h2>
       <div className="flex flex-col gap-2">
-        {weeks.map((w, i) => {
+        {weeks.map((w) => {
           const feels = w.sessions.map((s) => s.feelings).filter((f): f is NonNullable<typeof f> => f != null)
           const avgFeel = feels.length ? (feels.reduce((a, b) => a + b, 0) / feels.length).toFixed(1) : null
           const isOpen = open === w.key
           return (
-            <Reveal key={w.key} index={i}>
-              <Card>
-                <button type="button" onClick={() => setOpen(isOpen ? null : w.key)} aria-expanded={isOpen} className="w-full text-left">
-                  <CardSection className="flex items-center gap-3 py-3.5">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-[#f5f5f0]">{w.label}</p>
-                      <div className="flex items-center gap-3 mt-1">
-                        <span className="text-xs text-[#949494]">
-                          {w.sessions.length} session{w.sessions.length !== 1 ? 's' : ''}
+            <Card key={w.key}>
+              <button type="button" onClick={() => setOpen(isOpen ? null : w.key)} aria-expanded={isOpen} className="w-full text-left">
+                <CardSection className="flex items-center gap-3 py-3.5">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-[#f5f5f0]">{w.label}</p>
+                    <div className="flex items-center gap-3 mt-1">
+                      <span className="text-xs text-[#949494]">
+                        {w.sessions.length} session{w.sessions.length !== 1 ? 's' : ''}
+                      </span>
+                      {avgFeel && (
+                        <span className="flex items-center gap-1 text-xs text-[#949494]">
+                          <Star size={11} className="text-[#d97756] fill-[#d97756]" aria-hidden />
+                          {avgFeel}/5 avg feel
                         </span>
-                        {avgFeel && (
-                          <span className="flex items-center gap-1 text-xs text-[#949494]">
-                            <Star size={11} className="text-[#d97756] fill-[#d97756]" aria-hidden />
-                            {avgFeel}/5 avg feel
-                          </span>
-                        )}
-                      </div>
+                      )}
                     </div>
-                    <ChevronDown
-                      size={16}
-                      aria-hidden
-                      className={`text-[#858585] shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`}
-                    />
-                  </CardSection>
-                </button>
-
-                {isOpen && (
-                  <div className="border-t border-[#2a2a2a] px-3 py-2 flex flex-col gap-1">
-                    {w.sessions.map((s) => (
-                      <Link
-                        key={s.id}
-                        to={`/session/${s.plannedSessionId}`}
-                        className="flex items-center gap-3 px-2 py-2 rounded-2xl hover:bg-[#1a1a1a] transition-colors text-left"
-                      >
-                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
-                          s.type === 'weights' ? 'bg-[#d97756]/15' : 'bg-blue-500/15'
-                        }`}>
-                          {s.type === 'weights'
-                            ? <Dumbbell size={15} className="text-[#d97756]" />
-                            : <Waves size={15} className="text-blue-400" />}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-[#f5f5f0] truncate">{localize(s.title, units)}</p>
-                          <p className="text-xs text-[#949494] mt-0.5">{format(parseISO(s.date), 'EEE dd MMM')}</p>
-                        </div>
-                        {s.feelings && (
-                          <Badge label={`${s.feelings}/5`} variant="accent" />
-                        )}
-                      </Link>
-                    ))}
                   </div>
-                )}
-              </Card>
-            </Reveal>
+                  <ChevronDown
+                    size={16}
+                    aria-hidden
+                    className={`text-[#858585] shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+                  />
+                </CardSection>
+              </button>
+
+              {isOpen && (
+                <div className="border-t border-[#2a2a2a] px-3 py-2 flex flex-col gap-1">
+                  {w.sessions.map((s) => (
+                    <Link
+                      key={s.id}
+                      to={`/session/${s.plannedSessionId}`}
+                      className="flex items-center gap-3 px-2 py-2 rounded-2xl hover:bg-[#1a1a1a] transition-colors text-left"
+                    >
+                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
+                        s.type === 'weights' ? 'bg-[#d97756]/15' : 'bg-blue-500/15'
+                      }`}>
+                        {s.type === 'weights'
+                          ? <Dumbbell size={15} className="text-[#d97756]" />
+                          : <Waves size={15} className="text-blue-400" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-[#f5f5f0] truncate">{localize(s.title, units)}</p>
+                        <p className="text-xs text-[#949494] mt-0.5">{format(parseISO(s.date), 'EEE dd MMM')}</p>
+                      </div>
+                      {s.feelings && (
+                        <Badge label={`${s.feelings}/5`} variant="accent" />
+                      )}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </Card>
           )
         })}
       </div>

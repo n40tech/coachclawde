@@ -4,7 +4,6 @@ import { useUnits } from '../store/useSettingsStore'
 import { toWeight, type WeightUnit } from '../lib/units'
 import { HeaderIconLink, PageHeader } from '../components/layout/PageHeader'
 import { Card, CardSection } from '../components/shared/Card'
-import { Reveal } from '../components/shared/Reveal'
 import { SyncIndicator } from '../components/shared/SyncIndicator'
 import { WeightPRCard } from '../components/progress/PRCards'
 import { computeWeightPRs } from '../lib/prComputations'
@@ -65,106 +64,96 @@ export function Progress() {
 
       <div className="flex flex-col gap-6 w-full px-4 pt-4 pb-tabbar">
         {/* Program progress — tap to configure & see week-by-week history */}
-        <Reveal>
-          <Card accent to="/program">
-            <CardSection>
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-sm font-semibold text-[#f5f5f0]">{program.length}-Week Program</p>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs text-[#d97756]">
-                    {program.isComplete ? 'Complete' : `Week ${program.week}`}
-                  </span>
-                  <ChevronRight size={15} className="text-[#858585]" aria-hidden />
-                </div>
+        <Card accent to="/program">
+          <CardSection>
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-sm font-semibold text-[#f5f5f0]">{program.length}-Week Program</p>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-[#d97756]">
+                  {program.isComplete ? 'Complete' : `Week ${program.week}`}
+                </span>
+                <ChevronRight size={15} className="text-[#858585]" aria-hidden />
               </div>
-              <div className="h-2 rounded-full overflow-hidden">
-                <progress
-                  className="meter [--meter-fill:linear-gradient(to_right,#d97756,#f5a07a)]"
-                  value={program.percent}
-                  max={100}
-                  aria-hidden
-                />
-              </div>
-              <div className="flex justify-between mt-1.5">
-                <span className="text-xs text-[#858585]">Start</span>
-                <span className="text-xs text-[#858585]">{program.percent}% complete</span>
-                <span className="text-xs text-[#858585]">Week {program.length}</span>
-              </div>
-            </CardSection>
-          </Card>
-        </Reveal>
+            </div>
+            <div className="h-2 rounded-full overflow-hidden">
+              <progress
+                className="meter [--meter-fill:linear-gradient(to_right,#d97756,#f5a07a)]"
+                value={program.percent}
+                max={100}
+                aria-hidden
+              />
+            </div>
+            <div className="flex justify-between mt-1.5">
+              <span className="text-xs text-[#858585]">Start</span>
+              <span className="text-xs text-[#858585]">{program.percent}% complete</span>
+              <span className="text-xs text-[#858585]">Week {program.length}</span>
+            </div>
+          </CardSection>
+        </Card>
 
         {/* This week */}
-        <Reveal index={1}>
-          <Section title="This week">
-            <div className="grid grid-cols-3 gap-3">
-              <StatCard icon={<Zap size={18} className="text-[#d97756]" />} value={thisWeekSessions.length} label="Sessions" />
-              <StatCard icon={<Dumbbell size={18} className="text-blue-400" />} value={thisWeekSessions.filter((s) => s.type === 'weights').length} label="Weights" />
-              <StatCard icon={<Layers size={18} className="text-emerald-400" />} value={setsIn(thisWeekSessions)} label="Sets" />
-            </div>
-          </Section>
-        </Reveal>
+        <Section title="This week">
+          <div className="grid grid-cols-3 gap-3">
+            <StatCard icon={<Zap size={18} className="text-[#d97756]" />} value={thisWeekSessions.length} label="Sessions" />
+            <StatCard icon={<Dumbbell size={18} className="text-blue-400" />} value={thisWeekSessions.filter((s) => s.type === 'weights').length} label="Weights" />
+            <StatCard icon={<Layers size={18} className="text-emerald-400" />} value={setsIn(thisWeekSessions)} label="Sets" />
+          </div>
+        </Section>
 
         {/* Activity calendar — last four weeks, GitHub-style */}
-        <Reveal index={2}>
-          <Section title="Last 4 weeks">
-            <ActivityCalendar sessions={completed} />
-          </Section>
-        </Reveal>
+        <Section title="Last 4 weeks">
+          <ActivityCalendar sessions={completed} />
+        </Section>
 
         {/* All time */}
-        <Reveal index={3}>
-          <Section title="All time">
-            <div className="grid grid-cols-2 @3xl/app:grid-cols-4 gap-3">
-              <StatCard icon={<Zap size={18} className="text-[#d97756]" />} value={completed.length} label="Total sessions" />
-              <StatCard icon={<TrendingUp size={18} className="text-emerald-400" />} value={`${avgFeeling}/5`} label="Avg feeling" />
-              <StatCard icon={<Dumbbell size={18} className="text-blue-400" />} value={weightSessions.length} label="Weights sessions" />
-              <StatCard icon={<Layers size={18} className="text-purple-400" />} value={setsIn(weightSessions)} label="Sets completed" />
-            </div>
-            {totalVolume > 0 && (
-              <Card className="mt-3">
-                <CardSection className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-[#d97756]/15 flex items-center justify-center shrink-0">
-                    <TrendingUp size={18} className="text-[#d97756]" />
-                  </div>
-                  <div>
-                    <p className="text-lg font-bold text-[#f5f5f0]">{formatVolume(totalVolume, weightUnit)}</p>
-                    <p className="text-xs text-[#949494]">Total volume lifted</p>
-                  </div>
-                </CardSection>
-              </Card>
-            )}
-          </Section>
-        </Reveal>
+        <Section title="All time">
+          <div className="grid grid-cols-2 @3xl/app:grid-cols-4 gap-3">
+            <StatCard icon={<Zap size={18} className="text-[#d97756]" />} value={completed.length} label="Total sessions" />
+            <StatCard icon={<TrendingUp size={18} className="text-emerald-400" />} value={`${avgFeeling}/5`} label="Avg feeling" />
+            <StatCard icon={<Dumbbell size={18} className="text-blue-400" />} value={weightSessions.length} label="Weights sessions" />
+            <StatCard icon={<Layers size={18} className="text-purple-400" />} value={setsIn(weightSessions)} label="Sets completed" />
+          </div>
+          {totalVolume > 0 && (
+            <Card className="mt-3">
+              <CardSection className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-[#d97756]/15 flex items-center justify-center shrink-0">
+                  <TrendingUp size={18} className="text-[#d97756]" />
+                </div>
+                <div>
+                  <p className="text-lg font-bold text-[#f5f5f0]">{formatVolume(totalVolume, weightUnit)}</p>
+                  <p className="text-xs text-[#949494]">Total volume lifted</p>
+                </div>
+              </CardSection>
+            </Card>
+          )}
+        </Section>
 
         {/* Best efforts — preview a few key bests, full list one tap away */}
-        <Reveal index={4}>
-          <Section title="Best efforts">
-            {!hasPRs ? (
-              <Card>
-                <CardSection className="flex items-center gap-3 py-5">
-                  <div className="w-10 h-10 rounded-2xl bg-[#d97756]/15 flex items-center justify-center shrink-0">
-                    <Trophy size={18} className="text-[#d97756]" />
-                  </div>
-                  <p className="text-sm text-[#949494]">
-                    Log some sessions and your personal bests for each lift will show up here.
-                  </p>
-                </CardSection>
-              </Card>
-            ) : (
-              <div className="flex flex-col gap-3">
-                {weightPRs.length > 0 && <WeightPRCard prs={weightPRs} limit={3} />}
-                <Link
-                  to="/progress/best-efforts"
-                  className="flex items-center justify-center gap-1 py-2 text-sm font-medium text-[#d97756] hover:underline"
-                >
-                  View all<span className="sr-only"> best efforts</span>
-                  <ChevronRight size={15} aria-hidden />
-                </Link>
-              </div>
-            )}
-          </Section>
-        </Reveal>
+        <Section title="Best efforts">
+          {!hasPRs ? (
+            <Card>
+              <CardSection className="flex items-center gap-3 py-5">
+                <div className="w-10 h-10 rounded-2xl bg-[#d97756]/15 flex items-center justify-center shrink-0">
+                  <Trophy size={18} className="text-[#d97756]" />
+                </div>
+                <p className="text-sm text-[#949494]">
+                  Log some sessions and your personal bests for each lift will show up here.
+                </p>
+              </CardSection>
+            </Card>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {weightPRs.length > 0 && <WeightPRCard prs={weightPRs} limit={3} />}
+              <Link
+                to="/progress/best-efforts"
+                className="flex items-center justify-center gap-1 py-2 text-sm font-medium text-[#d97756] hover:underline"
+              >
+                View all<span className="sr-only"> best efforts</span>
+                <ChevronRight size={15} aria-hidden />
+              </Link>
+            </div>
+          )}
+        </Section>
       </div>
     </div>
   )

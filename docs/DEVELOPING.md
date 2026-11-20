@@ -48,7 +48,7 @@ work out of the box.
 
 ## Shipping a beta update (versions & release notes)
 
-The app version lives in `package.json` (currently **1.1.1**) and is injected
+The app version lives in `package.json` (currently **1.1.3**) and is injected
 into the bundle as `__APP_VERSION__` (read it via `APP_VERSION` in
 `src/lib/appVersion.ts`). The first time a tester opens a new version, a
 "What's new" sheet lists the changes; it's also reachable from Settings →
@@ -147,8 +147,11 @@ are marked as seen when they finish onboarding.
   on the minimised rest bar (`RestTimerOverlay`; `hooks/useHorizontalDrag`,
   `lib/swipe`) goes Home. Off the workout screen,
   `hooks/useWorkoutDock` drives `layout/WorkoutDock`: a timer circle left of
-  the tab bar (or in the iPad sidebar): tap it or drag it right to open the
-  workout. The rest bar and the circle share `view-transition-name:
+  the tab bar (or in the iPad sidebar): the rest countdown, or between rests
+  the session type's icon (`shared/SessionIcon`); tap it or drag it right to
+  open the workout. Home shows the same workout (`useCurrentWorkout`) as an
+  "In progress" card at the top. Home and Progress have no entrance
+  animations (the old `Reveal` was removed: it looked like loading jank). The rest bar and the circle share `view-transition-name:
   workout-timer` (`.vt-workout-timer` in index.css), and those navigations
   run through `lib/viewTransition`, so one morphs into the other. Only one
   of them may be on screen at a time. Exercise order is the

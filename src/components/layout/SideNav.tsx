@@ -2,6 +2,8 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { Settings } from 'lucide-react'
 import { ClawdeMark } from '../shared/ClawdeMark'
 import { NAV_ITEMS, isFullscreenRoute, type NavItem } from './navItems'
+import { WorkoutDockButton } from './WorkoutDock'
+import { useWorkoutDock } from '../../hooks/useWorkoutDock'
 
 const SETTINGS_ITEM: NavItem = { path: '/settings', icon: Settings, label: 'Settings' }
 
@@ -14,6 +16,7 @@ const SETTINGS_ITEM: NavItem = { path: '/settings', icon: Settings, label: 'Sett
 export function SideNav() {
   const location = useLocation()
   const navigate = useNavigate()
+  const dock = useWorkoutDock()
 
   if (isFullscreenRoute(location.pathname)) return null
 
@@ -44,7 +47,16 @@ export function SideNav() {
         <span className="text-sm font-semibold text-[#f5f5f0]">Coach Clawde</span>
       </div>
       {NAV_ITEMS.map(item)}
-      <div className="mt-auto">{item(SETTINGS_ITEM)}</div>
+      <div className="mt-auto flex flex-col gap-3">
+        {/* The workout's clock, linking back to it (the tab bar's dock on phones). */}
+        {dock && (
+          <div className="flex items-center gap-3 px-1">
+            <div className="h-14"><WorkoutDockButton dock={dock} /></div>
+            <span className="text-xs text-[#a8a29e]">Back to workout</span>
+          </div>
+        )}
+        {item(SETTINGS_ITEM)}
+      </div>
     </nav>
   )
 }

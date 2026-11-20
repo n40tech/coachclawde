@@ -60,8 +60,11 @@ export function useRestTimer() {
       const diff = Math.max(0, Math.ceil((timer.endTime! - now) / 1000))
       setRemaining(diff)
       if (diff === 0) {
+        const { sessionId } = useAppStore.getState().timer
         clearTimer()
         restAlarm.stop()
+        // Rest's over: the next tap in this workout starts timing the set.
+        if (sessionId) useAppStore.getState().armSetTimer(sessionId)
       }
     }
 
@@ -70,7 +73,7 @@ export function useRestTimer() {
     return () => clearInterval(id)
   }, [timer.isActive, timer.endTime, clearTimer])
 
-  function startTimer(seconds: number, label: string) {
+  function startTimer(seconds: number, label: string, sessionId?: string) {
     scheduleAlarm(seconds)
     retimeAudioOnReturn()
     watchVisibilityForRestAlarm()
@@ -81,19 +84,22 @@ export function useRestTimer() {
       endTime,
       durationSeconds: seconds,
       label,
+      sessionId,
     })
   }
 
   function skipTimer() {
+    const { sessionId } = useAppStore.getState().timer
     alarm?.cancel()
     alarm = null
     restAlarm.stop()
     clearTimer()
+    if (sessionId) useAppStore.getState().armSetTimer(sessionId)
   }
 
   const progress = timer.durationSeconds > 0
     ? 1 - remaining / timer.durationSeconds
     : 0
 
-  return { remaining, progress, isActive: timer.isActive, label: timer.label, startTimer, skipTimer }
+  return { remaining, progress, isActive: timer.isActive, label: timer.label, sessionId: timer.sessionId, startTimer, skipTimer }
 }

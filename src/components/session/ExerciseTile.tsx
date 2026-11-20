@@ -15,10 +15,18 @@ interface ExerciseTileProps {
   onSetUncomplete: (setIndex: number) => void
   isActive: boolean
   onActivate: () => void
+  /** The set being timed in this exercise, if any (see ActiveSet). */
+  timedSet?: { setIndex: number; startedAt: number }
 }
 
-export function ExerciseTile({ planned, logged, onUpdateSet, onSetComplete, onSetUncomplete, isActive, onActivate }: ExerciseTileProps) {
+export function ExerciseTile({ planned, logged, onUpdateSet, onSetComplete, onSetUncomplete, isActive, onActivate, timedSet }: ExerciseTileProps) {
   const [expanded, setExpanded] = useState(isActive)
+  // The timed set's tile opens so the orange tick is in view.
+  const [prevTimed, setPrevTimed] = useState(timedSet)
+  if (timedSet !== prevTimed) {
+    setPrevTimed(timedSet)
+    if (timedSet && !expanded) setExpanded(true)
+  }
   const [showGuide, setShowGuide] = useState(false)
   const units = useUnits()
 
@@ -28,6 +36,7 @@ export function ExerciseTile({ planned, logged, onUpdateSet, onSetComplete, onSe
 
   return (
     <div
+      data-exercise={planned.id}
       className={`rounded-[2rem] border overflow-hidden transition-all duration-200 ${
         isActive
           ? 'border-[#d97756]/40 bg-gradient-to-br from-[#d97756]/5 to-[#161616]'
@@ -97,6 +106,7 @@ export function ExerciseTile({ planned, logged, onUpdateSet, onSetComplete, onSe
                 onUpdate={(updates) => onUpdateSet(i, updates)}
                 onComplete={(payload) => onSetComplete(i, payload)}
                 onUncomplete={() => onSetUncomplete(i)}
+                inProgressSince={timedSet?.setIndex === i ? timedSet.startedAt : undefined}
               />
             ))}
           </div>

@@ -1,5 +1,5 @@
 /**
- * Sound and vibration cues for the rest timer and Run Mode.
+ * Sound and vibration cues for the rest timer.
  *
  * Tones only, generated with Web Audio. We deliberately don't use
  * `speechSynthesis`: on iPhone it takes an exclusive audio session and stops

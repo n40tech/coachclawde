@@ -14,6 +14,11 @@ interface SetRowProps {
   onComplete: (payload?: Partial<LoggedSet>) => void
   /** Reopen a completed set so its reps/weight/time can be corrected. */
   onUncomplete: () => void
+  /**
+   * Epoch ms the set timer started, while this set is being timed: the tick
+   * turns orange and the elapsed time shows. Reps and weight stay editable.
+   */
+  inProgressSince?: number
 }
 
 export function SetRow(props: SetRowProps) {
@@ -22,7 +27,7 @@ export function SetRow(props: SetRowProps) {
 }
 
 /** Standard reps × weight set. */
-function RepSetRow({ setIndex, plannedSet, loggedSet, onUpdate, onComplete, onUncomplete }: SetRowProps) {
+function RepSetRow({ setIndex, plannedSet, loggedSet, onUpdate, onComplete, onUncomplete, inProgressSince }: SetRowProps) {
   const completed = loggedSet?.completed ?? false
   const skipped = loggedSet?.skipped ?? false
   const [confirm, setConfirm] = useState<'empty' | 'edit' | null>(null)
@@ -34,9 +39,15 @@ function RepSetRow({ setIndex, plannedSet, loggedSet, onUpdate, onComplete, onUn
   const [weightText, setWeightText] = useState(loggedSet?.weightKg != null ? String(toWeight(loggedSet.weightKg, unit)) : '')
   const weightRef = useRef<HTMLInputElement>(null)
 
+  const timing = !completed && inProgressSince != null
+
   return (
-    <div className={rowClass(completed, skipped)}>
-      <span className="text-xs text-[#4a4a4a] w-6 shrink-0 font-medium">#{setIndex + 1}</span>
+    <div className={rowClass(completed, skipped, timing)} data-set={setIndex}>
+      {timing ? (
+        <SetClock since={inProgressSince} />
+      ) : (
+        <span className="text-xs text-[#4a4a4a] w-6 shrink-0 font-medium">#{setIndex + 1}</span>
+      )}
 
       {/* Target */}
       <div className="text-xs text-[#6a6a6a] shrink-0 w-16">
@@ -93,6 +104,7 @@ function RepSetRow({ setIndex, plannedSet, loggedSet, onUpdate, onComplete, onUn
       <CompleteButton
         setIndex={setIndex}
         completed={completed}
+        inProgress={timing}
         onClick={() => {
           // An empty-reps tick is usually a mis-tap; ticking a done set means
           // the athlete wants to fix it. Both ask first.
@@ -158,7 +170,7 @@ function TimedSetRow({ setIndex, plannedSet, loggedSet, onComplete, onUncomplete
   }
 
   return (
-    <div className={rowClass(completed, skipped)}>
+    <div className={rowClass(completed, skipped)} data-set={setIndex}>
       <span className="text-xs text-[#4a4a4a] w-6 shrink-0 font-medium">#{setIndex + 1}</span>
 
       {/* Target hold — no reps, no weight */}
@@ -231,7 +243,22 @@ function EditSetDialog({
   )
 }
 
-function rowClass(completed: boolean, skipped: boolean): string {
+/** The set timer, in place of the set number while the set is being timed. */
+function SetClock({ since }: { since: number }) {
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 500)
+    return () => clearInterval(id)
+  }, [])
+  const s = Math.max(0, Math.floor((now - since) / 1000))
+  return (
+    <span className="text-2xs text-[#f59e0b] w-6 shrink-0 font-bold tabular-nums" aria-label={`Set time ${secondsToDisplay(s)}`}>
+      {secondsToDisplay(s)}
+    </span>
+  )
+}
+
+function rowClass(completed: boolean, skipped: boolean, timing = false): string {
   // Rows sit 1rem inside a 2rem-radius tile, so their corners are 1rem
   // (concentric). They then declare their own radius/inset so the inputs and
   // tick ~0.625rem inside pick up the remainder via rounded-nested.
@@ -240,18 +267,22 @@ function rowClass(completed: boolean, skipped: boolean): string {
       ? 'bg-emerald-500/8 border border-emerald-500/15'
       : skipped
       ? 'bg-[#1a1a1a] opacity-50'
+      : timing
+      ? 'bg-[#f59e0b]/8 border border-[#f59e0b]/30'
       : 'bg-[#1a1a1a] border border-[#2a2a2a]'
   }`
 }
 
-function CompleteButton({ setIndex, completed, onClick }: { setIndex: number; completed: boolean; onClick: () => void }) {
+function CompleteButton({ setIndex, completed, inProgress, onClick }: { setIndex: number; completed: boolean; inProgress?: boolean; onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      aria-label={completed ? `Edit set ${setIndex + 1}` : `Complete set ${setIndex + 1}`}
+      aria-label={completed ? `Edit set ${setIndex + 1}` : inProgress ? `Finish set ${setIndex + 1}` : `Complete set ${setIndex + 1}`}
       className={`w-8 h-8 rounded-nested flex items-center justify-center transition-all shrink-0 ${
         completed
           ? 'bg-emerald-500 text-white active:scale-90'
+          : inProgress
+          ? 'bg-[#f59e0b] text-white shadow-md shadow-[#f59e0b]/30 active:scale-90'
           : 'bg-[#2a2a2a] text-[#4a4a4a] hover:bg-[#d97756]/20 hover:text-[#d97756] active:scale-90'
       }`}
     >

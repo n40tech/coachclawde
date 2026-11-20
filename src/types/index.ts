@@ -60,7 +60,7 @@ export interface RecentResult {
 
 /**
  * Why the athlete is here and where they're starting from. Onboarding creates
- * it, check-ins update it, the plan prompt embeds it and Run Mode uses its
+ * it, check-ins update it, the plan prompt embeds it and (in older builds) Run Mode used its
  * zones. The legacy `ProgramConfig`/profile fields are derived from it.
  *
  * Health is special-category data: only flags are stored, never diagnoses.
@@ -260,7 +260,7 @@ export interface PlannedSession {
   exercises?: PlannedExercise[];
   /** Legacy cardio format. Converted to `workout` on import and when read. */
   intervals?: PlannedInterval[];
-  /** Structured cardio workout: what Run Mode times and cues. */
+  /** Structured cardio workout (older plans; new plans are weights-first). */
   workout?: WorkoutItem[];
   /**
    * For cardio sessions that could be done as more than one modality. When
@@ -298,6 +298,8 @@ export interface LoggedSet {
   completed: boolean;
   skipped: boolean;
   restCompletedAt?: string;
+  /** How long the set took, from the set timer starting to the tick (seconds). */
+  workSeconds?: number;
 }
 
 export interface LoggedExercise {
@@ -321,7 +323,7 @@ export interface LoggedInterval {
   stepPath?: string;
 }
 
-/** One step as Run Mode timed it. */
+/** One step as Run Mode timed it (older logs). */
 export interface LoggedStep {
   /** Position in the workout, e.g. "1.3.0" = item 1, repetition 3, step 0. */
   path: string;
@@ -363,7 +365,7 @@ export interface LoggedSession {
   outcome?: SessionOutcome;
   /** What was done instead, when `outcome` is 'substituted' (or a session logged with no plan). */
   substitute?: SubstituteActivity;
-  /** Every step as Run Mode timed it. */
+  /** Every step as Run Mode timed it (older logs). */
   loggedSteps?: LoggedStep[];
 }
 
@@ -413,6 +415,21 @@ export interface TimerState {
   endTime: number | null;
   durationSeconds: number;
   label: string;
+  /** The planned session this rest belongs to, so the app-wide dock can link back. */
+  sessionId?: string;
+}
+
+/**
+ * The set being timed right now. It starts on the athlete's first tap after a
+ * rest ends and stops when they tick the set.
+ */
+export interface ActiveSet {
+  /** Planned session id. */
+  sessionId: string;
+  plannedExerciseId: string;
+  setIndex: number;
+  /** Epoch ms. */
+  startedAt: number;
 }
 
 export interface AppState {

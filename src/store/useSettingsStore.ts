@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware'
 import type { SyncStatus } from '../lib/supabaseSync'
 import { STORAGE_KEYS } from '../lib/storageKeys'
 import { METRIC, type Units } from '../lib/units'
+import type { PlanMethod } from '../lib/planMethods'
 
 interface SettingsStore {
   lastSyncAt: string | null
@@ -16,6 +17,8 @@ interface SettingsStore {
   restAlertsOfferDismissed: boolean
   /** The rest timer opens as a small bar instead of full screen. */
   restTimerMinimised: boolean
+  /** How the athlete last made a week's plan; the planner offers it first. */
+  lastPlanMethod: PlanMethod | null
 
   setSyncStatus: (status: SyncStatus, error?: string) => void
   markSynced: () => void
@@ -23,6 +26,7 @@ interface SettingsStore {
   setRestAlerts: (on: boolean) => void
   dismissRestAlertsOffer: () => void
   setRestTimerMinimised: (minimised: boolean) => void
+  setLastPlanMethod: (method: PlanMethod) => void
 }
 
 export const useSettingsStore = create<SettingsStore>()(
@@ -35,6 +39,7 @@ export const useSettingsStore = create<SettingsStore>()(
       restAlerts: false,
       restAlertsOfferDismissed: false,
       restTimerMinimised: false,
+      lastPlanMethod: null,
 
       setSyncStatus: (status, error) =>
         set({ syncStatus: status, syncError: error ?? null }),
@@ -46,6 +51,7 @@ export const useSettingsStore = create<SettingsStore>()(
       setRestAlerts: (on) => set({ restAlerts: on }),
       dismissRestAlertsOffer: () => set({ restAlertsOfferDismissed: true }),
       setRestTimerMinimised: (minimised) => set({ restTimerMinimised: minimised }),
+      setLastPlanMethod: (method) => set({ lastPlanMethod: method }),
     }),
     {
       name: STORAGE_KEYS.settings,
@@ -55,6 +61,7 @@ export const useSettingsStore = create<SettingsStore>()(
         restAlerts: s.restAlerts,
         restAlertsOfferDismissed: s.restAlertsOfferDismissed,
         restTimerMinimised: s.restTimerMinimised,
+        lastPlanMethod: s.lastPlanMethod,
       }),
     }
   )

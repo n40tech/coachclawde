@@ -6,10 +6,10 @@ import { Button } from '../components/shared/Button'
 import { ConfirmDialog } from '../components/shared/ConfirmDialog'
 import { BottomSheet, SheetCloseButton } from '../components/shared/BottomSheet'
 import { Card, CardSection } from '../components/shared/Card'
-import { buildConvertPlanPrompt, buildWeekPlanPrompt } from '../lib/promptBuilder'
-import { applyCheckIn, plannerPrefill } from '../lib/checkIn'
+import { buildConvertPlanPrompt, buildModifyPlanPrompt, buildWeekPlanPrompt } from '../lib/promptBuilder'
+import { plannerPrefill } from '../lib/checkIn'
 import { plannerInvitation } from '../lib/checkInTriggers'
-import type { CheckIn, RunsWith, UserProfile } from '../types'
+import type { CheckIn, WeekPlan } from '../types'
 import { importPlanFromJson } from '../lib/export'
 import { useAutoSync } from '../hooks/useAutoSync'
 import {
@@ -22,20 +22,32 @@ import {
   toLocalISODate,
 } from '../lib/weekUtils'
 import type { DayOfWeek } from '../types'
-import { Copy, Check, Download, AlertCircle, CalendarClock, ExternalLink, MessageCircle, Sparkles } from 'lucide-react'
+import { Copy, Check, Download, AlertCircle, CalendarClock, ExternalLink, MessageCircle, Sparkles, Repeat, PencilLine, ClipboardPaste, Wand2 } from 'lucide-react'
 import { OpenClaudeButton } from '../components/shared/OpenClaudeButton'
 import { openClaudeApp } from '../lib/openClaude'
 import { format } from 'date-fns'
+import { latestPlan, orderMethods, repeatPlan, repeatTargetMonday, type PlanMethod } from '../lib/planMethods'
+import { useSettingsStore } from '../store/useSettingsStore'
+import { formatSessionDate } from '../lib/dateUtils'
+import type { LucideIcon } from 'lucide-react'
 
 const SESSION_LENGTH_OPTIONS = [30, 45, 60, 75, 90] as const
 
 export function WeekPlanner() {
   const navigate = useNavigate()
-  const { getCurrentWeekPlan, weekPlans, addWeekPlan, updateWeekPlan, profile, loggedSessions, checkIns, checkInDismissed, dismissCheckIn, setProfile } = useAppStore()
+  const { getCurrentWeekPlan, weekPlans, addWeekPlan, updateWeekPlan, profile, loggedSessions, checkIns, checkInDismissed, dismissCheckIn } = useAppStore()
+  const lastMethod = useSettingsStore((s) => s.lastPlanMethod)
+  const setLastMethod = useSettingsStore((s) => s.setLastPlanMethod)
 
   const today = new Date()
   const seedPlan = getCurrentWeekPlan()
   const tracker = !!profile.goal?.tracker
+  // The plan "last week" refers to, for repeating or modifying.
+  const [previous] = useState(() => latestPlan(weekPlans))
+  const [method, setMethod] = useState<PlanMethod>(() => {
+    const m = lastMethod ?? (tracker ? 'convert' : 'generate')
+    return (m === 'repeat' || m === 'modify') && !previous ? 'generate' : m
+  })
 
   // A recent check-in pre-fills the planner for the week after the one it
   // reviewed: days (one fewer if asked), session length and notes.
@@ -57,6 +69,10 @@ export function WeekPlanner() {
 
   const [selectedDays, setSelectedDays] = useState<DayOfWeek[]>(prefill?.days.length ? prefill.days : seedPlan?.availableDays ?? [])
   const [notes, setNotes] = useState(prefill ? prefill.notes : seedPlan?.userNotes ?? '')
+  // What to change (modify) and the pasted plan (convert) are kept apart from
+  // the generate notes, so switching method never mixes them up.
+  const [changes, setChanges] = useState('')
+  const [pasted, setPasted] = useState('')
   // Target minutes per session: from the check-in, else the current plan's
   // average so a replan keeps the same length by default.
   const [sessionMinutes, setSessionMinutes] = useState<number>(() => {
@@ -138,10 +154,21 @@ export function WeekPlanner() {
   // Step 0: suggest a check-in for the week before the one being planned.
   const checkInWeek = plannerInvitation({ profile, weekPlans, loggedSessions, checkIns, dismissed: checkInDismissed }, weekStartISO)
 
+  function chooseMethod(m: PlanMethod) {
+    setMethod(m)
+    // Modifying or converting a week starts from last week's days.
+    if ((m === 'modify' || m === 'convert') && !selectedDays.length && previous) {
+      setSelectedDays(previous.availableDays.filter((d) => planNextWeek || !isDayPastThisWeek(d, today)))
+    }
+  }
+
   function buildPrompt() {
-    const prompt = tracker
-      ? buildConvertPlanPrompt(notes, selectedDays, weekStart, profile)
-      : buildWeekPlanPrompt(selectedDays, notes, sessionMinutes, existingPlan, weekStart, profile, loggedSessions, checkIns)
+    setLastMethod(method)
+    const prompt = method === 'convert'
+      ? buildConvertPlanPrompt(pasted, selectedDays, weekStart, profile)
+      : method === 'modify' && previous
+        ? buildModifyPlanPrompt(previous, changes, selectedDays, weekStart, profile)
+        : buildWeekPlanPrompt(selectedDays, notes, sessionMinutes, existingPlan, weekStart, profile, loggedSessions, checkIns)
     setPromptText(prompt)
     return prompt
   }
@@ -202,40 +229,58 @@ export function WeekPlanner() {
     setTimeout(() => setCopied(false), 2000)
   }
 
+  /**
+   * Adds a plan for its week. Replanning a week shouldn't erase work already
+   * done: planned sessions with a completed log stay on the week (matched by
+   * plannedSessionId) next to the new plan's sessions, and the existing plan id
+   * is kept so those logs stay attached to it.
+   */
+  function savePlan(plan: WeekPlan, days: DayOfWeek[], userNotes: string) {
+    const existing = weekPlans.find((p) => p.weekStartDate === plan.weekStartDate)
+    if (existing) {
+      const completedPlannedIds = new Set(
+        loggedSessions
+          .filter((ls) => ls.status === 'complete')
+          .map((ls) => ls.plannedSessionId)
+      )
+      const preserved = existing.sessions.filter((s) => completedPlannedIds.has(s.id))
+      updateWeekPlan(existing.id, {
+        ...plan,
+        id: existing.id,
+        sessions: [...preserved, ...plan.sessions],
+      })
+    } else {
+      addWeekPlan({ ...plan, availableDays: days, userNotes })
+    }
+    // Sync plans in background after saving
+    sync('plans')
+    navigate('/')
+  }
+
   function handleImport() {
     setImportError('')
     setImporting(true)
     try {
       const plan = importPlanFromJson(importJson)
-      if (existingPlan) {
-        // Replanning a week shouldn't erase work already done. Carry over the
-        // planned sessions that have a completed log so those days stay on the
-        // week (matched by plannedSessionId) and keep the new plan's sessions
-        // too — completed days and the freshly planned ones both survive. We
-        // keep the existing plan id so the completed logs stay attached to it.
-        const completedPlannedIds = new Set(
-          loggedSessions
-            .filter((ls) => ls.status === 'complete')
-            .map((ls) => ls.plannedSessionId)
-        )
-        const preserved = existingPlan.sessions.filter((s) => completedPlannedIds.has(s.id))
-        updateWeekPlan(existingPlan.id, {
-          ...plan,
-          id: existingPlan.id,
-          sessions: [...preserved, ...plan.sessions],
-        })
-      } else {
-        addWeekPlan({ ...plan, availableDays: selectedDays, userNotes: notes })
-      }
       setShowImport(false)
-      // Sync plans in background after import
-      sync('plans')
-      navigate('/')
+      setLastMethod(method)
+      savePlan(plan, selectedDays, method === 'generate' ? notes : '')
     } catch (e: unknown) {
       setImportError(e instanceof Error ? e.message : 'Invalid JSON')
     } finally {
       setImporting(false)
     }
+  }
+
+  // Repeat: last week's plan, moved on a week. No Claude round trip.
+  const repeatMonday = previous ? repeatTargetMonday(previous, today) : null
+  const repeatWeekISO = repeatMonday ? toLocalISODate(repeatMonday) : ''
+  const repeatReplaces = !!repeatWeekISO && weekPlans.some((p) => p.weekStartDate === repeatWeekISO)
+  function handleRepeat() {
+    if (!previous || !repeatMonday) return
+    setLastMethod('repeat')
+    const copy = repeatPlan(previous, repeatMonday)
+    savePlan(copy, copy.availableDays, copy.userNotes)
   }
 
   const dayIndex = (day: DayOfWeek) => WEEK_DAYS_MON.indexOf(day)
@@ -271,8 +316,44 @@ export function WeekPlanner() {
           </div>
         )}
 
-        {!tracker && <RunsWithCard profile={profile} onSave={(p) => { setProfile(p); void sync('profile') }} />}
+        <MethodPicker
+          methods={orderMethods(lastMethod)}
+          last={lastMethod}
+          selected={method}
+          hasPrevious={!!previous}
+          onSelect={chooseMethod}
+        />
 
+        {method === 'repeat' && previous && (
+          <Card>
+            <CardSection className="flex flex-col gap-3">
+              <p className="text-sm text-[#a8a29e]">
+                Copies the week of {format(new Date(`${previous.weekStartDate}T00:00:00`), 'dd MMM')} onto the week of{' '}
+                <span className="text-[#f5f5f0] font-medium">{repeatMonday && format(repeatMonday, 'dd MMM')}</span>: same sessions, exercises and weights.
+              </p>
+              <ul className="flex flex-col gap-1.5">
+                {repeatPlan(previous, repeatMonday!).sessions.map((s) => (
+                  <li key={s.id} className="flex items-center justify-between gap-3 rounded-2xl bg-[#1a1a1a] border border-[#2a2a2a] px-3.5 py-2.5">
+                    <span className="text-sm text-[#f5f5f0] truncate">{s.title}</span>
+                    <span className="text-xs text-[#6a6a6a] shrink-0">{formatSessionDate(s.date)}</span>
+                  </li>
+                ))}
+              </ul>
+              {repeatReplaces && (
+                <p className="flex items-start gap-2 text-xs text-[#d97756]">
+                  <AlertCircle size={14} className="shrink-0 mt-0.5" />
+                  You already have a plan for that week. Repeating replaces it (sessions you've finished stay).
+                </p>
+              )}
+              <Button onClick={handleRepeat} fullWidth size="lg">
+                <Repeat size={18} />
+                Repeat last week
+              </Button>
+            </CardSection>
+          </Card>
+        )}
+
+        {method !== 'repeat' && <>
         {/* Day selector */}
         <Card>
           <CardSection>
@@ -327,7 +408,7 @@ export function WeekPlanner() {
         </Card>
 
         {/* Session length */}
-        {!tracker && <Card>
+        {method === 'generate' && <Card>
           <CardSection>
             <p className="text-sm font-medium text-[#a8a29e] mb-3">How long per session?</p>
             {/* Equal-width chips that wrap to a second row at large text sizes. */}
@@ -352,18 +433,22 @@ export function WeekPlanner() {
           </CardSection>
         </Card>}
 
-        {/* Notes (tracker mode: the pasted plan) */}
+        {/* Notes: context (generate), the changes (modify) or the pasted plan (convert) */}
         <Card>
           <CardSection>
-            <label htmlFor="plan-notes" className="block text-sm font-medium text-[#a8a29e] mb-3">{tracker ? 'Paste this week of your plan' : 'Any extra context for Clawde?'}</label>
+            <label htmlFor="plan-notes" className="block text-sm font-medium text-[#a8a29e] mb-3">
+              {method === 'convert' ? 'Paste this week of your plan' : method === 'modify' ? 'What should change from last week?' : 'Any extra context for Clawde?'}
+            </label>
             <textarea
               id="plan-notes"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder={tracker
-                ? 'e.g. Mon: 5 × 1 km @ 10K pace, 2 min jog. Wed: 40 min easy. Sat: long run 14 km.'
-                : 'e.g. Going out Wednesday night, make Thursday light. Left shoulder feeling tight this week.'}
-              rows={tracker ? 8 : 3}
+              value={method === 'convert' ? pasted : method === 'modify' ? changes : notes}
+              onChange={(e) => (method === 'convert' ? setPasted : method === 'modify' ? setChanges : setNotes)(e.target.value)}
+              placeholder={method === 'convert'
+                ? 'e.g. Mon: Squat 5 × 5 @ 100kg, RDL 3 × 8. Wed: Bench 5 × 5, rows 4 × 10. Fri: Deadlift 3 × 3.'
+                : method === 'modify'
+                  ? 'e.g. Add 2.5kg to the main lifts, swap leg press for hack squat, make Friday 45 minutes.'
+                  : 'e.g. Going out Wednesday night, make Thursday light. Left shoulder feeling tight this week.'}
+              rows={method === 'generate' ? 3 : 6}
               className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl px-4 py-3 text-base text-[#f5f5f0] placeholder-[#3a3a3a] resize-none focus:outline-none focus:border-[#d97756]/50 transition-colors"
             />
           </CardSection>
@@ -374,13 +459,13 @@ export function WeekPlanner() {
           <div className="flex flex-col gap-1">
             <Button
               onClick={handleGeneratePrompt}
-              disabled={selectedDays.length === 0}
+              disabled={selectedDays.length === 0 || (method === 'convert' && !pasted.trim()) || (method === 'modify' && !changes.trim())}
               loading={launching}
               fullWidth
               size="lg"
             >
               {!launching && <ExternalLink size={18} />}
-              {launching ? 'Opening Claude…' : tracker ? 'Convert with Claude' : 'Generate & Open Claude'}
+              {launching ? 'Opening Claude…' : method === 'convert' ? 'Convert with Claude' : method === 'modify' ? 'Modify with Claude' : 'Generate & Open Claude'}
             </Button>
             <button
               onClick={handleShowPrompt}
@@ -406,7 +491,10 @@ export function WeekPlanner() {
           </Button>
         </div>
 
+        </>}
+
         {/* How it works */}
+        {method === 'generate' && (
         <div className="rounded-2xl bg-[#161616] border border-[#2a2a2a] p-4">
           <p className="text-xs font-semibold text-[#6a6a6a] uppercase tracking-widest mb-3">How it works</p>
           <div className="flex flex-col gap-2.5">
@@ -424,6 +512,7 @@ export function WeekPlanner() {
             ))}
           </div>
         </div>
+        )}
       </div>
 
       {/* Prompt Modal */}
@@ -533,51 +622,51 @@ function latestWeeklyCheckIn(checkIns: CheckIn[]): CheckIn | undefined {
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0]
 }
 
-const RUNS_WITH: { value: RunsWith; label: string }[] = [
-  { value: 'phone', label: 'Just my phone' },
-  { value: 'watch', label: 'GPS watch' },
-  { value: 'track', label: 'A track' },
-  { value: 'treadmill', label: 'Treadmill' },
-]
+const METHOD_INFO: Record<PlanMethod, { icon: LucideIcon; title: string; text: string }> = {
+  generate: { icon: Wand2, title: 'New plan from Clawde', text: 'Claude writes a fresh week from your profile and history' },
+  repeat: { icon: Repeat, title: 'Repeat last week', text: 'Same sessions and weights, next week. Instant' },
+  modify: { icon: PencilLine, title: 'Modify last week', text: 'Say what to change and Claude edits it' },
+  convert: { icon: ClipboardPaste, title: 'Use my own plan', text: 'Paste a plan as text and Claude formats it' },
+}
 
-/**
- * A deferred onboarding question asked where it matters: before Claude plans
- * intervals, what can the athlete measure with? (A phone can't end an 800 m rep.)
- */
-function RunsWithCard({ profile, onSave }: { profile: UserProfile; onSave: (patch: Partial<UserProfile>) => void }) {
-  const [picked, setPicked] = useState<RunsWith[]>([])
-  const due = profile.goal?.deferred.includes('runs-with') && profile.program?.exerciseTypes.includes('cardio')
-  if (!due) return null
-  function save() {
-    const now = new Date()
-    const checkIn: CheckIn = {
-      id: 'runs-with', weekStartDate: toLocalISODate(getMonday(now)), createdAt: now.toISOString(), trigger: 'planner',
-      answers: {}, actions: [{ kind: 'deferred', id: 'runs-with', value: picked.length ? picked : ['phone'] }], summary: '',
-    }
-    onSave(applyCheckIn(profile, checkIn, now))
-  }
+/** How to make this week's plan, last-used first and highlighted. */
+function MethodPicker({ methods, last, selected, hasPrevious, onSelect }: {
+  methods: PlanMethod[]
+  last: PlanMethod | null
+  selected: PlanMethod
+  hasPrevious: boolean
+  onSelect: (m: PlanMethod) => void
+}) {
   return (
-    <Card>
-      <CardSection>
-        <p className="text-sm font-medium text-[#a8a29e]">Before Clawde plans your runs: what do you run with?</p>
-        <p className="text-xs text-[#6a6a6a] mt-1 mb-3">With just a phone, reps are set by time, because a phone can’t tell you when you’ve run 800 m.</p>
-        <div className="flex flex-wrap gap-2 mb-3">
-          {RUNS_WITH.map((o) => {
-            const on = picked.includes(o.value)
-            return (
-              <button
-                key={o.value}
-                aria-pressed={on}
-                onClick={() => setPicked((p) => (on ? p.filter((x) => x !== o.value) : [...p, o.value]))}
-                className={`px-3.5 py-2 rounded-2xl text-sm font-medium ${on ? 'bg-[#d97756] text-white' : 'bg-[#1a1a1a] text-[#a8a29e] border border-[#2a2a2a]'}`}
-              >
-                {o.label}
-              </button>
-            )
-          })}
-        </div>
-        <Button size="sm" onClick={save} disabled={!picked.length}>Save</Button>
-      </CardSection>
-    </Card>
+    <div role="radiogroup" aria-label="How to plan this week" className="grid grid-cols-2 gap-2">
+      {methods.map((m) => {
+        const { icon: Icon, title, text } = METHOD_INFO[m]
+        const needsPrevious = (m === 'repeat' || m === 'modify') && !hasPrevious
+        const on = selected === m
+        return (
+          <button
+            key={m}
+            role="radio"
+            aria-checked={on}
+            disabled={needsPrevious}
+            onClick={() => onSelect(m)}
+            className={`relative text-left rounded-3xl p-3.5 border transition-all disabled:opacity-40 ${
+              on
+                ? 'bg-[#d97756]/12 border-[#d97756]/60 shadow-lg shadow-[#d97756]/10'
+                : 'bg-[#161616] border-[#2a2a2a] hover:border-[#3a3a3a]'
+            }`}
+          >
+            <div className="flex items-start justify-between gap-2">
+              <Icon size={18} className={on ? 'text-[#d97756]' : 'text-[#a8a29e]'} />
+              {m === last && (
+                <span className="text-2xs font-semibold uppercase tracking-wide text-[#d97756] bg-[#d97756]/15 rounded-full px-2 py-0.5">Last used</span>
+              )}
+            </div>
+            <p className="text-sm font-semibold text-[#f5f5f0] mt-2 leading-tight">{title}</p>
+            <p className="text-xs text-[#6a6a6a] mt-1 leading-snug">{needsPrevious ? 'Needs a previous plan' : text}</p>
+          </button>
+        )
+      })}
+    </div>
   )
 }

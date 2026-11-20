@@ -600,3 +600,50 @@ ${flareUp}
 
 ${outputSection(weekStartISO, selectedDays, ALL)}`
 }
+
+/**
+ * "Modify last week": Claude edits the athlete's latest plan as they describe
+ * and moves it onto the target week. Everything not mentioned stays as it was
+ * (exercise names especially, since working weights are matched by name).
+ */
+export function buildModifyPlanPrompt(
+  lastPlan: WeekPlan,
+  changes: string,
+  selectedDays: DayOfWeek[],
+  weekStart: Date,
+  profile: UserProfile,
+): string {
+  const weekStartISO = toLocalISODate(weekStart)
+  const s = promptScope(profile)
+  const dayLines = WEEK_DAYS_MON
+    .map((day, i) => ({ day, i }))
+    .filter(({ day }) => selectedDays.includes(day))
+    .map(({ day, i }) => `  - ${day} → \`${toLocalISODate(addDays(weekStart, i))}\``)
+    .join('\n')
+  const niggles = profile.injuries.length ? `
+## Niggles to train around
+${profile.injuries.map((i) => `- ${i}${profile.goal?.health.injuryStatus?.[i] === 'worse' ? ' (worse this week: go lighter on what loads it)' : ''}`).join('\n')}
+` : ''
+  const { createdAt: _created, ...plan } = lastPlan
+  void _created
+  return `# Modify my training plan — week of ${format(weekStart, 'dd MMM yyyy')}
+
+Below is the plan I followed most recently. Make **only the changes I ask for**
+and move it onto this week. Keep everything else the same: sessions, exercise
+names (my working weights are matched by name), sets, reps and weights.
+
+## Change it like this
+${changes.trim() || '(describe the changes here)'}
+
+## This week
+- **Week starts (Monday):** ${weekStartISO}
+- **Training days — use these dates, one session per day:**
+${dayLines || '  - (the same weekdays as the plan below, this week)'}
+${niggles}
+## The plan to modify (JSON)
+\`\`\`json
+${JSON.stringify(plan)}
+\`\`\`
+
+${outputSection(weekStartISO, selectedDays, s)}`
+}

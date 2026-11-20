@@ -10,7 +10,8 @@
  * here, so the free plan's 150 s worker limit doesn't matter.
  *
  * Requests:
- *   GET                         → { publicKey } (the VAPID key to subscribe with)
+ *   GET                         → { publicKey } (the VAPID key to subscribe with),
+ *                                 plus `problem` when the VAPID secrets are wrong
  *   POST { action: 'arm', … }   → store/replace the athlete's alarm
  *   POST { action: 'cancel' }   → drop it
  *   POST { action: 'tick' }     → send due alarms (pg_cron, with the tick secret)
@@ -22,7 +23,7 @@
  *
  * Plain web APIs only (no Deno globals), so the tests run it in Node.
  */
-import { isP256PublicKey, b64urlDecode, sendWebPush, type PushSubscriptionJSON, type VapidKeys } from '../_shared/webpush.ts'
+import { isP256PublicKey, b64urlDecode, sendWebPush, vapidProblem, type PushResult, type PushSubscriptionJSON, type VapidKeys } from '../_shared/webpush.ts'
 
 export interface Config {
   supabaseUrl: string
@@ -152,7 +153,12 @@ export async function handle(req: Request, cfg: Config): Promise<Response> {
 
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS })
   if (!cfg.vapid) return json({ error: 'Rest alerts are not set up on this server yet.' }, 503)
-  if (req.method === 'GET') return json({ publicKey: cfg.vapid.publicKey })
+  if (req.method === 'GET') {
+    // A bad key pair or subject only shows up as push services refusing every
+    // alert (Apple: 403 BadJwtToken), so say so where it can be checked.
+    const problem = await vapidProblem(cfg.vapid)
+    return json({ publicKey: cfg.vapid.publicKey, ...(problem ? { problem } : {}) })
+  }
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405)
 
   let body: Record<string, unknown>
@@ -185,13 +191,21 @@ export async function handle(req: Request, cfg: Config): Promise<Response> {
             ttlSeconds: PUSH_TTL_SECONDS,
             urgency: 'high',
             fetchImpl: f,
-          }).catch(() => ({ status: 0, ok: false, gone: false })),
+          }).catch((err): PushResult => ({ status: 0, ok: false, gone: false, detail: String(err).slice(0, 200) })),
         ),
       )
+      // Why sends failed, for the logs and net._http_response (status and the
+      // push service's reason only, never the subscription).
+      const errors = results.filter((r) => !r.ok && !r.gone).map((r) => ({ status: r.status, detail: r.detail ?? '' }))
+      for (const e of errors) console.error('rest-alarm push failed', e.status, e.detail)
+      const problem = errors.length ? await vapidProblem(vapid) : null
+      if (problem) console.error('rest-alarm secrets:', problem)
       return json({
         sent: results.filter((r) => r.ok).length,
         gone: results.filter((r) => r.gone).length,
-        failed: results.filter((r) => !r.ok && !r.gone).length,
+        failed: errors.length,
+        ...(errors.length ? { errors } : {}),
+        ...(problem ? { problem } : {}),
       })
     }
 

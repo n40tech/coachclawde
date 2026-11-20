@@ -186,3 +186,18 @@ describe('parsePayload', () => {
     expect(parsePayload({ url: '/session/2026-11-17-upper' }).url).toBe('/session/2026-11-17-upper')
   })
 })
+
+describe('VAPID self-check', () => {
+  it('reports a mismatched key pair on GET', async () => {
+    const { generateVapidKeys } = await import('../_shared/webpush')
+    const a = await generateVapidKeys()
+    const b = await generateVapidKeys()
+    const res = await handle(new Request('https://x/functions/v1/rest-alarm'), {
+      supabaseUrl: 'https://x', serviceKey: 'k', tickSecret: 's',
+      vapid: { publicKey: a.publicKey, privateKey: b.privateKey, subject: 'https://coachclawde.vercel.app' },
+    })
+    const body = await res.json()
+    expect(body.publicKey).toBe(a.publicKey)
+    expect(body.problem).toMatch(/does not match/)
+  })
+})

@@ -14,14 +14,19 @@ function serviceKey(): string {
   }
 }
 
-const publicKey = Deno.env.get('VAPID_PUBLIC_KEY')
-const privateKey = Deno.env.get('VAPID_PRIVATE_KEY')
-const subject = Deno.env.get('VAPID_SUBJECT')
+// Trimmed: a pasted secret easily picks up a trailing newline, and a VAPID
+// subject with whitespace in it makes Apple refuse every alert (403
+// BadJwtToken), which is how rest alerts broke in 1.0.7.
+const env = (name: string) => Deno.env.get(name)?.trim() || undefined
+const publicKey = env('VAPID_PUBLIC_KEY')
+const privateKey = env('VAPID_PRIVATE_KEY')
+const subject = env('VAPID_SUBJECT')
 
 const config: Config = {
   supabaseUrl: Deno.env.get('SUPABASE_URL') ?? '',
   serviceKey: serviceKey(),
   vapid: publicKey && privateKey && subject ? { publicKey, privateKey, subject } : null,
+  // Not trimmed: it must equal the Vault copy the ticker sends, exactly.
   tickSecret: Deno.env.get('REST_ALARM_TICK_SECRET') ?? '',
 }
 

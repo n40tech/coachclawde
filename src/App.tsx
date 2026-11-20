@@ -15,7 +15,7 @@ import { ReleaseNotesGate } from './components/shared/WhatsNew'
 import { useKeyboardInset } from './hooks/useKeyboardInset'
 import { lazyPage } from './lib/lazyPage'
 
-// Home and Session (with Run Mode and the movement guides) are in the entry
+// Home and Session (with the movement guides) are in the entry
 // chunk: the workout path never waits on a chunk, and an update can't pull a
 // chunk out from under a workout (see lib/lazyPage). Everything else loads on
 // first visit.

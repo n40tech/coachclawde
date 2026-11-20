@@ -20,11 +20,15 @@ export function RequireAuth({ children }: { children: ReactNode }) {
   const { user, loading, configured } = useAuth()
   const { pull } = useAutoSync()
   const reset = useAppStore((s) => s.reset)
+  // This device already holds the athlete's data (the persisted store is
+  // cleared on sign-out, so it belongs to whoever is signed in).
+  const hasLocalData = useAppStore((s) => !!s.profile.onboarded)
   const identity = user?.id ?? null
   const lastIdentity = useRef<string | null>(null)
   // Block render until the signed-in identity's data has been pulled, so the
   // onboarding gate (which keys off the profile) never flashes for a returning
-  // user before their real profile has loaded.
+  // user before their real profile has loaded. Skipped when the device already
+  // has an onboarded profile (see below).
   const [pulled, setPulled] = useState(false)
 
   useEffect(() => {
@@ -45,7 +49,10 @@ export function RequireAuth({ children }: { children: ReactNode }) {
 
   if (!configured) return <>{children}</>
 
-  if (loading || (identity && !pulled)) {
+  // Reopening the app shouldn't sit on a loading screen while the database
+  // answers: with the athlete's data already on the device, show the app at
+  // once and let the pull refresh it in the background.
+  if (loading || (identity && !pulled && !hasLocalData)) {
     return (
       <div className="flex items-center justify-center min-h-svh bg-[#0a0a0a]">
         <ClawdeMark size={56} idle />

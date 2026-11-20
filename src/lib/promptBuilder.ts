@@ -18,9 +18,9 @@ import { buildGoalSection } from './goalPrompt'
  * read the repo).
  *
  * It's also TAILORED: every rule, schema field and example is chosen from
- * what the athlete set up (`promptScope`). A gym-only athlete never hears
- * about cardio, a runner with no strength work never gets superset rules,
- * home-workout athletes are held to their equipment, and so on. CLAUDE.md is
+ * what the athlete set up (`promptScope`). The app is weights-first, so no
+ * prompt asks for cardio sessions; home-workout athletes are held to their
+ * equipment, and so on. CLAUDE.md is
  * the full, general reference; this is the per-athlete cut of it.
  *
  * Keep the rules/schema here in sync with `CLAUDE.md` and `src/types/index.ts`.
@@ -52,13 +52,14 @@ export interface PromptScope {
 export function promptScope(profile: UserProfile): PromptScope {
   const types = profile.program?.exerciseTypes ?? []
   const has = (t: ProgramExerciseType) => types.length === 0 || types.includes(t)
-  const weights = has('weights')
-  const cardio = has('cardio')
+  // Weights-first: every plan is built around lifting, and cardio is never
+  // scheduled (athletes log any cardio by hand). Mobility days only when asked.
+  const weights = true
+  const cardio = false
   const mobility = has('mobility')
   const sessionTypes: SessionType[] = [
-    ...(weights ? ['weights' as const] : []),
-    ...(cardio ? ['cardio' as const] : []),
-    ...(mobility || (!weights && !cardio) ? ['active-recovery' as const] : []),
+    'weights',
+    ...(mobility ? ['active-recovery' as const] : []),
   ]
   const goal = profile.goal
   const strengthFocus: PromptScope['strengthFocus'] =
@@ -415,7 +416,7 @@ export function buildWeekPlanPrompt(
   const programBlock = program
     ? [
         `- **Goals:** ${program.goals.join(', ') || '—'}`,
-        `- **Training types:** ${program.exerciseTypes.join(', ') || '—'} (only plan these)`,
+        `- **Session types:** ${s.sessionTypes.join(', ')} (only plan these)`,
         `- **Facilities:** ${program.facilities.join(', ') || '—'}`,
         s.cardio && program.sports.length ? `- **Preferred cardio:** ${program.sports.join(', ')}` : '',
         `- **Preferred frequency:** ${program.daysPerWeek ? `about ${daysPerWeekLabel(program.daysPerWeek)} days a week` : '—'}`,
@@ -598,4 +599,51 @@ ${flareUp}
   \`end: { by: "time" }\`.
 
 ${outputSection(weekStartISO, selectedDays, ALL)}`
+}
+
+/**
+ * "Modify last week": Claude edits the athlete's latest plan as they describe
+ * and moves it onto the target week. Everything not mentioned stays as it was
+ * (exercise names especially, since working weights are matched by name).
+ */
+export function buildModifyPlanPrompt(
+  lastPlan: WeekPlan,
+  changes: string,
+  selectedDays: DayOfWeek[],
+  weekStart: Date,
+  profile: UserProfile,
+): string {
+  const weekStartISO = toLocalISODate(weekStart)
+  const s = promptScope(profile)
+  const dayLines = WEEK_DAYS_MON
+    .map((day, i) => ({ day, i }))
+    .filter(({ day }) => selectedDays.includes(day))
+    .map(({ day, i }) => `  - ${day} → \`${toLocalISODate(addDays(weekStart, i))}\``)
+    .join('\n')
+  const niggles = profile.injuries.length ? `
+## Niggles to train around
+${profile.injuries.map((i) => `- ${i}${profile.goal?.health.injuryStatus?.[i] === 'worse' ? ' (worse this week: go lighter on what loads it)' : ''}`).join('\n')}
+` : ''
+  const { createdAt: _created, ...plan } = lastPlan
+  void _created
+  return `# Modify my training plan — week of ${format(weekStart, 'dd MMM yyyy')}
+
+Below is the plan I followed most recently. Make **only the changes I ask for**
+and move it onto this week. Keep everything else the same: sessions, exercise
+names (my working weights are matched by name), sets, reps and weights.
+
+## Change it like this
+${changes.trim() || '(describe the changes here)'}
+
+## This week
+- **Week starts (Monday):** ${weekStartISO}
+- **Training days — use these dates, one session per day:**
+${dayLines || '  - (the same weekdays as the plan below, this week)'}
+${niggles}
+## The plan to modify (JSON)
+\`\`\`json
+${JSON.stringify(plan)}
+\`\`\`
+
+${outputSection(weekStartISO, selectedDays, s)}`
 }

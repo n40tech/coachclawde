@@ -41,6 +41,27 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: '1.1.0',
+    date: '2026-11-20',
+    headline: 'Weights-first: a set timer, a workout summary to share, and faster planning.',
+    fromFeedback: [
+      'After a rest, your next tap starts timing the set: its tick turns orange with a count-up, and you can still type reps and weight before you tick it. Don’t want it? Settings → Beta features.',
+      'Leave the workout mid-rest and the timer comes with you: a little circle bottom-left (the tab bar shifts over). Tap it to jump back.',
+      'Finishing a workout opens a full “Workout complete” page: reps, sets, time and total lifted beside Clawde, any new PBs, how it felt and notes. Share it as one of three square cards (Summary, Headline or Logbook), or delete the workout if it was a mistake.',
+      'Reorder your exercises by dragging them. Start one early and the list reshuffles itself to match.',
+      'Four ways to plan a week: repeat last week, change last week by describing it, paste your own plan, or a fresh plan from Clawde. The one you used last comes first.',
+      'Onboarding is down to the basics: name, gender, age, how active you are, where you train, injuries and anything else.',
+      'Movement guides now have Google Images next to YouTube.',
+      'History has an Edit button: select sessions and delete them together (no more bin on every tile).',
+      'The bottom of the Progress page no longer hides behind the tab bar.',
+      'Reopening the app no longer flashes white, and it opens straight away instead of waiting for the server.',
+      'Rest alert notifications work again.',
+    ],
+    alsoNew: [
+      'Coach Clawde is now weights-first: plans no longer schedule cardio, and Run Mode is gone. Did a run or a class? Log it with "Did something else?" or "Log a session" and it still counts.',
+    ],
+  },
+  {
     version: '1.0.7',
     date: '2026-11-17',
     headline: 'Easier with a keyboard, a screen reader or a password manager.',

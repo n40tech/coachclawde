@@ -5,6 +5,20 @@
 @theme {
   --text-2xs: 0.6875rem;
   --text-2xs--line-height: 1rem;
+  /* The website's type (site/): pixel lettering for big numbers and
+     headings, Space Mono for small uppercase labels. */
+  --font-pixel: "Tiny5", "Space Mono", ui-monospace, monospace;
+  --font-mono: "Space Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+
+@font-face { font-family: "Tiny5"; src: url("/fonts/tiny5.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Space Mono"; src: url("/fonts/space-mono-400.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Space Mono"; src: url("/fonts/space-mono-700.woff2") format("woff2"); font-weight: 700; font-display: swap; }
+
+/* Dot grid, as on the website's panels. */
+@utility dot-grid {
+  background-image: radial-gradient(rgba(245, 245, 240, 0.08) 1.1px, transparent 1.4px);
+  background-size: 16px 16px;
 }
 
 /* Short viewports — phone landscape, split-screen. */
@@ -113,11 +127,13 @@ html {
   /* Screen edge → bar: clear of the home indicator, never flush. */
   --tabbar-offset: max(var(--tabbar-gap), var(--safe-bottom));
   --tabbar-side: var(--tabbar-gap);
-  /* Room content must leave beneath it so the last row isn't hidden. The
-     page ends at the (reported) viewport bottom, which in the installed
-     iPhone app can sit `--viewport-gap` above the screen bottom the bar is
-     anchored to. */
-  --tabbar-clearance: calc(var(--tabbar-offset) + var(--tabbar-h) + var(--tabbar-gap) - var(--viewport-gap, 0px));
+  /* Room content must leave beneath it so the last row isn't hidden. This
+     used to subtract `--viewport-gap` (the installed iPhone app can report a
+     viewport shorter than the screen), but iOS still scrolls the page's end
+     under the bar there, so the last card on long pages (Progress) was
+     covered. Clearing the full bar is always safe: at worst a little extra
+     space at the end of a page. */
+  --tabbar-clearance: calc(var(--tabbar-offset) + var(--tabbar-h) + var(--tabbar-gap));
 
   /* iPad / wide layout: sidebar navigation replaces the tab bar. */
   --sidebar-w: 14rem;

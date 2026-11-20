@@ -6,10 +6,10 @@ import { PageHeader } from '../components/layout/PageHeader'
 import { Card, CardSection } from '../components/shared/Card'
 import { Reveal } from '../components/shared/Reveal'
 import { SyncIndicator } from '../components/shared/SyncIndicator'
-import { WeightPRCard, CardioPRCard } from '../components/progress/PRCards'
-import { computeWeightPRs, computeCardioPRs } from '../lib/prComputations'
+import { WeightPRCard } from '../components/progress/PRCards'
+import { computeWeightPRs } from '../lib/prComputations'
 import { getProgramProgress } from '../lib/programProgress'
-import { Dumbbell, Waves, TrendingUp, Trophy, Zap, Settings, ChevronRight } from 'lucide-react'
+import { Dumbbell, Layers, TrendingUp, Trophy, Zap, Settings, ChevronRight } from 'lucide-react'
 import { parseISO, isSameWeek } from 'date-fns'
 import { getMonday, addDays, toLocalISODate, WEEK_DAYS_MON } from '../lib/weekUtils'
 import type { LoggedSession } from '../types'
@@ -21,7 +21,6 @@ export function Progress() {
 
   const completed = loggedSessions.filter((s) => s.status === 'complete')
   const weightSessions = completed.filter((s) => s.type === 'weights')
-  const cardioSessions = completed.filter((s) => s.type === 'cardio')
 
   // This week — bucket by when the session was actually completed (falling back
   // to the planned date for older logs), so a session done this week counts even
@@ -44,8 +43,9 @@ export function Progress() {
     : '—'
 
   const weightPRs = computeWeightPRs(weightSessions)
-  const cardioPRs = computeCardioPRs(cardioSessions)
-  const hasPRs = weightPRs.length > 0 || cardioPRs.length > 0
+  const hasPRs = weightPRs.length > 0
+  const setsIn = (list: LoggedSession[]) =>
+    list.reduce((n, s) => n + (s.loggedExercises?.reduce((m, ex) => m + ex.sets.filter((x) => x.completed).length, 0) ?? 0), 0)
 
   const program = getProgramProgress(profile)
 
@@ -102,7 +102,7 @@ export function Progress() {
             <div className="grid grid-cols-3 gap-3">
               <StatCard icon={<Zap size={18} className="text-[#d97756]" />} value={thisWeekSessions.length} label="Sessions" />
               <StatCard icon={<Dumbbell size={18} className="text-blue-400" />} value={thisWeekSessions.filter((s) => s.type === 'weights').length} label="Weights" />
-              <StatCard icon={<Waves size={18} className="text-emerald-400" />} value={thisWeekSessions.filter((s) => s.type === 'cardio').length} label="Cardio" />
+              <StatCard icon={<Layers size={18} className="text-emerald-400" />} value={setsIn(thisWeekSessions)} label="Sets" />
             </div>
           </Section>
         </Reveal>
@@ -121,7 +121,7 @@ export function Progress() {
               <StatCard icon={<Zap size={18} className="text-[#d97756]" />} value={completed.length} label="Total sessions" />
               <StatCard icon={<TrendingUp size={18} className="text-emerald-400" />} value={`${avgFeeling}/5`} label="Avg feeling" />
               <StatCard icon={<Dumbbell size={18} className="text-blue-400" />} value={weightSessions.length} label="Weights sessions" />
-              <StatCard icon={<Waves size={18} className="text-purple-400" />} value={cardioSessions.length} label="Cardio sessions" />
+              <StatCard icon={<Layers size={18} className="text-purple-400" />} value={setsIn(weightSessions)} label="Sets completed" />
             </div>
             {totalVolume > 0 && (
               <Card className="mt-3">
@@ -149,14 +149,13 @@ export function Progress() {
                     <Trophy size={18} className="text-[#d97756]" />
                   </div>
                   <p className="text-sm text-[#6a6a6a]">
-                    Log some sessions and your personal bests for each lift and cardio piece will show up here.
+                    Log some sessions and your personal bests for each lift will show up here.
                   </p>
                 </CardSection>
               </Card>
             ) : (
               <div className="flex flex-col gap-3">
                 {weightPRs.length > 0 && <WeightPRCard prs={weightPRs} limit={3} />}
-                {cardioPRs.length > 0 && <CardioPRCard prs={cardioPRs} limit={3} />}
                 <button
                   onClick={() => navigate('/progress/best-efforts')}
                   className="flex items-center justify-center gap-1 py-2 text-sm font-medium text-[#d97756] hover:underline"

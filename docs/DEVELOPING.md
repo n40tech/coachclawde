@@ -48,7 +48,7 @@ work out of the box.
 
 ## Shipping a beta update (versions & release notes)
 
-The app version lives in `package.json` (currently **1.0.7**) and is injected
+The app version lives in `package.json` (currently **1.1.0**) and is injected
 into the bundle as `__APP_VERSION__` (read it via `APP_VERSION` in
 `src/lib/appVersion.ts`). The first time a tester opens a new version, a
 "What's new" sheet lists the changes; it's also reachable from Settings →
@@ -111,10 +111,11 @@ are marked as seen when they finish onboarding.
   `text-[10px]`. Nested rounded boxes use `rounded-nested` with the parent's
   `--nest-radius` / `--nest-inset`. Row layouts that must survive large text
   sizes reflow with a `@container` + `@max-[17rem]:` variant.
-  `Onboarding` is the first-run flow: an in-app chat (`components/onboarding/
-  ChatFlow` rendering the goal tree in `lib/goalFlow`), a confirmation card,
-  then "About you", then finish. `?from=<node>` re-enters the tree for an
-  onboarded athlete.
+  `Onboarding` is the first-run flow: one short form of basics
+  (`lib/basicOnboarding` turns it into the GoalProfile and legacy fields),
+  then a finish screen. An onboarded athlete opening it gets the same form
+  pre-filled. `lib/goalFlow` (the old goal tree) is still used by check-ins
+  and the migration flow; `components/onboarding/ChatFlow` renders check-ins.
 - `components/shared/BetaFeedbackTile` — the Home tile linking beta testers
   to the WhatsApp feedback group. The invite link is build-time config
   (`VITE_BETA_FEEDBACK_URL`, read in `lib/betaFeedback`), never source, and
@@ -126,7 +127,32 @@ are marked as seen when they finish onboarding.
   worker), fuzzy-matched by name with a YouTube-search fallback. `RoutineCard`
   is the expandable warm-up/cool-down.
 - `src/components/session/` — the live-workout UI (exercise tiles, set rows, rest
-  timer, interval rows, complete flow).
+  timer, `ReorderList`, and `WorkoutComplete`: the full-screen finish page in
+  the website's style, using its fonts from `public/fonts` (`font-mono` for
+  labels, `dot-grid`; `font-pixel` only for the title, sparingly).
+- **Weights-first (v1.1):** plans never schedule cardio (`promptScope` in
+  `lib/promptBuilder`); Run Mode, interval rows and the run engine were removed
+  (preserved on the `cardio-archive` branch). `lib/workout` and `lib/zones`
+  stay so older plans and logs still load; a legacy cardio session is logged
+  by hand via `QuickLogSheet`.
+- **Workout clock (v1.1):** after a rest ends (or is skipped) the store's
+  `setTimerArmed` holds the session; the next pointer-down in the Session page
+  starts `activeSet` (the set touched, else `lib/exerciseOrder.nextOpenSet`),
+  shown as an orange tick, and ticking records `workSeconds`. Both are
+  persisted. Off the workout screen, `hooks/useWorkoutDock` drives
+  `layout/WorkoutDock`: a timer circle left of the tab bar (or in the iPad
+  sidebar) linking back. Exercise order is the order of `loggedExercises`
+  (`lib/exerciseOrder`: reorder, and promote an exercise started early).
+- **Completion & sharing:** `lib/workoutSummary` (time, volume, sets, reps, PBs
+  vs. earlier sessions, per-exercise best sets) and `lib/shareCard`: three
+  1080² card designs in the app's colours (summary, headline, logbook), all built
+  when the page opens so iOS opens the share sheet straight from the tap.
+- **Beta features** (Settings): `autoSetTimer` in the settings store turns the
+  set timer off.
+- **Planning methods:** `lib/planMethods` (generate / repeat / modify /
+  convert; the last used is remembered in the settings store and offered
+  first). Repeat copies the newest plan in the app; modify uses
+  `buildModifyPlanPrompt`.
 - `src/components/shared/` & `components/layout/` — reusable primitives
   (`Button`, `Card`, `Badge`, `PageHeader`, `ConfirmDialog`, `BottomSheet`, …). Reuse these instead of
   hand-rolling new ones.

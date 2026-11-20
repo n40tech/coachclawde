@@ -15,10 +15,23 @@ interface ExerciseTileProps {
   onSetUncomplete: (setIndex: number) => void
   isActive: boolean
   onActivate: () => void
+  /** The set being timed in this exercise, if any (see ActiveSet). */
+  timedSet?: { setIndex: number; startedAt: number }
 }
 
-export function ExerciseTile({ planned, logged, onUpdateSet, onSetComplete, onSetUncomplete, isActive, onActivate }: ExerciseTileProps) {
+export function ExerciseTile({ planned, logged, onUpdateSet, onSetComplete, onSetUncomplete, isActive, onActivate, timedSet }: ExerciseTileProps) {
   const [expanded, setExpanded] = useState(isActive)
+  // The timed set's tile opens so the orange tick is in view. The tap that
+  // started the timer may be on this header: its click mustn't close it again.
+  const [prevTimed, setPrevTimed] = useState(timedSet)
+  const [autoOpenedAt, setAutoOpenedAt] = useState(0)
+  if (timedSet !== prevTimed) {
+    setPrevTimed(timedSet)
+    if (timedSet && !expanded) {
+      setExpanded(true)
+      setAutoOpenedAt(timedSet.startedAt)
+    }
+  }
   const [showGuide, setShowGuide] = useState(false)
   const units = useUnits()
 
@@ -28,6 +41,7 @@ export function ExerciseTile({ planned, logged, onUpdateSet, onSetComplete, onSe
 
   return (
     <div
+      data-exercise={planned.id}
       className={`rounded-[2rem] border overflow-hidden transition-all duration-200 ${
         isActive
           ? 'border-[#d97756]/40 bg-gradient-to-br from-[#d97756]/5 to-[#161616]'
@@ -40,7 +54,10 @@ export function ExerciseTile({ planned, logged, onUpdateSet, onSetComplete, onSe
       <div className="flex items-center pr-2">
         <button
           className="flex-1 min-w-0 flex items-center gap-3 pl-4 pr-2 py-4 text-left"
-          onClick={() => { setExpanded((e) => !e); onActivate() }}
+          onClick={() => {
+            if (Date.now() - autoOpenedAt > 600) setExpanded((e) => !e)
+            onActivate()
+          }}
         >
           {/* Set progress indicator */}
           <div className="flex gap-1 shrink-0">
@@ -97,6 +114,7 @@ export function ExerciseTile({ planned, logged, onUpdateSet, onSetComplete, onSe
                 onUpdate={(updates) => onUpdateSet(i, updates)}
                 onComplete={(payload) => onSetComplete(i, payload)}
                 onUncomplete={() => onSetUncomplete(i)}
+                inProgressSince={timedSet?.setIndex === i ? timedSet.startedAt : undefined}
               />
             ))}
           </div>

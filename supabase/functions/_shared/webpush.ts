@@ -25,6 +25,8 @@ export interface PushResult {
   ok: boolean
   /** 404/410: the subscription has expired or been revoked. */
   gone: boolean
+  /** On failure: the push service's reason (e.g. Apple's {"reason":"BadJwtToken"}). */
+  detail?: string
 }
 
 const utf8 = new TextEncoder()
@@ -134,6 +136,45 @@ export async function vapidAuthorization(endpoint: string, vapid: VapidKeys, now
   return `vapid t=${jwtHeader}.${claims}.${b64urlEncode(signature)}, k=${vapid.publicKey}`
 }
 
+/**
+ * Why push services would refuse these VAPID secrets, or null when they look
+ * right. Apple answers both with 403 `BadJwtToken`:
+ * - the private key isn't the partner of the public key (signing only uses
+ *   the private half, so a mismatched pair still "works" until it's checked);
+ * - the subject isn't a `mailto:` or `https:` contact (localhost is refused).
+ */
+export async function vapidProblem(vapid: VapidKeys): Promise<string | null> {
+  const subject = vapid.subject.trim()
+  if (subject !== vapid.subject) return 'VAPID_SUBJECT has spaces around it'
+  if (!/^(mailto:[^\s@]+@[^\s@]+\.[^\s@]+|https:\/\/[^\s]+)$/.test(subject) || /localhost|127\.0\.0\.1/.test(subject)) {
+    return 'VAPID_SUBJECT must be a mailto: address or an https:// URL (not localhost)'
+  }
+  if (!isP256PublicKey(vapid.publicKey)) return 'VAPID_PUBLIC_KEY is not a P-256 public key'
+  try {
+    const pub = b64urlDecode(vapid.publicKey)
+    const signer = await crypto.subtle.importKey(
+      'jwk',
+      { kty: 'EC', crv: 'P-256', x: b64urlEncode(pub.slice(1, 33)), y: b64urlEncode(pub.slice(33, 65)), d: vapid.privateKey },
+      { name: 'ECDSA', namedCurve: 'P-256' },
+      false,
+      ['sign'],
+    )
+    const verifier = await crypto.subtle.importKey('raw', pub, { name: 'ECDSA', namedCurve: 'P-256' }, false, ['verify'])
+    const msg = utf8.encode('vapid-self-check')
+    const sig = await crypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, signer, msg)
+    const ok = await crypto.subtle.verify({ name: 'ECDSA', hash: 'SHA-256' }, verifier, sig, msg)
+    return ok ? null : 'VAPID_PRIVATE_KEY does not match VAPID_PUBLIC_KEY (generate one pair and set both)'
+  } catch {
+    // Some runtimes (Node) refuse to import a private key that isn't the
+    // partner of x/y, rather than signing with it: that's the same mismatch.
+    let d: Uint8Array | null = null
+    try { d = b64urlDecode(vapid.privateKey) } catch { /* reported below */ }
+    return d?.length === 32
+      ? 'VAPID_PRIVATE_KEY does not match VAPID_PUBLIC_KEY (generate one pair and set both)'
+      : 'VAPID_PRIVATE_KEY is not a valid P-256 private key'
+  }
+}
+
 /** Encrypts `payload` and posts it to the subscription's push service. */
 export async function sendWebPush(
   sub: PushSubscriptionJSON,
@@ -153,9 +194,13 @@ export async function sendWebPush(
     },
     body,
   })
-  // Drain the body so the connection can be reused.
-  await res.arrayBuffer().catch(() => undefined)
-  return { status: res.status, ok: res.status >= 200 && res.status < 300, gone: res.status === 404 || res.status === 410 }
+  const ok = res.status >= 200 && res.status < 300
+  // Read the body either way (so the connection can be reused); on failure it
+  // says why, e.g. Apple's {"reason":"BadJwtToken"}.
+  const text = await res.text().catch(() => '')
+  const result: PushResult = { status: res.status, ok, gone: res.status === 404 || res.status === 410 }
+  if (!ok && text) result.detail = text.slice(0, 200)
+  return result
 }
 
 /** A fresh VAPID key pair (scripts/gen-vapid-keys.mjs does the same in Node). */

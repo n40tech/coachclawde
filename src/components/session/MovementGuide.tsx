@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
-import { CirclePlay, Info, LoaderCircle, SearchX, WifiOff } from 'lucide-react'
+import { CirclePlay, Image as ImageIcon, Info, LoaderCircle, SearchX, WifiOff } from 'lucide-react'
 import {
   exerciseImageUrl,
   findExercise,
+  googleImagesUrl,
   isExerciseDbLoaded,
   loadExerciseDb,
   youtubeSearchUrl,
@@ -28,7 +29,8 @@ interface MovementGuideProps {
 /**
  * Bottom sheet explaining how to do an exercise: start/end photos, muscles and
  * step-by-step instructions from free-exercise-db, plus a YouTube search as a
- * backup (always offered, since a library match is only a best guess).
+ * backup alongside a Google Images search (always offered, since a library
+ * match is only a best guess).
  */
 export function MovementGuide({ name, notes, onClose }: MovementGuideProps) {
   const [state, setState] = useState<GuideState>({ status: 'loading' })
@@ -76,26 +78,38 @@ export function MovementGuide({ name, notes, onClose }: MovementGuideProps) {
         )}
 
         {state.status === 'offline' && (
-          <EmptyState icon={<WifiOff size={20} />} text="Couldn't load the exercise library. Check your connection, or try the video search below." />
+          <EmptyState icon={<WifiOff size={20} />} text="Couldn't load the exercise library. Check your connection, or try the image and video searches below." />
         )}
 
         {state.status === 'ready' && !match && (
-          <EmptyState icon={<SearchX size={20} />} text="No written guide for this one yet. The video search below should have you covered." />
+          <EmptyState icon={<SearchX size={20} />} text="No written guide for this one yet. The image and video searches below should have you covered." />
         )}
 
         {match && <GuideBody entry={match} />}
       </div>
 
       <div className="px-5 pt-3 pb-safe border-t border-[#1a1a1a]">
-        <a
-          href={youtubeSearchUrl(name)}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mb-2 w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-[#1f1f1f] hover:bg-[#2a2a2a] border border-[#2e2e2e] text-[#f5f5f0] font-medium transition-all active:scale-95"
-        >
-          <CirclePlay size={18} className="text-[#ef4444]" />
-          Watch videos on YouTube
-        </a>
+        {/* Two searches side by side: pictures on the left, videos on the right. */}
+        <div className="mb-2 grid grid-cols-2 gap-2">
+          <a
+            href={googleImagesUrl(name)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center gap-2 px-3 py-3 rounded-2xl bg-[#1f1f1f] hover:bg-[#2a2a2a] border border-[#2e2e2e] text-sm text-[#f5f5f0] font-medium transition-all active:scale-95"
+          >
+            <ImageIcon size={18} className="text-[#60a5fa] shrink-0" />
+            Google Images
+          </a>
+          <a
+            href={youtubeSearchUrl(name)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center gap-2 px-3 py-3 rounded-2xl bg-[#1f1f1f] hover:bg-[#2a2a2a] border border-[#2e2e2e] text-sm text-[#f5f5f0] font-medium transition-all active:scale-95"
+          >
+            <CirclePlay size={18} className="text-[#ef4444] shrink-0" />
+            YouTube videos
+          </a>
+        </div>
       </div>
     </BottomSheet>
   )

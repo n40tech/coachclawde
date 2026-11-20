@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { AppState, CheckIn, UserProfile, WeekPlan, LoggedSession, TimerState } from '../types'
+import type { ActiveSet, AppState, CheckIn, UserProfile, WeekPlan, LoggedSession, TimerState } from '../types'
 import { DEFAULT_PROFILE } from '../lib/profileData'
 import { STORAGE_KEYS } from '../lib/storageKeys'
 import { getMonday, toLocalISODate } from '../lib/weekUtils'
@@ -37,11 +37,27 @@ interface AppStore extends AppState {
   setActiveSession: (id: string | null) => void
   setTimer: (timer: TimerState) => void
   clearTimer: () => void
+  /** The set being timed (see ActiveSet). Persisted, so a reload keeps the clock. */
+  activeSet: ActiveSet | null
+  setActiveSet: (set: ActiveSet | null) => void
+  /**
+   * Planned session whose rest just ended: the athlete's next tap in that
+   * workout starts the set timer. Persisted with `activeSet`.
+   */
+  setTimerArmed: string | null
+  armSetTimer: (sessionId: string | null) => void
   getCurrentWeekPlan: () => WeekPlan | undefined
   getLastNSessions: (n: number) => LoggedSession[]
   restoreFromRemote: (data: { profile: UserProfile; weekPlans: WeekPlan[]; loggedSessions: LoggedSession[]; checkIns?: CheckIn[] }) => void
   /** Wipe in-memory + persisted data (used on sign-out so accounts don't leak on a shared device). */
   reset: () => void
+}
+
+/** The persisted rest timer on reopen: still running, or finished (arming the set timer). */
+function restoreTimer(timer: TimerState | undefined, armed: string | null): { timer: TimerState; setTimerArmed: string | null } {
+  if (timer?.isActive && timer.endTime && timer.endTime > Date.now()) return { timer, setTimerArmed: armed }
+  if (timer?.isActive && timer.sessionId) return { timer: DEFAULT_TIMER, setTimerArmed: timer.sessionId }
+  return { timer: DEFAULT_TIMER, setTimerArmed: armed }
 }
 
 const DEFAULT_TIMER: TimerState = {
@@ -61,6 +77,11 @@ export const useAppStore = create<AppStore>()(
       checkInDismissed: [],
       activeSessionId: null,
       timer: DEFAULT_TIMER,
+      activeSet: null,
+      setTimerArmed: null,
+
+      setActiveSet: (activeSet) => set({ activeSet }),
+      armSetTimer: (setTimerArmed) => set({ setTimerArmed }),
 
       saveCheckIn: (checkIn) =>
         set((s) => ({ checkIns: [...s.checkIns.filter((c) => c.id !== checkIn.id), checkIn] })),
@@ -143,6 +164,8 @@ export const useAppStore = create<AppStore>()(
         checkInDismissed: [],
         activeSessionId: null,
         timer: DEFAULT_TIMER,
+        activeSet: null,
+        setTimerArmed: null,
       }),
     }),
     {
@@ -158,6 +181,10 @@ export const useAppStore = create<AppStore>()(
           loggedSessions: logs,
           checkIns: p.checkIns ?? [],
           checkInDismissed: (p as { checkInDismissed?: string[] }).checkInDismissed ?? [],
+          activeSet: (p as { activeSet?: ActiveSet | null }).activeSet ?? null,
+          // A rest still running when the app was closed carries on (its end
+          // time is absolute); one that ran out meanwhile arms the set timer.
+          ...restoreTimer((p as { timer?: TimerState }).timer, (p as { setTimerArmed?: string | null }).setTimerArmed ?? null),
         }
       },
       partialize: (state) => ({
@@ -166,6 +193,9 @@ export const useAppStore = create<AppStore>()(
         loggedSessions: state.loggedSessions,
         checkIns: state.checkIns,
         checkInDismissed: state.checkInDismissed,
+        activeSet: state.activeSet,
+        setTimerArmed: state.setTimerArmed,
+        timer: state.timer,
       }),
     }
   )

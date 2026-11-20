@@ -1,206 +1,121 @@
-import { useEffect, useMemo, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAppStore } from '../store/useAppStore'
 import { useAutoSync } from '../hooks/useAutoSync'
 import { Button } from '../components/shared/Button'
 import { ClawdeMark } from '../components/shared/ClawdeMark'
-import { ChatFlow } from '../components/onboarding/ChatFlow'
-import { ConfirmCard } from '../components/onboarding/ConfirmCard'
-import { rewindTo, type FlowAnswers, type FlowValue } from '../lib/flow'
-import { GOAL_FLOW, confirmationRows, mergeGoalUpdate, profilePatchFromGoal, toGoalProfile } from '../lib/goalFlow'
-import type { UserProfile } from '../types'
 import { markVersionSeen } from '../lib/appVersion'
-import { isValidBirthDate } from '../lib/dateUtils'
-import { toLocalISODate } from '../lib/weekUtils'
 import { FixedLayer } from '../components/layout/FixedLayer'
+import {
+  ACTIVITY_LABEL, WHERE_LABEL, basicsFromProfile, profileFromBasics,
+  type ActivityLevel, type BasicAnswers, type TrainWhere,
+} from '../lib/basicOnboarding'
 import {
   ArrowRight, ChevronDown, ChevronLeft, ChevronUp, Check, Share, Smartphone, MoreVertical, Sparkles,
 } from 'lucide-react'
 
-type StepKey = 'chat' | 'about' | 'finish'
-const STEPS: StepKey[] = ['chat', 'about', 'finish']
+const EMPTY: BasicAnswers = {
+  name: '', activity: '1-2x', where: [], injuries: '', medical: false, cleared: false, notes: '',
+}
 
 /**
- * First-run onboarding, in three screens:
- *  1. a chat with Clawde that walks the goal tree (lib/goalFlow) and ends on a
- *     "here's what I heard" card,
- *  2. "About you": name (required) and optional stats,
- *  3. a finish screen with install-to-home-screen tips.
+ * First-run onboarding: one short form with the basics (name, gender, age,
+ * how active you are, where you train, injuries, anything else), then a
+ * finish screen with install-to-home-screen tips. Everything else is asked
+ * when it matters (the planner, check-ins).
  *
- * `?from=<node>` re-enters the tree at a node for an athlete who's already
- * onboarded ("my race moved", from a check-in): earlier answers are kept,
- * later ones become drafts, and saving skips the About/finish screens.
+ * An onboarded athlete reaching this page (Settings, or a check-in saying the
+ * goal changed) gets the same form pre-filled, and saving goes straight home.
  */
 export function Onboarding() {
   const navigate = useNavigate()
-  const [params] = useSearchParams()
   const profile = useAppStore((s) => s.profile)
   const setProfile = useAppStore((s) => s.setProfile)
   const { sync } = useAutoSync()
+  const returning = !!profile.onboarded
 
-  // About you — pre-filled when an existing athlete re-onboards (new stores
-  // carry placeholder defaults, so only trust the profile once onboarded).
-  const known = profile.onboarded ? profile : null
-  const from = params.get('from')
-  const why = params.get('why')
-  const stored = (known?.goal?.origin === 'onboarding' ? known.goal.answers : undefined) as FlowAnswers | undefined
-  // Re-entry: at a node of a stored tree, or (for a pre-v1.0.2 athlete) at a branch.
-  const atNode = !!(from && stored && GOAL_FLOW.nodes[from])
-  const atBranch = !!(known && why && ['event', 'fitness', 'physique', 'strength', 'sport', 'tracker'].includes(why))
-  const reentry = atNode || atBranch
-
-  const [step, setStep] = useState<StepKey>('chat')
-  const [answers, setAnswers] = useState<FlowAnswers>(() => (atNode ? rewindTo(GOAL_FLOW, stored!, from!) : atBranch ? { why: why! } : {}))
-  const [anythingElse, setAnythingElse] = useState('')
-  const [name, setName] = useState(known?.name ?? '')
-  const [birthDate, setBirthDate] = useState(known?.birthDate ?? '')
-  const [sex, setSex] = useState<'male' | 'female' | undefined>(known?.sex)
-  const [heightCm, setHeightCm] = useState(known?.heightCm ? String(known.heightCm) : '')
-  const [weightKg, setWeightKg] = useState(known?.weightKg ? String(known.weightKg) : '')
-
-  const [finishing, setFinishing] = useState(false)
-  // Fixed for the whole chat so reflections don't shift under the athlete.
   const [now] = useState(() => new Date())
-  const ctx = useMemo(() => ({ now, weightKg: Number(weightKg) > 0 ? Number(weightKg) : undefined }), [now, weightKg])
-  const goal = useMemo(() => toGoalProfile(answers, ctx), [answers, ctx])
+  const [a, setA] = useState<BasicAnswers>(() => (returning ? basicsFromProfile(profile, now) : EMPTY))
+  const [activityChosen, setActivityChosen] = useState(returning)
+  const [step, setStep] = useState<'form' | 'finish'>('form')
+  const [finishing, setFinishing] = useState(false)
+  const [tried, setTried] = useState(false)
 
-  const stepIndex = STEPS.indexOf(step)
+  const set = (patch: Partial<BasicAnswers>) => setA((x) => ({ ...x, ...patch }))
+  const valid = activityChosen && a.where.length > 0
 
-  function handleAnswer(id: string, answer: FlowValue) {
-    setAnswers((a) => ({ ...a, [id]: answer }))
-  }
-
-  function buildPatch(): Partial<UserProfile> {
-    const merged = mergeGoalUpdate(known?.goal, goal)
-    return profilePatchFromGoal(merged, {
-      now,
-      coachingStyle: known?.program?.coachingStyle,
-      anythingElse: anythingElse || undefined,
-    })
-  }
-
-  /** Re-entry: the athlete has a profile already, so save straight away. */
-  function handleSaveUpdate() {
-    const patch = buildPatch()
-    // A goal update keeps the block running unless the date changed it.
-    if (atNode && known?.program?.startDate && patch.program && !from?.startsWith('ev.') && !from?.startsWith('phy.') && from !== 'why') {
-      patch.program = { ...patch.program, startDate: known.program.startDate, lengthWeeks: known.program.lengthWeeks }
-    }
-    // Injuries are safety-critical: anything no longer listed moves to the
-    // injury history rather than vanishing.
-    const removed = (known?.injuries ?? []).filter((i) => !(patch.injuries ?? []).includes(i))
-    if (removed.length && patch.goal) {
-      patch.goal = { ...patch.goal, health: { ...patch.goal.health, pastInjuries: [...new Set([...(patch.goal.health.pastInjuries ?? []), ...removed])] } }
-    }
-    setProfile(patch)
+  function save() {
+    setProfile(profileFromBasics(a, now, profile))
     void sync('profile')
-    navigate('/', { replace: true })
+  }
+
+  function handleNext() {
+    setTried(true)
+    if (!valid) return
+    if (returning) {
+      save()
+      navigate('/', { replace: true })
+    } else {
+      setStep('finish')
+    }
   }
 
   function handleFinish() {
-    const patch: Partial<UserProfile> = {
-      ...buildPatch(),
-      name: name.trim() || 'Athlete',
-      birthDate: isValidBirthDate(birthDate) ? birthDate : undefined,
-      heightCm: Number(heightCm) > 0 ? Number(heightCm) : 0,
-      weightKg: Number(weightKg) > 0 ? Number(weightKg) : 0,
-      onboarded: true,
-    }
-    if (sex) patch.sex = sex
-    // Onboarding doesn't ask about diet (it's a check-in question). Keep a
-    // re-onboarding athlete's notes, but start new athletes clean.
-    if (!profile.onboarded) patch.dietaryNotes = []
-
-    setProfile(patch)
-    void sync('profile')
+    save()
     // Release notes are for testers who've seen an earlier build — don't greet
     // a brand-new athlete with a changelog.
-    if (!profile.onboarded) markVersionSeen()
-
+    markVersionSeen()
     // Play the flight, then drop the athlete on the home screen.
     setFinishing(true)
     setTimeout(() => navigate('/', { replace: true }), 950)
   }
 
-  if (finishing) return <FlightToHome name={name} />
+  if (finishing) return <FlightToHome name={a.name} />
 
   return (
     <div className="flex flex-col min-h-svh bg-[#0a0a0a]">
-      {/* Progress */}
-      <div className="sticky top-0 z-10 bg-[#0a0a0a] px-5 pt-safe pb-2">
-        <div className="flex gap-1.5 pt-4">
-          {(reentry ? ['chat'] : STEPS).map((s, i) => (
-            <div
-              key={s}
-              className={`h-1 flex-1 rounded-full transition-colors duration-300 ${
-                i <= stepIndex ? 'bg-[#d97756]' : 'bg-[#222]'
-              }`}
-            />
-          ))}
+      {!returning && (
+        <div className="sticky top-0 z-10 bg-[#0a0a0a] px-5 pt-safe pb-2">
+          <div className="flex gap-1.5 pt-4">
+            {['form', 'finish'].map((s, i) => (
+              <div key={s} className={`h-1 flex-1 rounded-full transition-colors duration-300 ${i <= (step === 'form' ? 0 : 1) ? 'bg-[#d97756]' : 'bg-[#222]'}`} />
+            ))}
+          </div>
         </div>
+      )}
+
+      <div key={step} className={`flex-1 flex flex-col px-5 pb-6 fade-in ${returning ? 'pt-safe' : 'pt-6'}`}>
+        {step === 'form' ? (
+          <BasicsForm a={a} set={set} activityChosen={activityChosen} onActivity={(v) => { set({ activity: v }); setActivityChosen(true) }} tried={tried} returning={returning} />
+        ) : (
+          <FinishStep name={a.name} />
+        )}
       </div>
 
-      {step === 'chat' ? (
-        <ChatFlow
-          flow={GOAL_FLOW}
-          answers={answers}
-          ctx={ctx}
-          initialDrafts={atNode ? stored : known?.injuries.length ? { 'health.injury': known.injuries.join('\n') } : undefined}
-          onAnswer={handleAnswer}
-          onRewind={(id) => setAnswers((a) => rewindTo(GOAL_FLOW, a, id))}
-          endLines={["Here's what I heard. Tap a line to change it."]}
-          endContent={
-            <ConfirmCard
-              rows={confirmationRows(goal, ctx)}
-              onEdit={(id) => setAnswers((a) => rewindTo(GOAL_FLOW, a, id))}
-              anythingElse={anythingElse}
-              onAnythingElse={setAnythingElse}
-            />
-          }
-          endAction={
-            <Button size="lg" fullWidth onClick={reentry ? handleSaveUpdate : () => setStep('about')}>
-              {reentry ? 'Save my goal' : 'Looks right'} <ArrowRight size={18} />
+      {/* Footer nav */}
+      <div className="px-5 pb-edge">
+        <div className="flex items-center gap-3">
+          {step === 'finish' ? (
+            <Button variant="ghost" onClick={() => setStep('form')} aria-label="Back">
+              <ChevronLeft size={18} />
+              Back
             </Button>
-          }
-        />
-      ) : (
-        <>
-          <div key={step} className="flex-1 flex flex-col px-5 pt-6 pb-6 fade-in">
-            {step === 'about' && (
-              <AboutStep
-                name={name} setName={setName}
-                birthDate={birthDate} setBirthDate={setBirthDate}
-                sex={sex} setSex={setSex}
-                heightCm={heightCm} setHeightCm={setHeightCm}
-                weightKg={weightKg} setWeightKg={setWeightKg}
-                showWeight={goal.pursuit === 'physique'}
-              />
-            )}
-            {step === 'finish' && <FinishStep name={name} />}
-          </div>
-
-          {/* Footer nav */}
-          <div className="px-5 pb-edge">
-            <div className="flex items-center gap-3">
-              <Button variant="ghost" onClick={() => setStep(STEPS[stepIndex - 1])} aria-label="Back">
-                <ChevronLeft size={18} />
-                Back
-              </Button>
-              <div className="flex-1" />
-              {step === 'about' ? (
-                <Button onClick={() => setStep('finish')} disabled={!name.trim()}>
-                  Next <ArrowRight size={18} />
-                </Button>
-              ) : (
-                <Button onClick={handleFinish}>
-                  <Sparkles size={18} />
-                  Enter Coach Clawde
-                </Button>
-              )}
-            </div>
-          </div>
-        </>
-      )}
+          ) : returning ? (
+            <Button variant="ghost" onClick={() => navigate(-1)}>Cancel</Button>
+          ) : null}
+          <div className="flex-1" />
+          {step === 'form' ? (
+            <Button onClick={handleNext}>
+              {returning ? 'Save' : 'Next'} <ArrowRight size={18} />
+            </Button>
+          ) : (
+            <Button onClick={handleFinish}>
+              <Sparkles size={18} />
+              Enter Coach Clawde
+            </Button>
+          )}
+        </div>
+      </div>
     </div>
   )
 }
@@ -209,7 +124,7 @@ export function Onboarding() {
 
 function StepHeading({ title, subtitle }: { title: string; subtitle?: string }) {
   return (
-    <div className="mb-6">
+    <div>
       <h1 className="text-2xl font-bold text-[#f5f5f0] leading-tight">{title}</h1>
       {subtitle && <p className="text-sm text-[#6a6a6a] mt-2 leading-relaxed">{subtitle}</p>}
     </div>
@@ -231,113 +146,141 @@ function FieldLabel({ htmlFor, children }: { htmlFor?: string; children: React.R
   return htmlFor ? <label htmlFor={htmlFor} className={className}>{children}</label> : <p className={className}>{children}</p>
 }
 
-function AboutStep({
-  name, setName, birthDate, setBirthDate, sex, setSex, heightCm, setHeightCm, weightKg, setWeightKg, showWeight,
-}: {
-  name: string; setName: (v: string) => void
-  birthDate: string; setBirthDate: (v: string) => void
-  sex: 'male' | 'female' | undefined; setSex: (v: 'male' | 'female' | undefined) => void
-  heightCm: string; setHeightCm: (v: string) => void
-  weightKg: string; setWeightKg: (v: string) => void
-  /** Physique goals track body weight, so it's shown up front. */
-  showWeight: boolean
-}) {
-  const [more, setMore] = useState(!!(heightCm || sex))
-  const weightField = (
-    <div>
-      <FieldLabel htmlFor="about-weight">Weight (kg) <span className="text-[#4a4a4a]">opt.</span></FieldLabel>
-      <TextInput
-        id="about-weight"
-        value={weightKg}
-        onChange={(e) => setWeightKg(e.target.value.replace(/[^0-9.]/g, ''))}
-        placeholder="75"
-        inputMode="decimal"
-      />
-    </div>
+function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={on}
+      className={`px-3 py-2.5 rounded-2xl text-sm font-medium transition-all duration-150 ${
+        on
+          ? 'bg-[#d97756] text-white shadow-lg shadow-[#d97756]/20'
+          : 'bg-[#1a1a1a] text-[#a8a29e] border border-[#2a2a2a] hover:text-[#f5f5f0]'
+      }`}
+    >
+      {children}
+    </button>
   )
+}
+
+function BasicsForm({ a, set, activityChosen, onActivity, tried, returning }: {
+  a: BasicAnswers
+  set: (patch: Partial<BasicAnswers>) => void
+  activityChosen: boolean
+  onActivity: (v: ActivityLevel) => void
+  /** Next was pressed: show what's missing. */
+  tried: boolean
+  returning: boolean
+}) {
+  const [more, setMore] = useState(!!a.notes)
+  // "Other" is a choice of its own: an unanswered gender shows nothing picked.
+  const [other, setOther] = useState(returning && !a.sex)
   return (
     <div>
-      <StepHeading title="A bit about you" subtitle="Only your name is required. The rest helps Clawde pitch your weights and pacing." />
-      <div className="flex flex-col gap-5">
+      <div className="flex items-center gap-3 mb-6">
+        <ClawdeMark size={44} sweat />
+        <StepHeading
+          title={returning ? 'Your basics' : 'Hi, I’m Clawde'}
+          subtitle={returning ? 'Update anything that’s changed.' : 'A few basics and we’re lifting. Everything else I’ll ask when it matters.'}
+        />
+      </div>
+      <div className="flex flex-col gap-6">
         <div>
-          <FieldLabel htmlFor="about-name">What should I call you? *</FieldLabel>
-          <TextInput
-            id="about-name"
-            autoComplete="given-name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Your name"
-            autoFocus
-            autoCapitalize="words"
-          />
+          <FieldLabel htmlFor="ob-name">What should I call you?</FieldLabel>
+          <TextInput id="ob-name" autoComplete="given-name" autoCapitalize="words" value={a.name} onChange={(e) => set({ name: e.target.value })} placeholder="Your name" />
         </div>
 
-        <div>
-          <FieldLabel htmlFor="about-dob">Date of birth <span className="text-[#4a4a4a]">(optional)</span></FieldLabel>
-          <TextInput
-            id="about-dob"
-            autoComplete="bday"
-            type="date"
-            value={birthDate}
-            onChange={(e) => setBirthDate(e.target.value)}
-            min="1900-01-01"
-            max={toLocalISODate(new Date())}
-            style={{ colorScheme: 'dark' }}
-          />
-        </div>
-
-        {showWeight && weightField}
-
-        <button
-          onClick={() => setMore((m) => !m)}
-          aria-expanded={more}
-          className="flex items-center gap-2 text-sm text-[#a8a29e] self-start py-1"
-        >
-          More about you {more ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-        </button>
-
-        {more && (
-          <div className="flex flex-col gap-5 fade-in">
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <FieldLabel htmlFor="about-height">Height (cm) <span className="text-[#4a4a4a]">opt.</span></FieldLabel>
-                <TextInput
-                  id="about-height"
-                  value={heightCm}
-                  onChange={(e) => setHeightCm(e.target.value.replace(/[^0-9.]/g, ''))}
-                  placeholder="180"
-                  inputMode="decimal"
-                />
-              </div>
-              {!showWeight && weightField}
-            </div>
-
-            <div>
-              <FieldLabel>Sex <span className="text-[#4a4a4a]">(optional)</span></FieldLabel>
-              <div className="grid grid-cols-3 gap-2">
-                {([['male', 'Male'], ['female', 'Female'], ['skip', 'Prefer not to say']] as const).map(
-                  ([value, label]) => {
-                    const active = value === 'skip' ? sex === undefined : sex === value
-                    return (
-                      <button
-                        key={value}
-                        onClick={() => setSex(value === 'skip' ? undefined : value)}
-                        aria-pressed={active}
-                        className={`px-2 py-2.5 rounded-2xl text-xs font-medium transition-all duration-150 ${
-                          active
-                            ? 'bg-[#d97756] text-white shadow-lg shadow-[#d97756]/20'
-                            : 'bg-[#1a1a1a] text-[#6a6a6a] border border-[#2a2a2a] hover:text-[#a8a29e]'
-                        }`}
-                      >
-                        {label}
-                      </button>
-                    )
-                  }
-                )}
-              </div>
+        <div className="grid grid-cols-[1fr_6rem] gap-3">
+          <div>
+            <FieldLabel>Gender</FieldLabel>
+            <div className="grid grid-cols-3 gap-1.5">
+              <Chip on={a.sex === 'male'} onClick={() => { set({ sex: 'male' }); setOther(false) }}>Male</Chip>
+              <Chip on={a.sex === 'female'} onClick={() => { set({ sex: 'female' }); setOther(false) }}>Female</Chip>
+              <Chip on={other} onClick={() => { set({ sex: undefined }); setOther(true) }}>Other</Chip>
             </div>
           </div>
-        )}
+          <div>
+            <FieldLabel htmlFor="ob-age">Age</FieldLabel>
+            <TextInput
+              id="ob-age"
+              inputMode="numeric"
+              value={a.age ? String(a.age) : ''}
+              onChange={(e) => { const n = Number(e.target.value.replace(/\D/g, '').slice(0, 3)); set({ age: n || undefined }) }}
+              placeholder="30"
+            />
+          </div>
+        </div>
+
+        <div>
+          <FieldLabel>How active are you right now? *</FieldLabel>
+          <div className="grid grid-cols-2 gap-2">
+            {(Object.keys(ACTIVITY_LABEL) as ActivityLevel[]).map((v) => (
+              <Chip key={v} on={activityChosen && a.activity === v} onClick={() => onActivity(v)}>{ACTIVITY_LABEL[v]}</Chip>
+            ))}
+          </div>
+          {tried && !activityChosen && <p role="alert" className="text-xs text-red-400 mt-2">Pick the closest one.</p>}
+        </div>
+
+        <div>
+          <FieldLabel>Where will you train? *</FieldLabel>
+          <div className="flex flex-wrap gap-2">
+            {(Object.keys(WHERE_LABEL) as TrainWhere[]).map((v) => {
+              const on = a.where.includes(v)
+              return (
+                <Chip key={v} on={on} onClick={() => set({ where: on ? a.where.filter((w) => w !== v) : [...a.where, v] })}>
+                  {WHERE_LABEL[v]}
+                </Chip>
+              )
+            })}
+          </div>
+          {tried && !a.where.length && <p role="alert" className="text-xs text-red-400 mt-2">Pick at least one, so I only plan exercises you can do.</p>}
+        </div>
+
+        <div>
+          <FieldLabel htmlFor="ob-injuries">Any injuries or niggles?</FieldLabel>
+          <textarea
+            id="ob-injuries"
+            value={a.injuries}
+            onChange={(e) => set({ injuries: e.target.value })}
+            placeholder="One per line, e.g. Left knee sore on deep squats"
+            rows={2}
+            className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl px-4 py-3 text-base text-[#f5f5f0] placeholder-[#3a3a3a] resize-none focus:outline-none focus:border-[#d97756]/50"
+          />
+          <label className="mt-3 flex items-start gap-3 text-sm text-[#a8a29e]">
+            <input type="checkbox" checked={a.medical} onChange={(e) => set({ medical: e.target.checked, cleared: false })} className="mt-0.5 w-5 h-5 accent-[#d97756] shrink-0" />
+            I have a medical or heart condition, or I’m pregnant
+          </label>
+          {a.medical && (
+            <div className="mt-3 rounded-2xl bg-[#161616] border border-[#2a2a2a] p-3.5 fade-in">
+              <p className="text-xs text-[#a8a29e] leading-relaxed">Thanks for telling me. Please check with your GP or physio before starting. I’ll keep things moderate until you’re cleared. No details needed.</p>
+              <label className="mt-3 flex items-start gap-3 text-sm text-[#a8a29e]">
+                <input type="checkbox" checked={a.cleared} onChange={(e) => set({ cleared: e.target.checked })} className="mt-0.5 w-5 h-5 accent-[#d97756] shrink-0" />
+                A GP or physio has cleared me to train
+              </label>
+            </div>
+          )}
+        </div>
+
+        <div>
+          <button
+            type="button"
+            onClick={() => setMore((m) => !m)}
+            aria-expanded={more}
+            className="flex items-center gap-2 text-sm text-[#a8a29e] py-1"
+          >
+            Anything else Clawde should know? {more ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+          </button>
+          {more && (
+            <textarea
+              aria-label="Anything else Clawde should know"
+              value={a.notes}
+              onChange={(e) => set({ notes: e.target.value })}
+              placeholder="Goals, sports you play, lifts you love or hate…"
+              rows={3}
+              className="mt-2 w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl px-4 py-3 text-base text-[#f5f5f0] placeholder-[#3a3a3a] resize-none focus:outline-none focus:border-[#d97756]/50 fade-in"
+            />
+          )}
+        </div>
       </div>
     </div>
   )

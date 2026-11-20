@@ -252,7 +252,12 @@ itself when the table is empty, so nothing runs between workouts. Code:
    alerts on → **Send a test alert**, then lock the phone. It arrives in about
    5 seconds.
 
-**Troubleshooting.** `select * from cron.job` shows `rest-alarm-tick` only
+**Troubleshooting.** Open the function's URL (a GET): it returns the public
+key and, if the secrets are wrong, a `problem` (a padded or invalid
+`VAPID_SUBJECT`, or a private key from a different pair). Apple reports both
+as `403 BadJwtToken`. The function trims the VAPID secrets, since a pasted
+value easily picks up a trailing newline (that broke alerts in 1.0.7).
+`select * from cron.job` shows `rest-alarm-tick` only
 while an alarm is pending. `select status_code, content from
 net._http_response order by created desc limit 5` shows the ticker's calls to
 the function. The function's logs (Supabase → Edge Functions → rest-alarm)

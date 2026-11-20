@@ -35,15 +35,12 @@ describe('the plan prompt is tailored to the athlete', () => {
     expect(gymLifter).toMatch(/Metric units only\*\* \(weights in kg\)/)
   })
 
-  it('gives a runner with no strength work no lifting rules', () => {
-    for (const word of [/superset/i, /suggestedWeightKg/, /ramp-up sets/i, /working weights/i, /"weights"/, /PlannedExercise/]) {
+  it('is weights-first: even a runner gets lifting and never a cardio session', () => {
+    for (const word of [/Cardio is a structured `workout`/, /type: "cardio"/, /WorkoutItem/, /Runs with:/, /Pace zones/]) {
       expect(runnerNoStrength).not.toMatch(word)
     }
-    expect(runnerNoStrength).toMatch(/You are an experienced running coach/)
-    expect(runnerNoStrength).toMatch(/Cardio is a structured `workout`/)
-    expect(runnerNoStrength).toMatch(/Every session is `type: "cardio"`/)
-    expect(runnerNoStrength).toMatch(/Runs with: unknown \(assume phone only\)/)
-    expect(runnerNoStrength).toMatch(/Metric units only\*\* \(distances in m or km, paces per km, speeds in km\/h\)/)
+    expect(runnerNoStrength).toMatch(/PlannedExercise/)
+    expect(runnerNoStrength).toMatch(/You are an experienced strength coach/)
   })
 
   it('holds home athletes to their equipment', () => {
@@ -94,8 +91,8 @@ describe('the plan prompt is tailored to the athlete', () => {
     expect(homeBodyweight).not.toMatch(/bike or rower|Rowing Machine/)
   })
 
-  it('keeps everything for profiles that predate onboarding', () => {
+  it('keeps weights and mobility (never cardio) for profiles that predate onboarding', () => {
     const s = promptScope({ ...DEFAULT_PROFILE, program: { ...DEFAULT_PROFILE.program!, exerciseTypes: [] } })
-    expect(s.sessionTypes).toEqual(['weights', 'cardio', 'active-recovery'])
+    expect(s.sessionTypes).toEqual(['weights', 'active-recovery'])
   })
 })

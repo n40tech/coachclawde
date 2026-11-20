@@ -154,3 +154,28 @@ describe('sendWebPush', () => {
     expect(await sendWebPush(sub, '{}', vapid, { fetchImpl: fake(410) })).toEqual({ status: 410, ok: false, gone: true })
   })
 })
+
+describe('vapidProblem', () => {
+  it('passes a matching pair with an https or mailto subject', async () => {
+    const { vapidProblem, generateVapidKeys } = await import('./webpush')
+    const keys = await generateVapidKeys()
+    expect(await vapidProblem({ ...keys, subject: 'https://coachclawde.vercel.app' })).toBeNull()
+    expect(await vapidProblem({ ...keys, subject: 'mailto:coach@example.com' })).toBeNull()
+  })
+
+  it('catches a private key from a different pair (Apple: BadJwtToken)', async () => {
+    const { vapidProblem, generateVapidKeys } = await import('./webpush')
+    const a = await generateVapidKeys()
+    const b = await generateVapidKeys()
+    expect(await vapidProblem({ publicKey: a.publicKey, privateKey: b.privateKey, subject: 'https://coachclawde.vercel.app' }))
+      .toMatch(/does not match/)
+  })
+
+  it('catches subjects push services refuse', async () => {
+    const { vapidProblem, generateVapidKeys } = await import('./webpush')
+    const keys = await generateVapidKeys()
+    for (const subject of ['coachclawde.vercel.app', 'http://coachclawde.vercel.app', 'https://localhost', 'mailto:nobody', ' https://x.app']) {
+      expect(await vapidProblem({ ...keys, subject })).not.toBeNull()
+    }
+  })
+})

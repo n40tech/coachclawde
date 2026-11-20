@@ -358,7 +358,7 @@ export function stepPosition(f: FlatStep): string {
 
 /**
  * Logged interval rows for a workout, one per loggable step, with the number
- * the plan fixes pre-filled-able (see IntervalRow).
+ * the plan fixes pre-filled-able (legacy manual cardio rows).
  */
 export function initialLoggedIntervals(flat: FlatStep[]): LoggedInterval[] {
   return loggableSteps(flat).map((f, i) => ({

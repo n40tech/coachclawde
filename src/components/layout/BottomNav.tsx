@@ -1,22 +1,30 @@
 import { useLocation, useNavigate } from 'react-router-dom'
 import { NAV_ITEMS, hidesTabBar } from './navItems'
 import { FixedLayer } from './FixedLayer'
+import { WorkoutDockButton } from './WorkoutDock'
+import { useWorkoutDock } from '../../hooks/useWorkoutDock'
 
 /**
  * Floating tab bar for phone widths: a pill that hovers above the home
  * indicator and stays within the phone column. Hidden at sidebar widths
  * (see SideNav), on full-screen routes and on Settings. Geometry lives in the `--tabbar-*`
  * tokens in index.css, which pages clear with `pb-tabbar`.
+ *
+ * During a workout the bar squeezes right to make room for a little timer
+ * circle on the left (WorkoutDock) that leads back to the workout.
  */
 export function BottomNav() {
   const location = useLocation()
   const navigate = useNavigate()
+  const dock = useWorkoutDock()
 
   if (hidesTabBar(location.pathname)) return null
 
   return (
     <FixedLayer>
-      <nav aria-label="Primary" className="absolute tabbar-dock @3xl/app:hidden">
+      <div className="absolute tabbar-dock @3xl/app:hidden flex gap-2">
+      {dock && <WorkoutDockButton dock={dock} />}
+      <nav aria-label="Primary" className="flex-1 min-w-0 h-full">
         <div className="flex h-full rounded-(--tabbar-radius) p-(--tabbar-pad) bg-[#161616]/85 backdrop-blur-xl ring-1 ring-inset ring-[#2a2a2a] shadow-lg shadow-black/50">
           {NAV_ITEMS.map(({ path, icon: Icon, label }) => {
             const active = location.pathname === path
@@ -36,6 +44,7 @@ export function BottomNav() {
           })}
         </div>
       </nav>
+      </div>
     </FixedLayer>
   )
 }

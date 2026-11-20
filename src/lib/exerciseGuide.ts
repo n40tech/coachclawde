@@ -77,6 +77,11 @@ export function youtubeSearchUrl(name: string): string {
   return `https://www.youtube.com/results?search_query=${encodeURIComponent(`${name} exercise form`)}`
 }
 
+/** Google Images search for the exercise: quick pictures of the positions. */
+export function googleImagesUrl(name: string): string {
+  return `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(`${name} exercise`)}`
+}
+
 // --- matching ---------------------------------------------------------------
 
 const ABBREVIATIONS: Record<string, string> = {

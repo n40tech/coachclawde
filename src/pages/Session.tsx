@@ -8,7 +8,6 @@ import { Button } from '../components/shared/Button'
 import { ExerciseTile } from '../components/session/ExerciseTile'
 import { ReorderList } from '../components/session/ReorderList'
 import { RestTimerOverlay } from '../components/session/RestTimer'
-import { WorkoutBar } from '../components/session/WorkoutBar'
 import { afterPopstate, withViewTransition } from '../lib/viewTransition'
 import { WorkoutComplete, type SessionCompleteData } from '../components/session/WorkoutComplete'
 import { QuickLogSheet } from '../components/session/QuickLogSheet'
@@ -364,9 +363,6 @@ export function Session() {
   const progressPercent = totalExercises > 0 ? Math.round((completedExercises / totalExercises) * 100) : 0
   // The set under way since the last rest: the next open one, in the exercise in progress.
   const clockHere = setClock?.sessionId === planned.id && !resting ? setClock : null
-  const allSets = logged.reduce((n, e) => n + e.sets.length, 0)
-  const doneSets = logged.reduce((n, e) => n + e.sets.filter((x) => x.completed).length, 0)
-  const workoutBarShowing = !!loggedSession && !isAlreadyComplete && !legacyCardio && !resting && !summary
   const activeIdx = Math.max(0, logged.findIndex((l) => l.plannedExerciseId === activeExerciseId))
   const inProgress = clockHere ? nextOpenSet(logged, activeIdx) : null
   const activeId = activeExerciseId ?? logged.find((e) => e.sets.some((s) => !s.completed && !s.skipped))?.plannedExerciseId
@@ -535,21 +531,11 @@ export function Session() {
 
         {/* Room to scroll the end of the session clear of the minimised rest
             timer, which docks where the tab bar sits on other screens. */}
-        {(restBarShowing || workoutBarShowing) && <div aria-hidden className="h-[calc(var(--tabbar-h)+var(--tabbar-gap))]" />}
+        {restBarShowing && <div aria-hidden className="h-[calc(var(--tabbar-h)+var(--tabbar-gap))]" />}
       </div>
 
       {/* Rest timer overlay */}
       <RestTimerOverlay onFlickAway={leaveToHome} />
-
-      {/* Between rests: the workout's clock, in the rest bar's place. */}
-      {workoutBarShowing && loggedSession && (
-        <WorkoutBar
-          startedAt={loggedSession.startedAt}
-          setStartedAt={clockHere?.startedAt}
-          progress={`${doneSets} of ${allSets} sets`}
-          onLeave={leaveToHome}
-        />
-      )}
 
       {/* Workout complete: full screen, the breakdown, sharing and how it felt */}
       {summary && (

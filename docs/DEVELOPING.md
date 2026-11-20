@@ -143,13 +143,12 @@ are marked as seen when they finish onboarding.
   `unconfirmed` (orange tick, inputs still editable; tapping the tick
   confirms) and starts the next rest. Taps on a tick (`data-tick`) are left to
   the tick. Ticking records `workSeconds`; saving the workout confirms any
-  orange sets. `setClock` is persisted. On the workout screen a bottom bar
-  shows the rest (`RestTimerOverlay`, minimised) or, between rests, the
-  workout clock (`WorkoutBar`); a flick left (`hooks/useHorizontalDrag`,
+  orange sets. `setClock` is persisted. On the workout screen, a flick left
+  on the minimised rest bar (`RestTimerOverlay`; `hooks/useHorizontalDrag`,
   `lib/swipe`) goes Home. Off the workout screen,
   `hooks/useWorkoutDock` drives `layout/WorkoutDock`: a timer circle left of
   the tab bar (or in the iPad sidebar): tap it or drag it right to open the
-  workout. The bar and the circle share `view-transition-name:
+  workout. The rest bar and the circle share `view-transition-name:
   workout-timer` (`.vt-workout-timer` in index.css), and those navigations
   run through `lib/viewTransition`, so one morphs into the other. Only one
   of them may be on screen at a time. Exercise order is the

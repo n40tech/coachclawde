@@ -41,6 +41,17 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: '1.1.1',
+    date: '2026-11-20',
+    headline: 'Sets that finish themselves, your real workout time, and a timer that follows you.',
+    fromFeedback: [
+      'Auto-finish: after a rest (and a 15-second grace period), your next tap means you’ve done the set. Its tick turns orange and the next rest starts on its own. Fix reps or weight any time, then tap the orange tick to confirm. Turn it off in Settings → Beta features.',
+      'Workout complete shows the elapsed time, from Start Session to Complete Session, like a stopwatch (e.g. 52:13). The share cards show it too.',
+      'Tapping a rest notification opens your workout at the exercise that’s up next, expanded and scrolled into view, even if the app was already open on another screen.',
+      'The workout timer now flows between screens: leave mid-rest and the rest bar shrinks into the little circle on Home; tap the circle (or drag it right) and it grows back into your workout. A quick flick left on the rest bar takes you Home.',
+    ],
+  },
+  {
     version: '1.1.0',
     date: '2026-11-20',
     headline: 'Weights-first: a set timer, a workout summary to share, and faster planning.',

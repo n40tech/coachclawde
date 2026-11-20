@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useAppStore } from '../store/useAppStore'
 import { combine, scheduleEarcon, unlockAudio, type CueHandle } from '../lib/audioCues'
 import { restAlarm, watchVisibilityForRestAlarm } from '../lib/restAlerts'
+import { restAlertUrl } from '../lib/alertLink'
 
 // The pending end-of-rest alarm. Module-level because several components use
 // this hook, but only one rest timer runs at a time.
@@ -60,11 +61,11 @@ export function useRestTimer() {
       const diff = Math.max(0, Math.ceil((timer.endTime! - now) / 1000))
       setRemaining(diff)
       if (diff === 0) {
-        const { sessionId } = useAppStore.getState().timer
+        const { sessionId, endTime } = useAppStore.getState().timer
         clearTimer()
         restAlarm.stop()
-        // Rest's over: the next tap in this workout starts timing the set.
-        if (sessionId) useAppStore.getState().armSetTimer(sessionId)
+        // Rest's over: the next set is under way (see lib/autoFinish).
+        if (sessionId) useAppStore.getState().startSetClock(sessionId, endTime ?? undefined)
       }
     }
 
@@ -73,12 +74,13 @@ export function useRestTimer() {
     return () => clearInterval(id)
   }, [timer.isActive, timer.endTime, clearTimer])
 
-  function startTimer(seconds: number, label: string, sessionId?: string) {
+  /** `nextExerciseId`: the exercise up next, so tapping the rest alert opens the workout there. */
+  function startTimer(seconds: number, label: string, sessionId?: string, nextExerciseId?: string) {
     scheduleAlarm(seconds)
     retimeAudioOnReturn()
     watchVisibilityForRestAlarm()
     const endTime = Date.now() + seconds * 1000
-    restAlarm.start(endTime, label, window.location.pathname)
+    restAlarm.start(endTime, label, restAlertUrl(sessionId, nextExerciseId, window.location.pathname))
     setTimer({
       isActive: true,
       endTime,
@@ -94,7 +96,7 @@ export function useRestTimer() {
     alarm = null
     restAlarm.stop()
     clearTimer()
-    if (sessionId) useAppStore.getState().armSetTimer(sessionId)
+    if (sessionId) useAppStore.getState().startSetClock(sessionId)
   }
 
   const progress = timer.durationSeconds > 0

@@ -47,7 +47,7 @@ export function useWorkoutDock(): DockState | null {
   const offSession = !pathname.startsWith('/session/')
   const now = useNow(offSession)
   const live = useLiveWorkout(now)
-  const activeSet = useAppStore((s) => s.activeSet)
+  const setClock = useAppStore((s) => s.setClock)
   const { remaining, progress, isActive: resting, sessionId: restSession } = useRestTimer()
   const sessionId = (resting && restSession) || live?.plannedSessionId
   const show = !!sessionId && offSession
@@ -56,8 +56,8 @@ export function useWorkoutDock(): DockState | null {
   if (resting && restSession) {
     return { sessionId, mode: 'rest', time: secondsToDisplay(remaining), fill: 1 - Math.min(1, Math.max(0, progress)), label: `Rest, ${secondsToDisplay(remaining)} left` }
   }
-  if (activeSet && activeSet.sessionId === sessionId) {
-    const s = Math.max(0, Math.floor((now - activeSet.startedAt) / 1000))
+  if (setClock && setClock.sessionId === sessionId) {
+    const s = Math.max(0, Math.floor((now - setClock.startedAt) / 1000))
     return { sessionId, mode: 'set', time: secondsToDisplay(s), fill: (s % 60) / 60, label: `Set in progress, ${secondsToDisplay(s)}` }
   }
   const s = live ? Math.max(0, Math.floor((now - Date.parse(live.startedAt)) / 1000)) : 0

@@ -48,7 +48,7 @@ work out of the box.
 
 ## Shipping a beta update (versions & release notes)
 
-The app version lives in `package.json` (currently **1.1.0**) and is injected
+The app version lives in `package.json` (currently **1.1.1**) and is injected
 into the bundle as `__APP_VERSION__` (read it via `APP_VERSION` in
 `src/lib/appVersion.ts`). The first time a tester opens a new version, a
 "What's new" sheet lists the changes; it's also reachable from Settings →
@@ -135,20 +135,31 @@ are marked as seen when they finish onboarding.
   (preserved on the `cardio-archive` branch). `lib/workout` and `lib/zones`
   stay so older plans and logs still load; a legacy cardio session is logged
   by hand via `QuickLogSheet`.
-- **Workout clock (v1.1):** after a rest ends (or is skipped) the store's
-  `setTimerArmed` holds the session; the next pointer-down in the Session page
-  starts `activeSet` (the set touched, else `lib/exerciseOrder.nextOpenSet`),
-  shown as an orange tick, and ticking records `workSeconds`. Both are
-  persisted. Off the workout screen, `hooks/useWorkoutDock` drives
-  `layout/WorkoutDock`: a timer circle left of the tab bar (or in the iPad
-  sidebar) linking back. Exercise order is the order of `loggedExercises`
-  (`lib/exerciseOrder`: reorder, and promote an exercise started early).
+- **Workout clock & auto-finish (v1.1.1):** when a rest ends (or is skipped)
+  the store's `setClock` records the session and the time: the next open set
+  is under way (its row shows the count-up). With auto-finish on (Settings →
+  Beta features, `autoSetTimer`), the first pointer-down in the Session page
+  after `AUTO_FINISH_GRACE_MS` finishes that set (`lib/autoFinish`) as
+  `unconfirmed` (orange tick, inputs still editable; tapping the tick
+  confirms) and starts the next rest. Taps on a tick (`data-tick`) are left to
+  the tick. Ticking records `workSeconds`; saving the workout confirms any
+  orange sets. `setClock` is persisted. On the workout screen, a flick left
+  on the minimised rest bar (`RestTimerOverlay`; `hooks/useHorizontalDrag`,
+  `lib/swipe`) goes Home. Off the workout screen,
+  `hooks/useWorkoutDock` drives `layout/WorkoutDock`: a timer circle left of
+  the tab bar (or in the iPad sidebar): tap it or drag it right to open the
+  workout. The rest bar and the circle share `view-transition-name:
+  workout-timer` (`.vt-workout-timer` in index.css), and those navigations
+  run through `lib/viewTransition`, so one morphs into the other. Only one
+  of them may be on screen at a time. Exercise order is the
+  order of `loggedExercises` (`lib/exerciseOrder`: reorder, and promote an
+  exercise started early).
 - **Completion & sharing:** `lib/workoutSummary` (time, volume, sets, reps, PBs
   vs. earlier sessions, per-exercise best sets) and `lib/shareCard`: three
   1080² card designs in the app's colours (summary, headline, logbook), all built
   when the page opens so iOS opens the share sheet straight from the tap.
-- **Beta features** (Settings): `autoSetTimer` in the settings store turns the
-  set timer off.
+- **Beta features** (Settings): `autoSetTimer` in the settings store turns
+  auto-finish off.
 - **Planning methods:** `lib/planMethods` (generate / repeat / modify /
   convert; the last used is remembered in the settings store and offered
   first). Repeat copies the newest plan in the app; modify uses
@@ -189,6 +200,11 @@ are marked as seen when they finish onboarding.
     only while the app is hidden mid-rest, armed by beacon, cancelled on return.
   - `public/push-sw.js` — the service worker's push and notification-click
     handlers, pulled into the generated worker by `workbox.importScripts`.
+    A tapped alert opens the workout at the exercise up next: the alarm's URL
+    is `/session/<id>/next/<exerciseId>` (`lib/alertLink`; a path, because
+    the function only accepts word characters, `-`, `.` and `/`). With the
+    app already open the worker focuses it and posts the path, which
+    `ServiceWorkerLinks` in `App.tsx` navigates to in-app.
     Push only works in a build (`npm run build && npm run preview`), never
     `npm run dev`, which registers no service worker.
   - `supabase/functions/rest-alarm` — arms, cancels and (from the pg_cron

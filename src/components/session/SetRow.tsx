@@ -14,10 +14,9 @@ interface SetRowProps {
   onComplete: (payload?: Partial<LoggedSet>) => void
   /** Reopen a completed set so its reps/weight/time can be corrected. */
   onUncomplete: () => void
-  /**
-   * Epoch ms the set timer started, while this set is being timed: the tick
-   * turns orange and the elapsed time shows. Reps and weight stay editable.
-   */
+  /** Confirm an auto-finished set (its orange tick). */
+  onConfirm: () => void
+  /** Epoch ms the last rest ended, while this is the set under way: its time shows. */
   inProgressSince?: number
 }
 
@@ -27,8 +26,11 @@ export function SetRow(props: SetRowProps) {
 }
 
 /** Standard reps × weight set. */
-function RepSetRow({ setIndex, plannedSet, loggedSet, onUpdate, onComplete, onUncomplete, inProgressSince }: SetRowProps) {
+function RepSetRow({ setIndex, plannedSet, loggedSet, onUpdate, onComplete, onUncomplete, onConfirm, inProgressSince }: SetRowProps) {
   const completed = loggedSet?.completed ?? false
+  // Auto-finished: done, but reps and weight stay open until the tick is tapped.
+  const unconfirmed = completed && !!loggedSet?.unconfirmed
+  const locked = completed && !unconfirmed
   const skipped = loggedSet?.skipped ?? false
   const [confirm, setConfirm] = useState<'empty' | 'edit' | null>(null)
   const unit = useUnits().weight
@@ -42,7 +44,7 @@ function RepSetRow({ setIndex, plannedSet, loggedSet, onUpdate, onComplete, onUn
   const timing = !completed && inProgressSince != null
 
   return (
-    <div className={rowClass(completed, skipped, timing)} data-set={setIndex}>
+    <div className={rowClass(locked, skipped, timing, unconfirmed)} data-set={setIndex}>
       {timing ? (
         <SetClock since={inProgressSince} />
       ) : (
@@ -73,7 +75,7 @@ function RepSetRow({ setIndex, plannedSet, loggedSet, onUpdate, onComplete, onUn
           const n = Number(raw)
           onUpdate({ actualReps: raw === '' || Number.isNaN(n) ? undefined : n })
         }}
-        disabled={completed}
+        disabled={locked}
         className="w-14 @max-[17rem]:w-11 @max-[17rem]:px-1 bg-[#111] border border-[#2a2a2a] rounded-nested px-2 py-1.5 text-base text-center text-[#f5f5f0] placeholder-[#3a3a3a] focus:outline-none focus:border-[#d97756]/50 disabled:opacity-40"
       />
 
@@ -95,7 +97,7 @@ function RepSetRow({ setIndex, plannedSet, loggedSet, onUpdate, onComplete, onUn
             const n = Number(raw)
             onUpdate({ weightKg: raw === '' || Number.isNaN(n) ? undefined : fromWeight(n, unit) })
           }}
-          disabled={completed}
+          disabled={locked}
           className="w-full bg-[#111] border border-[#2a2a2a] rounded-nested px-2 py-1.5 text-base text-center text-[#f5f5f0] placeholder-[#3a3a3a] focus:outline-none focus:border-[#d97756]/50 disabled:opacity-40"
         />
         <span className="text-xs text-[#4a4a4a] shrink-0">{unit}</span>
@@ -103,12 +105,14 @@ function RepSetRow({ setIndex, plannedSet, loggedSet, onUpdate, onComplete, onUn
 
       <CompleteButton
         setIndex={setIndex}
-        completed={completed}
-        inProgress={timing}
+        completed={locked}
+        unconfirmed={unconfirmed}
         onClick={() => {
-          // An empty-reps tick is usually a mis-tap; ticking a done set means
-          // the athlete wants to fix it. Both ask first.
-          if (completed) setConfirm('edit')
+          // An orange tick confirms the auto-finished set. An empty-reps tick
+          // is usually a mis-tap; ticking a done set means the athlete wants
+          // to fix it. Both of those ask first.
+          if (unconfirmed) onConfirm()
+          else if (completed) setConfirm('edit')
           else if (repsText.trim() === '') setConfirm('empty')
           else onComplete()
         }}
@@ -258,7 +262,7 @@ function SetClock({ since }: { since: number }) {
   )
 }
 
-function rowClass(completed: boolean, skipped: boolean, timing = false): string {
+function rowClass(completed: boolean, skipped: boolean, timing = false, unconfirmed = false): string {
   // Rows sit 1rem inside a 2rem-radius tile, so their corners are 1rem
   // (concentric). They then declare their own radius/inset so the inputs and
   // tick ~0.625rem inside pick up the remainder via rounded-nested.
@@ -267,22 +271,25 @@ function rowClass(completed: boolean, skipped: boolean, timing = false): string 
       ? 'bg-emerald-500/8 border border-emerald-500/15'
       : skipped
       ? 'bg-[#1a1a1a] opacity-50'
+      : unconfirmed
+      ? 'bg-[#d97756]/8 border border-[#d97756]/35'
       : timing
       ? 'bg-[#f59e0b]/8 border border-[#f59e0b]/30'
       : 'bg-[#1a1a1a] border border-[#2a2a2a]'
   }`
 }
 
-function CompleteButton({ setIndex, completed, inProgress, onClick }: { setIndex: number; completed: boolean; inProgress?: boolean; onClick: () => void }) {
+function CompleteButton({ setIndex, completed, unconfirmed, onClick }: { setIndex: number; completed: boolean; unconfirmed?: boolean; onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      aria-label={completed ? `Edit set ${setIndex + 1}` : inProgress ? `Finish set ${setIndex + 1}` : `Complete set ${setIndex + 1}`}
+      data-tick
+      aria-label={completed ? `Edit set ${setIndex + 1}` : unconfirmed ? `Confirm set ${setIndex + 1}` : `Complete set ${setIndex + 1}`}
       className={`w-8 h-8 rounded-nested flex items-center justify-center transition-all shrink-0 ${
         completed
           ? 'bg-emerald-500 text-white active:scale-90'
-          : inProgress
-          ? 'bg-[#f59e0b] text-white shadow-md shadow-[#f59e0b]/30 active:scale-90'
+          : unconfirmed
+          ? 'bg-[#d97756] text-white shadow-md shadow-[#d97756]/30 active:scale-90'
           : 'bg-[#2a2a2a] text-[#4a4a4a] hover:bg-[#d97756]/20 hover:text-[#d97756] active:scale-90'
       }`}
     >

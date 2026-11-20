@@ -7,7 +7,7 @@ import { useModal } from '../../hooks/useModal'
 import { useUnits } from '../../store/useSettingsStore'
 import { toWeight } from '../../lib/units'
 import { formatSessionDate } from '../../lib/dateUtils'
-import { formatWorkoutTime, type WorkoutSummary } from '../../lib/workoutSummary'
+import { formatElapsed, type WorkoutSummary } from '../../lib/workoutSummary'
 import { SHARE_STYLES, buildShareFile, formatVolume, shareFile, type ShareStyle } from '../../lib/shareCard'
 import type { Rating, SessionOutcome } from '../../types'
 
@@ -96,7 +96,7 @@ export function WorkoutComplete({ summary, isLastSessionOfWeek, onSave, onCheckI
                 <dl className="flex flex-col divide-y divide-[#272523] border-y border-[#272523]">
                   <Stat label="Reps" value={String(summary.reps)} />
                   <Stat label="Sets" value={String(summary.sets)} />
-                  <Stat label="Time" value={formatWorkoutTime(summary.durationSeconds)} />
+                  <Stat label="Elapsed" value={formatElapsed(summary.durationSeconds)} />
                   <Stat label="Lifted" value={formatVolume(summary.totalVolumeKg, unit)} />
                 </dl>
                 <div className="relative">

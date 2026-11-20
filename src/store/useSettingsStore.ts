@@ -19,7 +19,7 @@ interface SettingsStore {
   restTimerMinimised: boolean
   /** How the athlete last made a week's plan; the planner offers it first. */
   lastPlanMethod: PlanMethod | null
-  /** Beta: after a rest, the next tap starts timing the next set. */
+  /** Beta: after a rest and a grace period, the next tap finishes the set (lib/autoFinish). */
   autoSetTimer: boolean
 
   setSyncStatus: (status: SyncStatus, error?: string) => void

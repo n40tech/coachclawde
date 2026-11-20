@@ -8,6 +8,7 @@ import { Button } from '../components/shared/Button'
 import { ExerciseTile } from '../components/session/ExerciseTile'
 import { ReorderList } from '../components/session/ReorderList'
 import { RestTimerOverlay } from '../components/session/RestTimer'
+import { afterPopstate, withViewTransition } from '../lib/viewTransition'
 import { WorkoutComplete, type SessionCompleteData } from '../components/session/WorkoutComplete'
 import { QuickLogSheet } from '../components/session/QuickLogSheet'
 import { useWakeLock } from '../hooks/useWakeLock'
@@ -20,6 +21,7 @@ import { useAutoSync } from '../hooks/useAutoSync'
 import { formatDuration } from '../lib/dateUtils'
 import { warmExerciseDb } from '../lib/exerciseGuide'
 import { nextOpenSet, promoteStarted, reorderByIds } from '../lib/exerciseOrder'
+import { autoFinishTarget, graceOver } from '../lib/autoFinish'
 import { summarizeWorkout, type WorkoutSummary } from '../lib/workoutSummary'
 import type { Intensity, LoggedExercise, LoggedSession, PlannedExercise, PlannedSession } from '../types'
 import { Dumbbell, Waves, Clock, CheckCircle2, AlertTriangle, Shuffle, ArrowUpDown, Check } from 'lucide-react'
@@ -36,7 +38,8 @@ function usePlannedSession(sessionId: string | undefined): PlannedSession | unde
 }
 
 export function Session() {
-  const { id } = useParams<{ id: string }>()
+  // `/session/:id/next/:exerciseId` (a rest alert): open at the exercise up next.
+  const { id, exerciseId: revealId } = useParams<{ id: string; exerciseId?: string }>()
   const navigate = useNavigate()
   const location = useLocation()
   const planned = usePlannedSession(id)
@@ -44,10 +47,13 @@ export function Session() {
   // Return to wherever we came from (History, Home, Program history, …) instead
   // of a fixed route. `location.key === 'default'` means this is the first entry
   // in the history stack (e.g. a deep link), so fall back to Home.
-  const goBack = () => (location.key !== 'default' ? navigate(-1) : navigate('/'))
+  // Both morph the workout's timer bar into the Home dock (lib/viewTransition).
+  const goBack = () => withViewTransition(() =>
+    location.key !== 'default' ? afterPopstate(() => navigate(-1)) : navigate('/'))
+  const leaveToHome = () => withViewTransition(() => navigate('/'))
   const {
     weekPlans, loggedSessions, addLoggedSession, updateLoggedSession, setActiveSession, profile, dismissCheckIn,
-    activeSet, setActiveSet, armSetTimer,
+    setClock, startSetClock,
   } = useAppStore()
   const { startTimer, skipTimer, isActive: resting } = useRestTimer()
   const restBarShowing = useSettingsStore((s) => s.restTimerMinimised) && resting
@@ -85,6 +91,29 @@ export function Session() {
   useEffect(() => {
     if (planned?.type !== 'cardio') warmExerciseDb()
   }, [planned?.type])
+
+  // Opened from a rest alert: make the exercise up next the active one,
+  // expand it and scroll to it, then drop it from the URL.
+  const [reveal, setReveal] = useState<{ target: string; n: number }>({ target: '', n: 0 })
+  const [seenReveal, setSeenReveal] = useState<string | undefined>(undefined)
+  if (revealId !== seenReveal) {
+    setSeenReveal(revealId)
+    if (revealId) {
+      setActiveExerciseId(revealId)
+      setReveal((r) => ({ target: revealId, n: r.n + 1 }))
+    }
+  }
+  useEffect(() => {
+    if (!reveal.n) return
+    const frame = requestAnimationFrame(() => {
+      document.querySelector(`[data-exercise="${CSS.escape(reveal.target)}"]`)
+        ?.scrollIntoView({ block: 'start', behavior: 'smooth' })
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [reveal])
+  useEffect(() => {
+    if (revealId && id) navigate(`/session/${id}`, { replace: true })
+  }, [revealId, id, navigate])
 
   if (!planned && existingLog?.substitute) {
     return <LoggedActivityView log={existingLog} onBack={goBack} />
@@ -134,8 +163,6 @@ export function Session() {
     }
     addLoggedSession(initial)
     setLoggedSession(initial)
-    // The first tap of the workout starts timing the first set.
-    armSetTimer(planned.id)
     return initial
   }
 
@@ -164,15 +191,13 @@ export function Session() {
     if (!loggedSession || !list || !done) return
     const exerciseId = done.plannedExerciseId
 
-    // The set timer stops on the tick and records how long the set took.
-    const timed = useAppStore.getState().activeSet
+    // The set clock stops on the tick: how long since the last rest ended.
+    const clock = useAppStore.getState().setClock
     let workSeconds: number | undefined
-    if (timed?.sessionId === planned!.id) {
-      if (timed.plannedExerciseId === exerciseId && timed.setIndex === setIndex) {
-        const s = Math.round((Date.now() - timed.startedAt) / 1000)
-        if (s >= 2) workSeconds = s
-      }
-      setActiveSet(null)
+    if (clock?.sessionId === planned!.id) {
+      const s = Math.round((Date.now() - clock.startedAt) / 1000)
+      if (s >= 2) workSeconds = s
+      startSetClock(null)
     }
 
     // Starting an exercise ahead of others moves it up the list, so the order
@@ -202,10 +227,19 @@ export function Session() {
           ? `Up next: ${upNext.name}`
           : 'Last set — finish up'
         : `Up next: ${done.name} · set ${setIndex + 2}`
-      startTimer(restSeconds, label, planned!.id)
+      // The alert opens the workout at what's next: this exercise, or the next one after its last set.
+      const nextId = isLastSet ? upNext?.plannedExerciseId : exerciseId
+      startTimer(restSeconds, label, planned!.id, nextId)
     } else {
-      armSetTimer(planned!.id)
+      startSetClock(planned!.id)
     }
+  }
+
+  /** Taps the orange tick of an auto-finished set: it's confirmed as logged. */
+  function confirmSet(exerciseIdx: number, setIndex: number) {
+    if (!loggedSession) return
+    updateExerciseSet(exerciseIdx, setIndex, { unconfirmed: undefined })
+    syncSession(loggedSession.id)
   }
 
   /** Reopens a completed set so a mistyped rep count or weight can be fixed. */
@@ -216,44 +250,53 @@ export function Session() {
   }
 
   /**
-   * After a rest ends, the athlete's next tap in the workout starts timing a
-   * set: the one they touched, else the next open one.
+   * Auto-finish (lib/autoFinish): once the grace period after a rest is over,
+   * the athlete's next tap finishes the set in progress (orange tick) and
+   * starts the next rest. A tap on a tick is left to the tick itself.
    */
-  function maybeStartSetTimer(e: ReactPointerEvent) {
+  function maybeAutoFinish(e: ReactPointerEvent) {
     const st = useAppStore.getState()
     const list = loggedSession?.loggedExercises
     // Beta feature, on by default; Settings → Beta features turns it off.
     if (!useSettingsStore.getState().autoSetTimer) return
-    if (st.setTimerArmed !== planned!.id || st.timer.isActive || !list || isAlreadyComplete || reordering) return
+    const clock = st.setClock
+    if (clock?.sessionId !== planned!.id || st.timer.isActive || !list || isAlreadyComplete || reordering) return
+    if (!graceOver(clock.startedAt, Date.now())) return
     const el = e.target as HTMLElement
+    if (el.closest('[data-tick]')) return
     const exEl = el.closest<HTMLElement>('[data-exercise]')
     const setEl = el.closest<HTMLElement>('[data-set]')
     const touched = exEl ? list.findIndex((l) => l.plannedExerciseId === exEl.dataset.exercise) : -1
-    const touchedSet = touched >= 0 && setEl ? Number(setEl.dataset.set) : -1
-    const s = touched >= 0 ? list[touched].sets[touchedSet] : undefined
-    const pick = s && !s.completed && !s.skipped
-      ? { exerciseIdx: touched, setIndex: touchedSet }
-      : nextOpenSet(list, touched >= 0 ? touched : Math.max(0, list.findIndex((l) => l.plannedExerciseId === activeExerciseId)))
-    armSetTimer(null)
+    const pick = autoFinishTarget(
+      list,
+      touched >= 0 ? { exerciseIdx: touched, setIndex: setEl ? Number(setEl.dataset.set) : undefined } : {},
+      Math.max(0, list.findIndex((l) => l.plannedExerciseId === activeExerciseId)),
+    )
     if (!pick) return
-    const ex = list[pick.exerciseIdx]
     // Timed holds have their own stopwatch.
-    if (plannedOf(ex, pick.exerciseIdx)?.sets[pick.setIndex]?.durationSeconds != null) return
-    setActiveSet({ sessionId: planned!.id, plannedExerciseId: ex.plannedExerciseId, setIndex: pick.setIndex, startedAt: Date.now() })
-    setActiveExerciseId(ex.plannedExerciseId)
+    if (plannedOf(list[pick.exerciseIdx], pick.exerciseIdx)?.sets[pick.setIndex]?.durationSeconds != null) return
+    completeSet(pick.exerciseIdx, pick.setIndex, { unconfirmed: true })
   }
 
   function openComplete() {
     const log = useAppStore.getState().loggedSessions.find((ls) => ls.id === loggedSession?.id) ?? loggedSession
     if (!log) return
-    setSummary(summarizeWorkout(log, useAppStore.getState().loggedSessions))
+    // Elapsed time runs from Start Session to this tap.
+    setSummary(summarizeWorkout(log, useAppStore.getState().loggedSessions, new Date()))
   }
 
   function handleSessionSave(data: SessionCompleteData) {
     if (!loggedSession) return
+    // Saving confirms any auto-finished sets as logged.
+    const confirmed = loggedSession.loggedExercises?.map((ex) => ({
+      ...ex,
+      sets: ex.sets.map((set) => (set.unconfirmed ? { ...set, unconfirmed: undefined } : set)),
+    }))
     const updates: Partial<LoggedSession> = {
       status: 'complete',
-      completedAt: new Date().toISOString(),
+      // When Complete Session was tapped, so the log matches the elapsed time shown.
+      completedAt: summary?.finishedAt ?? new Date().toISOString(),
+      ...(confirmed ? { loggedExercises: confirmed } : {}),
       feelings: data.feelings,
       painNotes: data.painNotes || undefined,
       generalNotes: data.generalNotes || undefined,
@@ -271,7 +314,7 @@ export function Session() {
     if (!loggedSession) return
     stopSetTimer()
     if (useAppStore.getState().timer.sessionId === planned!.id) skipTimer()
-    armSetTimer(null)
+    startSetClock(null)
     void removeSession(loggedSession.id)
     setLoggedSession(null)
     setSummary(null)
@@ -279,9 +322,7 @@ export function Session() {
   }
 
   function stopSetTimer() {
-    const st = useAppStore.getState()
-    if (st.activeSet?.sessionId === planned!.id) setActiveSet(null)
-    if (st.setTimerArmed === planned!.id) armSetTimer(null)
+    if (useAppStore.getState().setClock?.sessionId === planned!.id) startSetClock(null)
   }
 
   // The week-done invitation opens a check-in, or snoozes until the next trigger.
@@ -320,7 +361,10 @@ export function Session() {
   const totalExercises = logged.length || planned.exercises?.length || 0
   const completedExercises = logged.filter((ex) => ex.sets.every((s) => s.completed || s.skipped)).length
   const progressPercent = totalExercises > 0 ? Math.round((completedExercises / totalExercises) * 100) : 0
-  const timedHere = activeSet?.sessionId === planned.id ? activeSet : null
+  // The set under way since the last rest: the next open one, in the exercise in progress.
+  const clockHere = setClock?.sessionId === planned.id && !resting ? setClock : null
+  const activeIdx = Math.max(0, logged.findIndex((l) => l.plannedExerciseId === activeExerciseId))
+  const inProgress = clockHere ? nextOpenSet(logged, activeIdx) : null
   const activeId = activeExerciseId ?? logged.find((e) => e.sets.some((s) => !s.completed && !s.skipped))?.plannedExerciseId
 
   return (
@@ -342,7 +386,7 @@ export function Session() {
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto pb-edge" onPointerDownCapture={maybeStartSetTimer}>
+      <div className="flex-1 overflow-y-auto pb-edge" onPointerDownCapture={maybeAutoFinish}>
         {/* Session meta */}
         <div className="px-4 py-4 flex items-center gap-4">
           <div className="flex items-center gap-1.5 text-xs text-[#6a6a6a]">
@@ -455,8 +499,10 @@ export function Session() {
                     onSetComplete={(setIdx, payload) => completeSet(i, setIdx, payload)}
                     onSetUncomplete={(setIdx) => uncompleteSet(i, setIdx)}
                     isActive={le.plannedExerciseId === activeId}
+                    revealNonce={reveal.target === le.plannedExerciseId ? reveal.n : undefined}
                     onActivate={() => setActiveExerciseId(le.plannedExerciseId)}
-                    timedSet={timedHere?.plannedExerciseId === le.plannedExerciseId ? timedHere : undefined}
+                    onSetConfirm={(setIdx) => confirmSet(i, setIdx)}
+                    timedSet={inProgress?.exerciseIdx === i && clockHere ? { setIndex: inProgress.setIndex, startedAt: clockHere.startedAt } : undefined}
                   />
                 )
               })
@@ -489,7 +535,7 @@ export function Session() {
       </div>
 
       {/* Rest timer overlay */}
-      <RestTimerOverlay />
+      <RestTimerOverlay onFlickAway={leaveToHome} />
 
       {/* Workout complete: full screen, the breakdown, sharing and how it felt */}
       {summary && (

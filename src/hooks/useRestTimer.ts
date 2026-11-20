@@ -60,11 +60,11 @@ export function useRestTimer() {
       const diff = Math.max(0, Math.ceil((timer.endTime! - now) / 1000))
       setRemaining(diff)
       if (diff === 0) {
-        const { sessionId } = useAppStore.getState().timer
+        const { sessionId, endTime } = useAppStore.getState().timer
         clearTimer()
         restAlarm.stop()
-        // Rest's over: the next tap in this workout starts timing the set.
-        if (sessionId) useAppStore.getState().armSetTimer(sessionId)
+        // Rest's over: the next set is under way (see lib/autoFinish).
+        if (sessionId) useAppStore.getState().startSetClock(sessionId, endTime ?? undefined)
       }
     }
 
@@ -94,7 +94,7 @@ export function useRestTimer() {
     alarm = null
     restAlarm.stop()
     clearTimer()
-    if (sessionId) useAppStore.getState().armSetTimer(sessionId)
+    if (sessionId) useAppStore.getState().startSetClock(sessionId)
   }
 
   const progress = timer.durationSeconds > 0

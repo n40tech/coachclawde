@@ -298,8 +298,14 @@ export interface LoggedSet {
   completed: boolean;
   skipped: boolean;
   restCompletedAt?: string;
-  /** How long the set took, from the set timer starting to the tick (seconds). */
+  /** How long the set took, from the end of the rest before it to the tick (seconds). */
   workSeconds?: number;
+  /**
+   * Finished automatically by the athlete's first tap after a rest (orange
+   * tick): counted as done, but reps and weight stay editable until they tap
+   * the tick to confirm.
+   */
+  unconfirmed?: boolean;
 }
 
 export interface LoggedExercise {
@@ -420,15 +426,13 @@ export interface TimerState {
 }
 
 /**
- * The set being timed right now. It starts on the athlete's first tap after a
- * rest ends and stops when they tick the set.
+ * The set in progress: it started when the last rest ended. After a short
+ * grace period the athlete's next tap finishes it (see lib/autoFinish).
  */
-export interface ActiveSet {
+export interface SetClock {
   /** Planned session id. */
   sessionId: string;
-  plannedExerciseId: string;
-  setIndex: number;
-  /** Epoch ms. */
+  /** Epoch ms the rest ended. */
   startedAt: number;
 }
 

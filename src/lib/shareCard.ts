@@ -1,5 +1,5 @@
 import { crabCells } from './crabArt'
-import { formatWorkoutTime, type WorkoutSummary } from './workoutSummary'
+import { formatElapsed, type WorkoutSummary } from './workoutSummary'
 import { toWeight, type WeightUnit } from './units'
 import { formatSessionDate } from './dateUtils'
 
@@ -121,7 +121,7 @@ function label(ctx: CanvasRenderingContext2D, text: string, x: number, y: number
 
 function stats(s: WorkoutSummary, unit: WeightUnit): [string, string][] {
   return [
-    [formatWorkoutTime(s.durationSeconds), 'Time'],
+    [formatElapsed(s.durationSeconds), 'Elapsed'],
     [formatVolume(s.totalVolumeKg, unit), 'Lifted'],
     [String(s.sets), s.sets === 1 ? 'Set' : 'Sets'],
     [String(s.reps), s.reps === 1 ? 'Rep' : 'Reps'],
@@ -190,7 +190,7 @@ function drawHeadline(ctx: CanvasRenderingContext2D, s: WorkoutSummary, unit: We
   ctx.fillText(big, SIZE / 2, 618 + 26 + px * 0.86)
   ctx.fillStyle = INK_3
   ctx.font = `400 26px ${MONO}`
-  const sub = [s.title, formatWorkoutTime(s.durationSeconds), `${s.sets} sets`].join('  ·  ').toUpperCase()
+  const sub = [s.title, formatElapsed(s.durationSeconds), `${s.sets} sets`].join('  ·  ').toUpperCase()
   ctx.fillText(fit(ctx, sub, SIZE - PAD * 2), SIZE / 2, 618 + 26 + px * 0.86 + 64)
   ctx.textAlign = 'left'
   footer(ctx, s.date)
@@ -207,7 +207,7 @@ function drawLog(ctx: CanvasRenderingContext2D, s: WorkoutSummary, unit: WeightU
   ctx.fillText(fit(ctx, s.title, SIZE - PAD * 2 - 13 * 22 - 30), PAD, 204)
   ctx.fillStyle = INK_2
   ctx.font = `400 26px ${MONO}`
-  ctx.fillText(`${formatWorkoutTime(s.durationSeconds).toUpperCase()} · ${formatVolume(s.totalVolumeKg, unit).toUpperCase()}`, PAD, 252)
+  ctx.fillText(`${formatElapsed(s.durationSeconds).toUpperCase()} · ${formatVolume(s.totalVolumeKg, unit).toUpperCase()}`, PAD, 252)
 
   const shown = s.lines.slice(0, 7)
   // Below Clawde (his feet end at y ≈ 350).

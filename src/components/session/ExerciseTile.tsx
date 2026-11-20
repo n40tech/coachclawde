@@ -13,13 +13,15 @@ interface ExerciseTileProps {
   onUpdateSet: (setIndex: number, updates: Partial<LoggedExercise['sets'][0]>) => void
   onSetComplete: (setIndex: number, payload?: Partial<LoggedExercise['sets'][0]>) => void
   onSetUncomplete: (setIndex: number) => void
+  /** Confirms an auto-finished (orange-ticked) set. */
+  onSetConfirm: (setIndex: number) => void
   isActive: boolean
   onActivate: () => void
-  /** The set being timed in this exercise, if any (see ActiveSet). */
+  /** The set under way in this exercise since the last rest, if any (see SetClock). */
   timedSet?: { setIndex: number; startedAt: number }
 }
 
-export function ExerciseTile({ planned, logged, onUpdateSet, onSetComplete, onSetUncomplete, isActive, onActivate, timedSet }: ExerciseTileProps) {
+export function ExerciseTile({ planned, logged, onUpdateSet, onSetComplete, onSetUncomplete, onSetConfirm, isActive, onActivate, timedSet }: ExerciseTileProps) {
   const [expanded, setExpanded] = useState(isActive)
   // The timed set's tile opens so the orange tick is in view. The tap that
   // started the timer may be on this header: its click mustn't close it again.
@@ -65,7 +67,7 @@ export function ExerciseTile({ planned, logged, onUpdateSet, onSetComplete, onSe
               <span
                 key={i}
                 className={`w-2 h-2 rounded-full transition-colors ${
-                  logged.sets[i]?.completed ? 'bg-emerald-400' : isActive ? 'bg-[#d97756]/40' : 'bg-[#2a2a2a]'
+                  logged.sets[i]?.unconfirmed ? 'bg-[#d97756]' : logged.sets[i]?.completed ? 'bg-emerald-400' : isActive ? 'bg-[#d97756]/40' : 'bg-[#2a2a2a]'
                 }`}
               />
             ))}
@@ -114,6 +116,7 @@ export function ExerciseTile({ planned, logged, onUpdateSet, onSetComplete, onSe
                 onUpdate={(updates) => onUpdateSet(i, updates)}
                 onComplete={(payload) => onSetComplete(i, payload)}
                 onUncomplete={() => onSetUncomplete(i)}
+                onConfirm={() => onSetConfirm(i)}
                 inProgressSince={timedSet?.setIndex === i ? timedSet.startedAt : undefined}
               />
             ))}

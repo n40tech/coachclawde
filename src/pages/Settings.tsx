@@ -525,13 +525,13 @@ function BetaFeatures() {
             <Timer size={18} className="text-[#d97756]" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-[#f5f5f0]">Auto-start set timer</p>
-            <p className="text-xs text-[#6a6a6a] mt-0.5">After a rest, your next tap starts timing the next set (its tick turns orange).</p>
+            <p className="text-sm font-semibold text-[#f5f5f0]">Auto-finish sets</p>
+            <p className="text-xs text-[#6a6a6a] mt-0.5">After a rest and a 15-second grace period, your next tap finishes the set (orange tick) and starts the next rest. Fix reps or weight, then tap the tick to confirm.</p>
           </div>
           <button
             role="switch"
             aria-checked={autoSetTimer}
-            aria-label="Auto-start set timer"
+            aria-label="Auto-finish sets"
             onClick={() => setAutoSetTimer(!autoSetTimer)}
             className={`w-12 h-7 rounded-full p-0.5 transition-colors shrink-0 ${autoSetTimer ? 'bg-[#d97756]' : 'bg-[#2a2a2a]'}`}
           >

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatWorkoutTime, summarizeWorkout } from './workoutSummary'
+import { formatElapsed, formatWorkoutTime, summarizeWorkout } from './workoutSummary'
 import type { LoggedSession } from '../types'
 
 function log(id: string, sets: { name: string; kg?: number; reps?: number; done?: boolean; secs?: number }[], extra: Partial<LoggedSession> = {}): LoggedSession {
@@ -34,6 +34,7 @@ describe('summarizeWorkout', () => {
     expect(r.reps).toBe(14)
     expect(r.exercises).toBe(2)
     expect(r.durationSeconds).toBe(65 * 60)
+    expect(r.finishedAt).toBe('2026-11-16T11:05:00.000Z')
     expect(r.lines).toEqual([
       { name: 'Bench Press', sets: 2, bestKg: 60, bestReps: 8 },
       { name: 'Plank', sets: 1, bestReps: 0, seconds: 45 },
@@ -73,5 +74,20 @@ describe('formatVolumeCompact', () => {
     expect(formatVolumeCompact(1500, 'kg')).toBe('1.5t')
     expect(formatVolumeCompact(12000, 'kg')).toBe('12t')
     expect(formatVolumeCompact(1500, 'lb')).toBe('3.3klb')
+  })
+})
+
+describe('formatElapsed', () => {
+  it('reads like a stopwatch', () => {
+    expect(formatElapsed(0)).toBe('0:00')
+    expect(formatElapsed(247)).toBe('4:07')
+    expect(formatElapsed(52 * 60 + 13)).toBe('52:13')
+    expect(formatElapsed(3909)).toBe('1:05:09')
+  })
+
+  it('runs from Start Session to the moment Complete was tapped', () => {
+    const s = { id: 'x', plannedSessionId: 'x', weekPlanId: 'w', date: '2026-11-16', type: 'weights' as const, title: 'T', focus: '',
+      startedAt: '2026-11-16T10:00:00.000Z', status: 'in-progress' as const, loggedExercises: [] }
+    expect(summarizeWorkout(s, [], new Date('2026-11-16T10:48:30.000Z')).durationSeconds).toBe(48 * 60 + 30)
   })
 })

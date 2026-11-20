@@ -12,8 +12,10 @@ export interface NewPB {
 export interface WorkoutSummary {
   title: string
   date: string
-  /** Start to finish, in seconds (0 when unknown). */
+  /** Elapsed: Start Session to Complete Session, in seconds (0 when unknown). */
   durationSeconds: number
+  /** ISO time the workout was finished (Complete Session tapped). */
+  finishedAt: string
   /** Sum of weight × reps over completed sets, in kg. */
   totalVolumeKg: number
   /** Exercises with at least one completed set. */
@@ -105,12 +107,14 @@ export function summarizeWorkout(session: LoggedSession, history: LoggedSession[
 
   const start = Date.parse(session.startedAt)
   const end = session.completedAt ? Date.parse(session.completedAt) : finishedAt.getTime()
+  const endISO = new Date(end).toISOString()
   const durationSeconds = Number.isNaN(start) || end < start ? 0 : Math.round((end - start) / 1000)
 
   return {
     title: session.title,
     date: session.date,
     durationSeconds,
+    finishedAt: endISO,
     totalVolumeKg: Math.round(totalVolumeKg),
     exercises,
     sets,
@@ -118,6 +122,15 @@ export function summarizeWorkout(session: LoggedSession, history: LoggedSession[
     pbs,
     lines,
   }
+}
+
+/** Elapsed time as a clock: "4:07", "52:13", "1:05:09". */
+export function formatElapsed(seconds: number): string {
+  const s = Math.max(0, Math.round(seconds))
+  const h = Math.floor(s / 3600)
+  const m = Math.floor((s % 3600) / 60)
+  const sec = String(s % 60).padStart(2, '0')
+  return h ? `${h}:${String(m).padStart(2, '0')}:${sec}` : `${m}:${sec}`
 }
 
 /** "1 h 05 m" or "42 m". */

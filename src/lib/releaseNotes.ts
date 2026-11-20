@@ -41,6 +41,15 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: '1.1.1',
+    date: '2026-11-20',
+    headline: 'Sets that finish themselves, and your real workout time.',
+    fromFeedback: [
+      'Auto-finish: after a rest (and a 15-second grace period), your next tap means you’ve done the set. Its tick turns orange and the next rest starts on its own. Fix reps or weight any time, then tap the orange tick to confirm. Turn it off in Settings → Beta features.',
+      'Workout complete shows the elapsed time, from Start Session to Complete Session, like a stopwatch (e.g. 52:13). The share cards show it too.',
+    ],
+  },
+  {
     version: '1.1.0',
     date: '2026-11-20',
     headline: 'Weights-first: a set timer, a workout summary to share, and faster planning.',

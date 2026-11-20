@@ -102,6 +102,7 @@ export function summarizeWorkout(session: LoggedSession, history: LoggedSession[
 /** "1 h 05 m" or "42 m". */
 export function formatWorkoutTime(seconds: number): string {
   const m = Math.round(seconds / 60)
+  if (m < 1) return '<1 m'
   if (m < 60) return `${m} m`
   return `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')} m`
 }

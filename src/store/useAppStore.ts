@@ -53,6 +53,13 @@ interface AppStore extends AppState {
   reset: () => void
 }
 
+/** The persisted rest timer on reopen: still running, or finished (arming the set timer). */
+function restoreTimer(timer: TimerState | undefined, armed: string | null): { timer: TimerState; setTimerArmed: string | null } {
+  if (timer?.isActive && timer.endTime && timer.endTime > Date.now()) return { timer, setTimerArmed: armed }
+  if (timer?.isActive && timer.sessionId) return { timer: DEFAULT_TIMER, setTimerArmed: timer.sessionId }
+  return { timer: DEFAULT_TIMER, setTimerArmed: armed }
+}
+
 const DEFAULT_TIMER: TimerState = {
   isActive: false,
   endTime: null,
@@ -175,7 +182,9 @@ export const useAppStore = create<AppStore>()(
           checkIns: p.checkIns ?? [],
           checkInDismissed: (p as { checkInDismissed?: string[] }).checkInDismissed ?? [],
           activeSet: (p as { activeSet?: ActiveSet | null }).activeSet ?? null,
-          setTimerArmed: (p as { setTimerArmed?: string | null }).setTimerArmed ?? null,
+          // A rest still running when the app was closed carries on (its end
+          // time is absolute); one that ran out meanwhile arms the set timer.
+          ...restoreTimer((p as { timer?: TimerState }).timer, (p as { setTimerArmed?: string | null }).setTimerArmed ?? null),
         }
       },
       partialize: (state) => ({
@@ -186,6 +195,7 @@ export const useAppStore = create<AppStore>()(
         checkInDismissed: state.checkInDismissed,
         activeSet: state.activeSet,
         setTimerArmed: state.setTimerArmed,
+        timer: state.timer,
       }),
     }
   )

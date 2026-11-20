@@ -173,6 +173,8 @@ function BasicsForm({ a, set, activityChosen, onActivity, tried, returning }: {
   returning: boolean
 }) {
   const [more, setMore] = useState(!!a.notes)
+  // "Other" is a choice of its own: an unanswered gender shows nothing picked.
+  const [other, setOther] = useState(returning && !a.sex)
   return (
     <div>
       <div className="flex items-center gap-3 mb-6">
@@ -192,9 +194,9 @@ function BasicsForm({ a, set, activityChosen, onActivity, tried, returning }: {
           <div>
             <FieldLabel>Gender</FieldLabel>
             <div className="grid grid-cols-3 gap-1.5">
-              {([['male', 'Male'], ['female', 'Female'], [undefined, 'Other']] as const).map(([v, label]) => (
-                <Chip key={label} on={a.sex === v} onClick={() => set({ sex: v })}>{label}</Chip>
-              ))}
+              <Chip on={a.sex === 'male'} onClick={() => { set({ sex: 'male' }); setOther(false) }}>Male</Chip>
+              <Chip on={a.sex === 'female'} onClick={() => { set({ sex: 'female' }); setOther(false) }}>Female</Chip>
+              <Chip on={other} onClick={() => { set({ sex: undefined }); setOther(true) }}>Other</Chip>
             </div>
           </div>
           <div>

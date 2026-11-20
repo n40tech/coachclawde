@@ -21,11 +21,16 @@ interface ExerciseTileProps {
 
 export function ExerciseTile({ planned, logged, onUpdateSet, onSetComplete, onSetUncomplete, isActive, onActivate, timedSet }: ExerciseTileProps) {
   const [expanded, setExpanded] = useState(isActive)
-  // The timed set's tile opens so the orange tick is in view.
+  // The timed set's tile opens so the orange tick is in view. The tap that
+  // started the timer may be on this header: its click mustn't close it again.
   const [prevTimed, setPrevTimed] = useState(timedSet)
+  const [autoOpenedAt, setAutoOpenedAt] = useState(0)
   if (timedSet !== prevTimed) {
     setPrevTimed(timedSet)
-    if (timedSet && !expanded) setExpanded(true)
+    if (timedSet && !expanded) {
+      setExpanded(true)
+      setAutoOpenedAt(timedSet.startedAt)
+    }
   }
   const [showGuide, setShowGuide] = useState(false)
   const units = useUnits()
@@ -49,7 +54,10 @@ export function ExerciseTile({ planned, logged, onUpdateSet, onSetComplete, onSe
       <div className="flex items-center pr-2">
         <button
           className="flex-1 min-w-0 flex items-center gap-3 pl-4 pr-2 py-4 text-left"
-          onClick={() => { setExpanded((e) => !e); onActivate() }}
+          onClick={() => {
+            if (Date.now() - autoOpenedAt > 600) setExpanded((e) => !e)
+            onActivate()
+          }}
         >
           {/* Set progress indicator */}
           <div className="flex gap-1 shrink-0">

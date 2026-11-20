@@ -4,14 +4,24 @@ This repo is a workout tracking PWA. Claude generates personalised weekly workou
 
 ## Onboarding
 
-Onboarding happens entirely in the app: a deterministic chat with Clawde
-walks a goal tree (`src/lib/goalFlow.ts`): one "why are you here?" question
-(an event, fitness, physique, strength, a sport, or "I have my own plan")
-routes to a short branch, then time, kit and a health screen, ending on a
-"here's what I heard" card. It builds a `GoalProfile` (event and date, aim,
-starting point, recent result, constraints, health flags) and derives the
-legacy profile fields from it. Weekly check-ins (`src/lib/checkIn.ts`) keep it
-current. There is no onboarding prompt to answer here.
+Onboarding happens entirely in the app, as one short form
+(`src/lib/basicOnboarding.ts`): name, gender, age, how active they are now,
+where they train (gym, home weights, bodyweight), injuries (plus one
+"medical/heart condition or pregnant" checkbox that keeps plans moderate until
+cleared) and free-text notes. It builds a `GoalProfile` (always all-round
+strength and a balanced physique) and derives the legacy profile fields from
+it. Weekly check-ins (`src/lib/checkIn.ts`) keep it current. There is no
+onboarding prompt to answer here.
+
+## Weights-first
+
+Coach Clawde is a **weights-first** app. New plans contain only `weights` and
+(when the athlete asked for mobility) `active-recovery` sessions: never
+schedule cardio. Athletes log any run, ride or class by hand in the app. The
+cardio parts of the schema below (`type: "cardio"`, `workout`, `cardioOptions`)
+are kept only so older plans still load, and for "Convert my training plan"
+prompts that contain cardio the athlete wrote themselves. The pre-1.1 cardio
+code (Run Mode, intervals) is preserved on the `cardio-archive` branch.
 
 ## How to Generate a Week Plan
 
@@ -30,7 +40,7 @@ Always apply the Critical Programming Rules below and progressive overload again
 The app **tailors each prompt** to the athlete: it only includes the rules,
 session types, schema fields and examples that fit what they set up (training
 types, equipment, goal, dietary needs). A gym-only lifter's prompt never
-mentions cardio, a runner without strength work gets no lifting rules, and a
+mentions cardio (no prompt asks for cardio any more), and a
 home athlete's equipment is a hard rule. This file is the full, general
 reference; when the prompt is narrower, follow the prompt (e.g. only use the
 session types it lists).
@@ -141,17 +151,20 @@ PlannedInterval {
 }
 ```
 
-Cardio sessions run in the app's **Run Mode**: it times every `workout` step,
-plays a tone at each change (rising = go, falling = recover, pips before each
-change) and fills in the log itself. Pick **effort words**; the app resolves
-them to the athlete's pace zones (from the "Pace zones" line in the prompt) for
-the modality they choose, or to RPE when it has no zones. The easy warm-up and
-cool-down running are workout steps so they're timed; drills and strides stay
-in `warmupExercises`, and only before runs with fast work. A continuous run is
-just steps back to back.
+Run Mode has been removed (1.1): a `cardio` session from an older plan, or
+one in a converted plan, is logged by hand in the app. If a converted plan
+has cardio, write it as `workout` steps with effort words, exactly as the
+athlete's plan describes it.
 
-Athletes who follow their own plan (tracker mode) paste a **"Convert my
-training plan"** prompt instead. Convert it into a `WeekPlan` exactly as
+Besides a fresh week, the planner offers three other ways to plan (the app
+shows the one used last first): **repeat last week** (done in the app, no
+prompt), **"Modify my training plan"** (last week's plan as JSON plus the
+changes the athlete wants: make only those changes, keep everything else,
+exercise names included, and move it onto the new dates) and **"Convert my
+training plan"**.
+
+Athletes who follow their own plan paste a **"Convert my training plan"**
+prompt. Convert it into a `WeekPlan` exactly as
 written: don't reprogram it, and flag anything that loads an injury marked
 worse at a check-in with a "⚠️" in `coachNotes` rather than rewriting it.
 
@@ -172,12 +185,12 @@ They arrive under `program` in the pasted prompt and should shape every plan:
 
 - `goals` — any of `get-fit`, `get-strong`, `look-great`. Bias the week's
   emphasis accordingly (conditioning vs. heavy strength vs. hypertrophy/aesthetics).
-- `exerciseTypes` — any of `weights`, `cardio`, `mobility`. Only program the
-  types selected here (mobility maps to active-recovery / rehab blocks).
+- `exerciseTypes` — any of `weights`, `cardio`, `mobility`. Weights are always
+  programmed; `mobility` adds active-recovery days. `cardio` (older profiles)
+  is ignored: the app is weights-first.
 - `facilities` — any of `yoga-mat`, `weights-at-home`, `full-gym`. Pick exercises
   the athlete can actually do with the equipment available.
-- `sports` — preferred cardio modalities (e.g. Running, Rowing) — favour these
-  for cardio sessions. Only relevant when `cardio` is in `exerciseTypes`.
+- `sports` — legacy (preferred cardio modalities); not used for new plans.
 - `daysPerWeek` — roughly how often the athlete wants to train (6 means "6+").
   The prompt's listed training days take precedence for the week itself.
 - `coachingStyle` — `supportive`, `balanced` or `intense`. Sets the tone of your

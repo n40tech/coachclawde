@@ -7,18 +7,25 @@ import { FixedLayer } from '../layout/FixedLayer'
 import { Button } from '../shared/Button'
 import { useSettingsStore } from '../../store/useSettingsStore'
 import { enableRestAlerts, prepareRestAlerts, restAlertSupport } from '../../lib/restAlerts'
+import { useHorizontalDrag } from '../../hooks/useHorizontalDrag'
+import { rubberBand } from '../../lib/swipe'
 
 /**
  * The rest timer: a full-screen countdown, or (minimised) a pill docked where
  * the tab bar sits on other screens, so the athlete can keep logging, read a
  * movement guide or scroll while resting. The choice sticks for the next rest.
  */
-export function RestTimerOverlay() {
+export function RestTimerOverlay({ onFlickAway }: {
+  /** A flick left on the minimised bar: leave the workout (it shrinks into the Home dock). */
+  onFlickAway?: () => void
+} = {}) {
   const { remaining, progress, isActive, label, skipTimer } = useRestTimer()
   const minimised = useSettingsStore((s) => s.restTimerMinimised)
   const setMinimised = useSettingsStore((s) => s.setRestTimerMinimised)
   const barRef = useRef<HTMLButtonElement>(null)
   const focusBar = useRef(false)
+  const drag = useHorizontalDrag(-1, () => onFlickAway?.())
+  const pull = rubberBand(drag.dx, 140)
 
   // Full screen it's modal (RestCard): on close, focus goes back to what had
   // it (usually the set's tick), or to the minimised bar when that's gone
@@ -43,7 +50,13 @@ export function RestTimerOverlay() {
         {/* Same dock, height and pill as the tab bar (index.css tabbar-dock),
             so it sits concentric with the screen's rounded corners. The ring
             and Skip are inset so their curves follow the pill's ends. */}
-        <div className="absolute tabbar-dock z-40 flex items-center gap-1 rounded-(--tabbar-radius) p-(--tabbar-pad) bg-[#161616]/95 backdrop-blur-xl ring-1 ring-inset ring-[#2a2a2a] shadow-lg shadow-black/50 slide-up">
+        <div
+          {...(onFlickAway ? drag.handlers : {})}
+          style={{ transform: pull ? `translateX(${pull}px)` : undefined, opacity: 1 - Math.min(0.35, -pull / 400) }}
+          className={`vt-workout-timer absolute tabbar-dock z-40 flex items-center gap-1 rounded-(--tabbar-radius) p-(--tabbar-pad) bg-[#161616]/95 backdrop-blur-xl ring-1 ring-inset ring-[#2a2a2a] shadow-lg shadow-black/50 slide-up touch-pan-y select-none ${
+            drag.dragging ? '' : 'transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]'
+          }`}
+        >
           <button
             ref={barRef}
             onClick={() => setMinimised(false)}

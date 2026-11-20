@@ -43,10 +43,11 @@ export const RELEASES: Release[] = [
   {
     version: '1.1.1',
     date: '2026-11-20',
-    headline: 'Sets that finish themselves, and your real workout time.',
+    headline: 'Sets that finish themselves, your real workout time, and a timer that follows you.',
     fromFeedback: [
       'Auto-finish: after a rest (and a 15-second grace period), your next tap means you’ve done the set. Its tick turns orange and the next rest starts on its own. Fix reps or weight any time, then tap the orange tick to confirm. Turn it off in Settings → Beta features.',
       'Workout complete shows the elapsed time, from Start Session to Complete Session, like a stopwatch (e.g. 52:13). The share cards show it too.',
+      'The workout timer now flows between screens: leave your workout and its timer bar shrinks into the little circle on Home; tap the circle (or drag it right) and it grows back into your workout. A quick flick left on the timer bar takes you Home. Between rests the bar shows your workout clock.',
     ],
   },
   {

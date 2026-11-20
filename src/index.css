@@ -247,6 +247,39 @@ html {
 }
 
 /* Slide up modal animation */
+/* --- Workout timer morph (lib/viewTransition) ---
+   The workout's bottom timer bar and the Home dock circle share one name, so
+   leaving or opening the workout shrinks the bar into the circle and back.
+   Only one of them is ever on screen. */
+.vt-workout-timer {
+  view-transition-name: workout-timer;
+}
+::view-transition-group(workout-timer) {
+  animation-duration: 380ms;
+  animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+}
+/* Bar and circle have different shapes: fill the group instead of stretching. */
+::view-transition-old(workout-timer),
+::view-transition-new(workout-timer) {
+  height: 100%;
+  object-fit: cover;
+}
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 220ms;
+}
+/* Entrance animations would freeze in the transition's snapshots. */
+:root[data-vt] .slide-up {
+  animation: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
+
 @keyframes slide-up {
   from { transform: translateY(100%); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { X, Calendar, Check, Shuffle, Target } from 'lucide-react'
 import { useAppStore } from '../store/useAppStore'
 import { useAutoSync } from '../hooks/useAutoSync'
@@ -34,6 +35,8 @@ export function CheckIn() {
   const weekStart = params.get('week') ?? reviewedWeekStart(now)
   const dismissKey = params.get('key')
   const migration = trigger === 'migration'
+  const heading = migration ? 'Upgrade your goal' : trigger === 'reactive' ? 'Quick question' : 'Check-in'
+  useDocumentTitle(heading)
 
   // Facts are fixed when the chat opens, so questions don't shift under the athlete.
   const [facts] = useState(() => computeFacts({
@@ -135,11 +138,11 @@ export function CheckIn() {
     <div className="flex flex-col min-h-svh bg-[#0a0a0a]">
       <div className="sticky top-0 z-10 bg-[#0a0a0a]/95 backdrop-blur-xl px-4 pt-safe pb-2 border-b border-[#1a1a1a] flex items-center justify-between">
         <div className="pt-2">
-          <p className="text-base font-semibold text-[#f5f5f0]">{migration ? 'Upgrade your goal' : trigger === 'reactive' ? 'Quick question' : 'Check-in'}</p>
-          <p className="text-xs text-[#6a6a6a]">{migration ? 'Three questions' : 'About a minute · skip any time'}</p>
+          <h1 className="text-base font-semibold text-[#f5f5f0]">{heading}</h1>
+          <p className="text-xs text-[#949494]">{migration ? 'Three questions' : 'About a minute · skip any time'}</p>
         </div>
-        <button onClick={() => navigate(-1)} aria-label="Close check-in" className="w-11 h-11 -mr-2 mt-1 flex items-center justify-center rounded-full text-[#6a6a6a] hover:text-[#f5f5f0]">
-          <X size={20} />
+        <button onClick={() => navigate(-1)} aria-label="Close check-in" className="w-11 h-11 -mr-2 mt-1 flex items-center justify-center rounded-full text-[#949494] hover:text-[#f5f5f0]">
+          <X size={20} aria-hidden />
         </button>
       </div>
 
@@ -154,7 +157,7 @@ export function CheckIn() {
           <div className="ml-10 rounded-3xl bg-[#141414] border border-[#d97756]/40 p-4 flex flex-col gap-2">
             {lines.map((l) => (
               <p key={l} className="text-sm text-[#e5e5e0] leading-snug flex gap-2">
-                <span className="text-[#d97756]">→</span>
+                <span aria-hidden className="text-[#d97756]">→</span>
                 <span>{l}</span>
               </p>
             ))}

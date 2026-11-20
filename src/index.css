@@ -9,11 +9,24 @@
      headings, Space Mono for small uppercase labels. */
   --font-pixel: "Tiny5", "Space Mono", ui-monospace, monospace;
   --font-mono: "Space Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  /* Solid accent behind white text or icons (buttons, picked chips, the
+     orange tick): a deeper shade of the brand orange, since white on #d97756
+     is only 3.1:1. 4.6:1, and 5.5:1 on hover. Orange text, icons, borders and
+     tints keep #d97756. */
+  --color-accent-fill: #b85a3a;
+  --color-accent-fill-hover: #a94f30;
 }
 
 @font-face { font-family: "Tiny5"; src: url("/fonts/tiny5.woff2") format("woff2"); font-weight: 400; font-display: swap; }
 @font-face { font-family: "Space Mono"; src: url("/fonts/space-mono-400.woff2") format("woff2"); font-weight: 400; font-display: swap; }
 @font-face { font-family: "Space Mono"; src: url("/fonts/space-mono-700.woff2") format("woff2"); font-weight: 700; font-display: swap; }
+
+/* While a web font loads (or if it fails), scale the fallback to the web
+   font's proportions so the swap doesn't resize or reflow the text. Tiny5 is
+   only used in capitals, so match cap height; Space Mono is matched on
+   x-height. Ignored where unsupported. */
+.font-pixel { font-size-adjust: cap-height from-font; }
+.font-mono { font-size-adjust: from-font; }
 
 /* Dot grid, as on the website's panels. */
 @utility dot-grid {
@@ -40,10 +53,10 @@ body {
   background: #0a0a0a;
   color: #f5f5f0;
   overscroll-behavior: none;
-  /* Never allow horizontal scrolling/bleed. `clip` (not `hidden`) keeps the
-     sticky page headers working while preventing any stray-width descendant
-     from pushing the centred app shell — and its right padding — off-screen. */
-  overflow-x: clip;
+  /* No overflow-x clip here: nothing is wider than the screen (checked down to
+     320px), and clipping the page would hide anything that ever was. The app
+     shell in App.tsx still clips its own column, so a stray wide element
+     can't push it (and its padding) off-screen. */
 }
 
 #root {
@@ -62,9 +75,21 @@ body {
 }
 
 /* Always reserve the scrollbar's space (where scrollbars take any), so pages
-   that do and don't scroll have the same width and fixed UI never shifts. */
+   that do and don't scroll have the same width and fixed UI never shifts.
+   Scroll padding keeps a focused field clear of the sticky page header and
+   of whatever is docked at the bottom (the tab bar, or the minimised rest
+   timer in the same place), so Tab and the keyboard never park it under
+   them. */
 html {
   scrollbar-gutter: stable;
+  scroll-padding-top: calc(max(0.5rem, var(--safe-top)) + 4rem);
+  scroll-padding-bottom: var(--tabbar-clearance);
+}
+
+/* A heading focused by the app after a navigation (lib/viewTransition) is a
+   landmark for the screen reader, not a control: no ring. */
+h1[tabindex="-1"]:focus {
+  outline: none;
 }
 
 /* Layer for screen-anchored UI (see FixedLayer.tsx): the tab bar, sheets,
@@ -218,35 +243,143 @@ html {
   padding-left: max(1rem, var(--safe-left));
 }
 
-/* Smooth scrolling */
 * {
   -webkit-tap-highlight-color: transparent;
   box-sizing: border-box;
 }
 
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 4px;
+/* Minimum touch targets: 24px with a mouse, 44px on touch screens. Small
+   icon buttons keep their look and grow an invisible hit area instead
+   (`hit-target`; the element must be positioned). Leave room around them so
+   neighbouring hit areas don't overlap. */
+:root {
+  --target-size: 24px;
 }
-::-webkit-scrollbar-track {
-  background: transparent;
+@media (pointer: coarse) {
+  :root {
+    --target-size: 44px;
+  }
 }
-::-webkit-scrollbar-thumb {
-  background: #2a2a2a;
-  border-radius: 2px;
+@utility hit-target {
+  &::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: max(100%, var(--target-size));
+    height: max(100%, var(--target-size));
+    translate: -50% -50%;
+  }
 }
 
-/* Animated gradient for active timer */
+/* Scrollbars: a thumb that's visible against the dark page (3:1), on a
+   transparent track. Older WebKit/Blink without scrollbar-color get the same
+   colours through the legacy pseudo-elements. */
+:root {
+  --scrollbar-thumb: #5a5a5a;
+  --scrollbar-track: transparent;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+@supports not (scrollbar-color: auto) {
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 4px;
+  }
+}
+
+/* On/off switch (components/shared/Switch): a native checkbox drawn as a
+   pill with a sliding knob, the same in every browser (Safari would
+   otherwise draw its own for the `switch` attribute). The knob is a
+   background image, since inputs can't reliably have pseudo-elements. */
+.switch {
+  appearance: none;
+  -webkit-appearance: none;
+  flex-shrink: 0;
+  width: 3rem;
+  height: 1.75rem;
+  margin: 0;
+  border-radius: 9999px;
+  cursor: pointer;
+  background-color: #2a2a2a;
+  background-image: radial-gradient(circle closest-side, #fff 92%, transparent 100%);
+  background-repeat: no-repeat;
+  background-size: 1.5rem 1.5rem;
+  background-position: 0.125rem center;
+  transition: background-color 0.15s ease;
+  @media (prefers-reduced-motion: no-preference) {
+    transition: background-color 0.15s ease, background-position 0.15s ease;
+  }
+}
+.switch:checked {
+  background-color: #d97756;
+  background-position: calc(100% - 0.125rem) center;
+}
+.switch:focus-visible {
+  outline: 2px solid #d97756;
+  outline-offset: 3px;
+}
+@media (forced-colors: active) {
+  .switch {
+    forced-color-adjust: none;
+    background-color: Canvas;
+    background-image: radial-gradient(circle closest-side, CanvasText 92%, transparent 100%);
+    border: 1px solid CanvasText;
+  }
+  .switch:checked {
+    background-color: Highlight;
+  }
+}
+
+/* Native <progress> drawn as a thin bar (the workout and program progress).
+   Set the fill with `--meter-fill`. */
+.meter {
+  appearance: none;
+  -webkit-appearance: none;
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: var(--meter-track, #1a1a1a);
+  color: #d97756;
+  border-radius: inherit;
+  overflow: hidden;
+}
+.meter::-webkit-progress-bar {
+  background: var(--meter-track, #1a1a1a);
+}
+.meter::-webkit-progress-value {
+  background: var(--meter-fill, #d97756);
+  border-radius: inherit;
+}
+.meter::-moz-progress-bar {
+  background: var(--meter-fill, #d97756);
+  border-radius: inherit;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .meter::-webkit-progress-value {
+    transition: inline-size 0.5s ease-out;
+  }
+}
+
+/* The last seconds of a rest throb gently. Motion that only decorates, so
+   it's left out entirely under reduced motion. */
 @keyframes timer-pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.6; }
 }
-
-.timer-pulse {
-  animation: timer-pulse 1s ease-in-out infinite;
+@media (prefers-reduced-motion: no-preference) {
+  .timer-pulse {
+    animation: timer-pulse 1s ease-in-out infinite;
+  }
 }
 
-/* Slide up modal animation */
 /* --- Workout timer morph (lib/viewTransition) ---
    The workout's bottom timer bar and the Home dock circle share one name, so
    leaving or opening the workout shrinks the bar into the circle and back.
@@ -280,38 +413,44 @@ html {
   }
 }
 
+/* Sheets, the rest bar and the dock slide up from the bottom edge; under
+   reduced motion they only fade in. */
 @keyframes slide-up {
   from { transform: translateY(100%); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
 }
+@keyframes fade-only {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
 .slide-up {
   animation: slide-up 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+  @media (prefers-reduced-motion: reduce) {
+    animation-name: fade-only;
+  }
 }
 
-/* Fade in */
+/* Fade in, with a small lift (just the fade under reduced motion) */
 @keyframes fade-in {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
 .fade-in {
   animation: fade-in 0.2s ease-out;
+  @media (prefers-reduced-motion: reduce) {
+    animation-name: fade-only;
+  }
 }
 
-/* Ripple for buttons */
-@keyframes ripple {
-  0% { transform: scale(0); opacity: 1; }
-  100% { transform: scale(4); opacity: 0; }
-}
+/* --- Clawde mark micro-animations ---
+   Decoration, so none of it runs under reduced motion. The looping ones stop
+   within five seconds (a breath and a drip), so nothing moves for long
+   beside content without a way to stop it (WCAG 2.2.2). */
 
-/* --- Clawde mark micro-animations --- */
-
-/* Idle breathing bob — the sweatband Clawde is never quite still */
+/* Breathing bob as Clawde appears */
 @keyframes clawde-bob {
   0%, 100% { transform: translateY(0) rotate(0deg); }
   50%      { transform: translateY(-1.4px) rotate(-1.4deg); }
-}
-.clawde-bob {
-  animation: clawde-bob 3.2s ease-in-out infinite;
 }
 
 /* One-shot cheer/squash when the user scrolls up */
@@ -322,11 +461,8 @@ html {
   80%  { transform: translateY(0) scale(0.99, 1.01) rotate(1.5deg); }
   100% { transform: translateY(0) scale(1, 1) rotate(0deg); }
 }
-.clawde-cheer {
-  animation: clawde-cheer 0.62s cubic-bezier(0.32, 0.72, 0, 1);
-}
 
-/* Sweat bead forming then dripping away — then a beat before the next drop */
+/* Sweat bead forming then dripping away. It rests hidden at the end. */
 @keyframes clawde-sweat {
   0%       { transform: translateY(-2px) scale(0.4); opacity: 0; }
   8%       { transform: translateY(0) scale(1); opacity: 1; }
@@ -334,29 +470,24 @@ html {
   30%      { transform: translateY(22px) scale(0.5); opacity: 0; }
   100%     { transform: translateY(22px) scale(0.5); opacity: 0; }
 }
-.clawde-sweat {
-  animation: clawde-sweat 3s ease-in infinite;
-}
 
-/* Clawde grinding out press-ups — a brisk up/down dip with a forward tip */
-@keyframes clawde-pushup {
-  0%, 100% { transform: translateY(0) rotate(0deg); }
-  45%      { transform: translateY(9px) rotate(3deg); }
-  55%      { transform: translateY(9px) rotate(3deg); }
+@media (prefers-reduced-motion: no-preference) {
+  .clawde-bob {
+    animation: clawde-bob 2.4s ease-in-out 2;
+  }
+  .clawde-cheer {
+    animation: clawde-cheer 0.62s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+  .clawde-sweat {
+    animation: clawde-sweat 3s ease-in 1 both;
+  }
 }
-.clawde-pushup {
-  animation: clawde-pushup 0.9s ease-in-out infinite;
-}
-
-/* Clawde out for a run — a bouncy lateral scuttle */
-@keyframes clawde-run {
-  0%, 100% { transform: translateX(-5px) translateY(0) rotate(-3deg); }
-  25%      { transform: translateX(-2px) translateY(-5px) rotate(2deg); }
-  50%      { transform: translateX(5px) translateY(0) rotate(3deg); }
-  75%      { transform: translateX(2px) translateY(-5px) rotate(-2deg); }
-}
-.clawde-run {
-  animation: clawde-run 0.7s ease-in-out infinite;
+/* Without the animation the bead isn't shown at all (it only ever shows
+   mid-drip). */
+@media (prefers-reduced-motion: reduce) {
+  .clawde-sweat {
+    opacity: 0;
+  }
 }
 
 /* Clawde "flying" from the finish screen up to where it lives on the home
@@ -383,28 +514,27 @@ html {
   30%           { transform: translateY(-3px); opacity: 1; }
 }
 .typing-dot {
-  animation: typing-dot 1s ease-in-out infinite;
+  opacity: 0.6;
+  @media (prefers-reduced-motion: no-preference) {
+    animation: typing-dot 1s ease-in-out infinite;
+  }
 }
 
-/* --- Scroll reveal --- */
-.reveal {
-  opacity: 0;
-  transform: translateY(14px);
-  transition: opacity 0.5s ease-out, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
-  will-change: opacity, transform;
-}
-.reveal-in {
-  opacity: 1;
-  transform: translateY(0);
+/* --- Scroll reveal (components/shared/Reveal) ---
+   Only with motion allowed; otherwise content is simply there. */
+@media (prefers-reduced-motion: no-preference) {
+  .reveal {
+    opacity: 0;
+    transform: translateY(14px);
+    transition: opacity 0.5s ease-out, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: opacity, transform;
+  }
+  .reveal-in {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .clawde-bob,
-  .clawde-cheer,
-  .clawde-sweat,
-  .clawde-pushup,
-  .clawde-run,
-  .typing-dot { animation: none; }
   .clawde-flight { transition: opacity 0.3s ease-out; }
-  .reveal { opacity: 1; transform: none; transition: none; }
 }

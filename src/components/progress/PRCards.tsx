@@ -13,7 +13,7 @@ export function WeightPRCard({ prs, limit }: { prs: WeightPR[]; limit?: number }
     <Card>
       <CardSection>
         <div className="flex items-center gap-2 mb-3">
-          <Dumbbell size={15} className="text-blue-400" />
+          <Dumbbell size={15} className="text-blue-400" aria-hidden />
           <p className="text-sm font-semibold text-[#f5f5f0]">Lifting PRs</p>
         </div>
         <div className="flex flex-col">
@@ -24,11 +24,11 @@ export function WeightPRCard({ prs, limit }: { prs: WeightPR[]; limit?: number }
             >
               <div className="min-w-0">
                 <p className="text-sm font-medium text-[#f5f5f0] truncate">{pr.name}</p>
-                <p className="text-xs text-[#4a4a4a] mt-0.5">{format(parseISO(pr.date), 'dd MMM yyyy')}</p>
+                <p className="text-xs text-[#858585] mt-0.5">{format(parseISO(pr.date), 'dd MMM yyyy')}</p>
               </div>
               <div className="text-right shrink-0">
                 <p className="text-sm font-bold text-[#d97756]">{formatWeight(pr.weightKg, units.weight)}</p>
-                <p className="text-xs text-[#6a6a6a]">× {pr.reps} reps</p>
+                <p className="text-xs text-[#949494]">× {pr.reps} reps</p>
               </div>
             </div>
           ))}
@@ -46,7 +46,7 @@ export function CardioPRCard({ prs, limit }: { prs: CardioPR[]; limit?: number }
     <Card>
       <CardSection>
         <div className="flex items-center gap-2 mb-3">
-          <Waves size={15} className="text-emerald-400" />
+          <Waves size={15} className="text-emerald-400" aria-hidden />
           <p className="text-sm font-semibold text-[#f5f5f0]">Cardio bests</p>
         </div>
         <div className="flex flex-col">
@@ -57,7 +57,7 @@ export function CardioPRCard({ prs, limit }: { prs: CardioPR[]; limit?: number }
             >
               <div className="min-w-0">
                 <p className="text-sm font-medium text-[#f5f5f0] truncate">{localize(pr.label, units)}</p>
-                <p className="text-xs text-[#4a4a4a] mt-0.5">{format(parseISO(pr.date), 'dd MMM yyyy')}</p>
+                <p className="text-xs text-[#858585] mt-0.5">{format(parseISO(pr.date), 'dd MMM yyyy')}</p>
               </div>
               <p className="text-sm font-bold text-emerald-400 shrink-0">{pr.time}</p>
             </div>

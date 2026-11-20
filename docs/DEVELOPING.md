@@ -166,7 +166,22 @@ are marked as seen when they finish onboarding.
   `buildModifyPlanPrompt`.
 - `src/components/shared/` & `components/layout/` — reusable primitives
   (`Button`, `Card`, `Badge`, `PageHeader`, `ConfirmDialog`, `BottomSheet`, …). Reuse these instead of
-  hand-rolling new ones.
+  hand-rolling new ones. Since v1.1.2 (see `WEB-AUDIT.md`, third pass):
+  - a card that opens something is `<Card to="/route">` (a native link),
+    never a clickable `div`; header icon links are `HeaderIconLink`;
+  - picking one or several options is `ChoiceGroup` + `ChoiceChip`
+    (`shared/Choice`, native radios/checkboxes; `chipLook` for the usual
+    style), not `aria-pressed` buttons; on/off is `shared/Switch`;
+  - a screen sets its title with `useDocumentTitle` (`PageHeader` does it);
+  - small icon buttons keep their size and add `relative hit-target`
+    (index.css) for a 44px touch area;
+  - text colours: `#a8a29e` secondary, `#949494` muted, `#858585` faint (the
+    lowest that reads at 4.5:1 on the cards); don't go darker for text;
+  - white text or icons on solid orange use `bg-accent-fill` (hover
+    `bg-accent-fill-hover`), not `bg-[#d97756]`, which is too light for
+    white; keep `#d97756` for orange text, icons, borders and tints;
+  - decoration animates only under `prefers-reduced-motion: no-preference`
+    (or `motion-safe:`), and nothing loops for more than 5 seconds.
 - `src/lib/` — pure helpers: `promptBuilder` (builds the **self-contained** plan
   prompt — embeds profile + summarised history), `historySummary` (bounds that
   history so the prompt isn't overloaded), `supabase` (client) + `supabaseSync`

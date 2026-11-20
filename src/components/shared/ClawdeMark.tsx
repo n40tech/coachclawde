@@ -3,12 +3,18 @@ import { crabCells } from '../../lib/crabArt'
 interface ClawdeMarkProps {
   size?: number
   className?: string
-  /** Gentle idle breathing/bob animation */
+  /** A couple of gentle breaths as Clawde appears */
   idle?: boolean
   /** Playful bounce + sweat flick — fire this on scroll-up */
   cheer?: boolean
   /** Show the dripping sweat bead */
   sweat?: boolean
+  /**
+   * Text alternative, when the mark means something on its own. Left out,
+   * it's decoration (next to the app's name, as a chat avatar, beside a
+   * heading) and hidden from screen readers.
+   */
+  label?: string
 }
 
 // Each pixel cell is CELL units wide, giving a ~104×96 coordinate space so the
@@ -22,15 +28,14 @@ const CELLS = crabCells()
  * crisp pixel rects so it stays sharp at any size and matches the home-screen
  * app icon generated from the same grid.
  */
-export function ClawdeMark({ size = 40, className = '', idle = true, cheer = false, sweat = false }: ClawdeMarkProps) {
+export function ClawdeMark({ size = 40, className = '', idle = true, cheer = false, sweat = false, label }: ClawdeMarkProps) {
   return (
     <svg
       width={size}
       height={size}
       viewBox="-6 -6 116 110"
       fill="none"
-      role="img"
-      aria-label="Clawde the crab, ready to train"
+      {...(label ? { role: 'img', 'aria-label': label } : { 'aria-hidden': true })}
       className={`overflow-visible ${className}`}
     >
       <g

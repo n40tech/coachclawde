@@ -90,6 +90,9 @@ export default defineConfig(({ mode, command }) => {
       injectRegister: false,
       includeAssets: ['favicon.svg', 'icons/*.png'],
       manifest: {
+        // The install's identity. Equal to the id browsers computed from
+        // start_url before it was set, so existing installs are unaffected.
+        id: '/',
         name: 'Coach Clawde',
         short_name: 'Coach',
         description: 'AI-powered personal workout tracker',

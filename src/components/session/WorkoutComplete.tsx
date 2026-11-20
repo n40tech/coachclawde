@@ -3,6 +3,7 @@ import { ChevronDown, ChevronUp, Share2, Trash2 } from 'lucide-react'
 import { FixedLayer } from '../layout/FixedLayer'
 import { ClawdeMark } from '../shared/ClawdeMark'
 import { ConfirmDialog } from '../shared/ConfirmDialog'
+import { ChoiceChip, ChoiceGroup } from '../shared/Choice'
 import { useModal } from '../../hooks/useModal'
 import { useUnits } from '../../store/useSettingsStore'
 import { toWeight } from '../../lib/units'
@@ -117,7 +118,7 @@ export function WorkoutComplete({ summary, isLastSessionOfWeek, onSave, onCheckI
                         <span className="text-sm font-medium text-[#f5f5f0] truncate">{pb.name}</span>
                         <span className="font-mono text-sm font-bold text-[#f5f5f0] tabular-nums shrink-0">
                           {toWeight(pb.weightKg, unit)}{unit} × {pb.reps}
-                          <span className="font-normal text-[#6a6560]"> ↑{+(toWeight(pb.weightKg, unit) - toWeight(pb.previousKg, unit)).toFixed(1)}</span>
+                          <span className="font-normal text-[#9a948e]"> ↑{+(toWeight(pb.weightKg, unit) - toWeight(pb.previousKg, unit)).toFixed(1)}</span>
                         </span>
                       </li>
                     ))}
@@ -129,26 +130,29 @@ export function WorkoutComplete({ summary, isLastSessionOfWeek, onSave, onCheckI
 
               {/* How did it feel */}
               <section>
-                <h3 className="font-mono text-2xs font-bold uppercase tracking-[0.12em] text-[#a39e98]">How did it feel?</h3>
-                <div role="radiogroup" aria-label="How did it feel?" className="mt-3 grid grid-cols-5 gap-2">
+                <ChoiceGroup
+                  legend="How did it feel?"
+                  legendClassName="block font-mono text-2xs font-bold uppercase tracking-[0.12em] text-[#a39e98] mb-3"
+                  className="grid grid-cols-5 gap-2"
+                >
                   {([1, 2, 3, 4, 5] as Rating[]).map((r) => (
-                    <button
+                    <ChoiceChip
                       key={r}
-                      role="radio"
-                      aria-checked={feelings === r}
-                      aria-label={`${r}, ${FEEL[r]}`}
-                      onClick={() => setFeelings(r)}
-                      className={`aspect-square rounded-2xl text-lg font-semibold transition-all duration-150 ${
+                      name="feeling"
+                      value={String(r)}
+                      checked={feelings === r}
+                      onChange={() => setFeelings(r)}
+                      className={`aspect-square flex items-center justify-center rounded-2xl text-lg font-semibold transition-all duration-150 ${
                         feelings === r
-                          ? 'bg-[#e07f5e] text-white scale-105 shadow-lg shadow-[#d97756]/25'
-                          : 'bg-[#121211] text-[#6a6560] border border-[#272523] hover:text-[#f5f5f0]'
+                          ? 'bg-accent-fill text-white scale-105 shadow-lg shadow-[#d97756]/25'
+                          : 'bg-[#121211] text-[#9a948e] border border-[#272523] hover:text-[#f5f5f0]'
                       }`}
                     >
-                      {r}
-                    </button>
+                      {r}<span className="sr-only">, {FEEL[r]}</span>
+                    </ChoiceChip>
                   ))}
-                </div>
-                <p className="font-mono text-2xs uppercase tracking-[0.12em] text-[#6a6560] text-center mt-2 h-4">{feelings ? FEEL[feelings] : ''}</p>
+                </ChoiceGroup>
+                <p aria-hidden className="font-mono text-2xs uppercase tracking-[0.12em] text-[#9a948e] text-center mt-2 h-4">{feelings ? FEEL[feelings] : ''}</p>
               </section>
 
               {/* Notes */}
@@ -160,7 +164,7 @@ export function WorkoutComplete({ summary, isLastSessionOfWeek, onSave, onCheckI
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="How it went, what you changed. Clawde reads this when planning next week."
                   rows={4}
-                  className="mt-3 w-full bg-[#121211] border border-[#272523] rounded-[1.25rem] px-4 py-3 text-base text-[#f5f5f0] placeholder-[#4a4643] resize-none focus:outline-none focus:border-[#e07f5e]/60"
+                  className="mt-3 w-full bg-[#121211] border border-[#66615c] rounded-[1.25rem] px-4 py-3 text-base text-[#f5f5f0] placeholder-[#8a847e] resize-y field-sizing-content min-h-24 max-h-[50svh] focus:outline-none focus:border-[#e07f5e] focus:ring-1 focus:ring-[#e07f5e]"
                 />
                 <button
                   type="button"
@@ -168,7 +172,7 @@ export function WorkoutComplete({ summary, isLastSessionOfWeek, onSave, onCheckI
                   aria-expanded={showPain}
                   className="mt-2 flex items-center gap-1.5 text-sm text-[#a39e98] py-1"
                 >
-                  Something hurt? {showPain ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+                  Something hurt? {showPain ? <ChevronUp size={15} aria-hidden /> : <ChevronDown size={15} aria-hidden />}
                 </button>
                 {showPain && (
                   <textarea
@@ -177,7 +181,7 @@ export function WorkoutComplete({ summary, isLastSessionOfWeek, onSave, onCheckI
                     onChange={(e) => setPainNotes(e.target.value)}
                     placeholder="e.g. Left shoulder clicking on overhead presses"
                     rows={2}
-                    className="mt-2 w-full bg-[#121211] border border-[#272523] rounded-[1.25rem] px-4 py-3 text-base text-[#f5f5f0] placeholder-[#4a4643] resize-none focus:outline-none focus:border-[#e07f5e]/60 fade-in"
+                    className="mt-2 w-full bg-[#121211] border border-[#66615c] rounded-[1.25rem] px-4 py-3 text-base text-[#f5f5f0] placeholder-[#8a847e] resize-y field-sizing-content min-h-24 max-h-[50svh] focus:outline-none focus:border-[#e07f5e] focus:ring-1 focus:ring-[#e07f5e] fade-in"
                   />
                 )}
               </section>
@@ -191,7 +195,7 @@ export function WorkoutComplete({ summary, isLastSessionOfWeek, onSave, onCheckI
                   onClick={() => setConfirmDelete(true)}
                   className="self-center flex items-center gap-1.5 font-mono text-xs font-bold uppercase tracking-[0.1em] text-[#a35a4a] hover:text-red-400 py-3 px-4"
                 >
-                  <Trash2 size={14} /> Delete workout
+                  <Trash2 size={14} aria-hidden /> Delete workout
                 </button>
               </div>
             </>
@@ -229,7 +233,7 @@ export function WorkoutComplete({ summary, isLastSessionOfWeek, onSave, onCheckI
 function Stat({ value, label }: { value: string; label: string }) {
   return (
     <div className="flex items-baseline justify-between gap-3 py-2.5">
-      <dt className="font-mono text-2xs font-bold uppercase tracking-[0.12em] text-[#6a6560]">{label}</dt>
+      <dt className="font-mono text-2xs font-bold uppercase tracking-[0.12em] text-[#9a948e]">{label}</dt>
       <dd className="text-lg font-semibold text-[#f5f5f0] tabular-nums truncate">{value}</dd>
     </div>
   )
@@ -243,7 +247,7 @@ function Pill({ ghost, onClick, children }: { ghost?: boolean; onClick: () => vo
       className={`min-h-12 px-6 rounded-full text-base font-medium border-[1.5px] transition-all duration-150 active:scale-[0.98] ${
         ghost
           ? 'bg-transparent text-[#f5f5f0] border-[#3a3735] hover:border-[#f5f5f0]'
-          : 'bg-[#f5f5f0] text-[#050505] border-[#f5f5f0] hover:bg-[#e07f5e] hover:border-[#e07f5e] hover:text-white'
+          : 'bg-[#f5f5f0] text-[#050505] border-[#f5f5f0] hover:bg-accent-fill hover:border-accent-fill hover:text-white'
       }`}
     >
       {children}
@@ -262,12 +266,24 @@ function ShareCards({ summary }: { summary: WorkoutSummary }) {
   useEffect(() => {
     let cancelled = false
     const urls: string[] = []
-    Promise.all(SHARE_STYLES.map(async ({ id }) => {
-      const file = await buildShareFile(summary, unit, id)
-      const url = URL.createObjectURL(file)
-      urls.push(url)
-      return [id, { file, url }] as const
-    })).then((entries) => { if (!cancelled) setFiles(Object.fromEntries(entries)) }, () => {})
+    // One card at a time, yielding to the browser in between, so drawing
+    // three 1080² canvases doesn't hold up taps on the page as it opens.
+    void (async () => {
+      const entries: [ShareStyle, { file: File; url: string }][] = []
+      for (const { id } of SHARE_STYLES) {
+        if (cancelled) return
+        try {
+          const file = await buildShareFile(summary, unit, id)
+          const url = URL.createObjectURL(file)
+          urls.push(url)
+          entries.push([id, { file, url }])
+        } catch {
+          return
+        }
+        await yieldToMain()
+      }
+      if (!cancelled) setFiles(Object.fromEntries(entries))
+    })()
     return () => {
       cancelled = true
       urls.forEach((u) => URL.revokeObjectURL(u))
@@ -284,35 +300,43 @@ function ShareCards({ summary }: { summary: WorkoutSummary }) {
   return (
     <section>
       <h3 className="font-mono text-2xs font-bold uppercase tracking-[0.12em] text-[#a39e98]">Share</h3>
-      <div role="radiogroup" aria-label="Card design" className="mt-3 grid grid-cols-3 gap-2.5">
+      <ChoiceGroup legend="Card design" legendClassName="sr-only" className="mt-3 grid grid-cols-3 gap-2.5">
         {SHARE_STYLES.map(({ id, label }) => {
           const on = style === id
           return (
-            <button
+            <ChoiceChip
               key={id}
-              role="radio"
-              aria-checked={on}
-              aria-label={`${label} card`}
-              onClick={() => setStyle(id)}
-              className="flex flex-col items-center gap-1.5"
+              name="share-card"
+              value={id}
+              checked={on}
+              onChange={() => setStyle(id)}
+              className="flex flex-col items-center gap-1.5 rounded-2xl"
             >
               <span className={`block w-full aspect-square rounded-2xl overflow-hidden bg-[#121211] border-2 transition-colors ${on ? 'border-[#e07f5e]' : 'border-[#272523]'}`}>
                 {files[id] && <img src={files[id]!.url} alt="" className="w-full h-full object-cover" />}
               </span>
-              <span className={`font-mono text-2xs font-bold uppercase tracking-[0.1em] ${on ? 'text-[#f5f5f0]' : 'text-[#6a6560]'}`}>{label}</span>
-            </button>
+              <span className={`font-mono text-2xs font-bold uppercase tracking-[0.1em] ${on ? 'text-[#f5f5f0]' : 'text-[#9a948e]'}`}>{label}<span className="sr-only"> card</span></span>
+            </ChoiceChip>
           )
         })}
-      </div>
+      </ChoiceGroup>
       <button
         type="button"
         onClick={share}
         disabled={!files[style]}
         className="mt-3 w-full min-h-12 rounded-full flex items-center justify-center gap-2 bg-[#121211] border-[1.5px] border-[#3a3735] text-[#f5f5f0] font-medium hover:border-[#e07f5e] disabled:opacity-50 transition-colors"
       >
-        <Share2 size={17} /> Share card
+        <Share2 size={17} aria-hidden /> Share card
       </button>
-      <p role="status" className="text-xs text-[#6a6560] text-center mt-2 empty:hidden">{msg}</p>
+      {/* Always rendered (not display:none when empty), so the message is announced. */}
+      <p role="status" className="text-xs text-[#9a948e] text-center mt-2 min-h-4">{msg}</p>
     </section>
   )
+}
+
+/** Lets pending input and rendering run before the next chunk of work. */
+function yieldToMain(): Promise<void> {
+  const scheduler = (globalThis as { scheduler?: { yield?: () => Promise<void> } }).scheduler
+  if (scheduler?.yield) return scheduler.yield()
+  return new Promise((resolve) => setTimeout(resolve, 0))
 }

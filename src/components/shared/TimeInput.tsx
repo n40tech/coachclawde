@@ -28,17 +28,17 @@ export function TimeInput({
     onChange(showHours ? total : (Number(next.m) || 0) * 60 + Math.min(59, Number(next.s) || 0))
   }
 
-  const box = 'w-14 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl px-2 py-2 text-base text-center text-[#f5f5f0] placeholder-[#3a3a3a] focus:outline-none focus:border-[#d97756]/50 tabular-nums'
+  const box = 'w-14 bg-[#1a1a1a] border border-[#666666] rounded-xl px-2 py-2 text-base text-center text-[#f5f5f0] placeholder-[#858585] focus:outline-none focus:border-[#d97756] focus:ring-1 focus:ring-[#d97756] tabular-nums'
   return (
     <div className="flex items-center gap-1.5" role="group" aria-label={label}>
       {showHours && (
         <>
           <input className={box} inputMode="numeric" placeholder="h" aria-label="Hours" value={parts.h} onChange={(e) => set('h', e.target.value)} />
-          <span className="text-[#4a4a4a]">:</span>
+          <span className="text-[#858585]">:</span>
         </>
       )}
       <input className={box} inputMode="numeric" placeholder="mm" aria-label="Minutes" value={parts.m} onChange={(e) => set('m', e.target.value)} />
-      <span className="text-[#4a4a4a]">:</span>
+      <span className="text-[#858585]">:</span>
       <input className={box} inputMode="numeric" placeholder="ss" aria-label="Seconds" value={parts.s} onChange={(e) => set('s', e.target.value)} />
     </div>
   )

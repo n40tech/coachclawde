@@ -3,6 +3,7 @@ import { Navigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider'
 import { Button } from '../components/shared/Button'
 import { ClawdeMark } from '../components/shared/ClawdeMark'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { Mail, AlertCircle, CheckCircle, LogIn } from 'lucide-react'
 
 /**
@@ -43,6 +44,7 @@ export function Login() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [sent, setSent] = useState(false)
+  useDocumentTitle('Sign in')
 
   async function handlePassword() {
     setError('')
@@ -97,6 +99,7 @@ export function Login() {
     return (
       <div className="flex items-center justify-center min-h-svh bg-[#0a0a0a]">
         <ClawdeMark size={56} idle />
+        <p role="status" className="sr-only">Loading…</p>
       </div>
     )
   }
@@ -112,17 +115,17 @@ export function Login() {
         <div className="flex flex-col items-center gap-3 text-center">
           <ClawdeMark size={72} sweat />
           <h1 className="text-2xl font-bold text-[#f5f5f0]">Coach Clawde</h1>
-          <p className="text-sm text-[#6a6a6a] leading-relaxed">
+          <p className="text-sm text-[#949494] leading-relaxed">
             Sign in to sync your training across devices and generate personalised weekly plans.
           </p>
         </div>
 
         {sent ? (
           <div className="w-full flex flex-col items-center gap-3 bg-[#161616] border border-[#2a2a2a] rounded-2xl p-6 text-center">
-            <CheckCircle size={28} className="text-emerald-500" />
+            <CheckCircle size={28} className="text-emerald-500" aria-hidden />
             {/* The form it replaces had focus: move it here so it isn't lost. */}
             <h2 tabIndex={-1} autoFocus className="text-sm font-medium text-[#f5f5f0] outline-none">Check your inbox</h2>
-            <p className="text-xs text-[#6a6a6a]">
+            <p className="text-xs text-[#949494]">
               We sent a sign-in link to <span className="text-[#a8a29e]">{email.trim()}</span>. Open it on this device to finish signing in.
             </p>
             <Button variant="ghost" size="sm" onClick={() => setSent(false)}>Use a different email</Button>
@@ -199,7 +202,7 @@ export function Login() {
               <button
                 type="button"
                 onClick={() => switchMode(mode === 'password' ? 'magic-link' : 'password')}
-                className="text-xs text-[#6a6a6a] hover:text-[#a8a29e] transition-colors mt-2 py-1"
+                className="text-xs text-[#949494] hover:text-[#a8a29e] transition-colors mt-2 py-1"
               >
                 {mode === 'password' ? 'Email me a sign-in link instead' : 'Sign in with a password instead'}
               </button>
@@ -207,7 +210,7 @@ export function Login() {
           </form>
         )}
 
-        <p className="text-2xs text-[#3a3a3a] text-center leading-relaxed">
+        <p className="text-2xs text-[#858585] text-center leading-relaxed">
           Your data is private to your account and never shared.
         </p>
       </div>
@@ -216,4 +219,4 @@ export function Login() {
 }
 
 const inputClass =
-  'w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl px-4 py-3 text-base text-[#f5f5f0] placeholder-[#3a3a3a] focus:outline-none focus:border-[#d97756]/50 transition-colors'
+  'w-full bg-[#1a1a1a] border border-[#666666] rounded-2xl px-4 py-3 text-base text-[#f5f5f0] placeholder-[#858585] focus:outline-none focus:border-[#d97756] focus:ring-1 focus:ring-[#d97756] transition-colors'

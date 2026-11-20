@@ -48,14 +48,14 @@ function RepSetRow({ setIndex, plannedSet, loggedSet, onUpdate, onComplete, onUn
       {timing ? (
         <SetClock since={inProgressSince} />
       ) : (
-        <span className="text-xs text-[#4a4a4a] w-6 shrink-0 font-medium">#{setIndex + 1}</span>
+        <span className="text-xs text-[#858585] w-6 shrink-0 font-medium">#{setIndex + 1}</span>
       )}
 
       {/* Target */}
-      <div className="text-xs text-[#6a6a6a] shrink-0 w-16">
+      <div className="text-xs text-[#949494] shrink-0 w-16">
         {plannedSet.reps} reps
         {plannedSet.suggestedWeightKg && (
-          <span className="block text-[#4a4a4a]">~{toWeight(plannedSet.suggestedWeightKg, unit)}{unit}</span>
+          <span className="block text-[#858585]">~{toWeight(plannedSet.suggestedWeightKg, unit)}{unit}</span>
         )}
       </div>
       <RowBreak />
@@ -65,7 +65,11 @@ function RepSetRow({ setIndex, plannedSet, loggedSet, onUpdate, onComplete, onUn
         type="text"
         inputMode="numeric"
         enterKeyHint="next"
-        onKeyDown={(e) => { if (e.key === 'Enter') weightRef.current?.focus() }}
+        onKeyDown={(e) => {
+          // Not while an input method is still composing (Enter confirms it).
+          if (e.key !== 'Enter' || e.nativeEvent.isComposing || e.keyCode === 229) return
+          weightRef.current?.focus()
+        }}
         aria-label={`Set ${setIndex + 1} reps`}
         placeholder={plannedSet.reps}
         value={repsText}
@@ -76,7 +80,7 @@ function RepSetRow({ setIndex, plannedSet, loggedSet, onUpdate, onComplete, onUn
           onUpdate({ actualReps: raw === '' || Number.isNaN(n) ? undefined : n })
         }}
         disabled={locked}
-        className="w-14 @max-[17rem]:w-11 @max-[17rem]:px-1 bg-[#111] border border-[#2a2a2a] rounded-nested px-2 py-1.5 text-base text-center text-[#f5f5f0] placeholder-[#3a3a3a] focus:outline-none focus:border-[#d97756]/50 disabled:opacity-40"
+        className="w-14 @max-[17rem]:w-11 @max-[17rem]:px-1 bg-[#111] border border-[#666666] rounded-nested px-2 py-1.5 text-base text-center text-[#f5f5f0] placeholder-[#858585] focus:outline-none focus:border-[#d97756] focus:ring-1 focus:ring-[#d97756] disabled:opacity-40"
       />
 
       {/* Actual weight */}
@@ -86,7 +90,10 @@ function RepSetRow({ setIndex, plannedSet, loggedSet, onUpdate, onComplete, onUn
           ref={weightRef}
           inputMode="decimal"
           enterKeyHint="done"
-          onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur() }}
+          onKeyDown={(e) => {
+            if (e.key !== 'Enter' || e.nativeEvent.isComposing || e.keyCode === 229) return
+            e.currentTarget.blur()
+          }}
           aria-label={`Set ${setIndex + 1} weight in ${unit}`}
           placeholder={unit}
           value={weightText}
@@ -98,9 +105,9 @@ function RepSetRow({ setIndex, plannedSet, loggedSet, onUpdate, onComplete, onUn
             onUpdate({ weightKg: raw === '' || Number.isNaN(n) ? undefined : fromWeight(n, unit) })
           }}
           disabled={locked}
-          className="w-full bg-[#111] border border-[#2a2a2a] rounded-nested px-2 py-1.5 text-base text-center text-[#f5f5f0] placeholder-[#3a3a3a] focus:outline-none focus:border-[#d97756]/50 disabled:opacity-40"
+          className="w-full bg-[#111] border border-[#666666] rounded-nested px-2 py-1.5 text-base text-center text-[#f5f5f0] placeholder-[#858585] focus:outline-none focus:border-[#d97756] focus:ring-1 focus:ring-[#d97756] disabled:opacity-40"
         />
-        <span className="text-xs text-[#4a4a4a] shrink-0">{unit}</span>
+        <span className="text-xs text-[#858585] shrink-0">{unit}</span>
       </div>
 
       <CompleteButton
@@ -175,10 +182,10 @@ function TimedSetRow({ setIndex, plannedSet, loggedSet, onComplete, onUncomplete
 
   return (
     <div className={rowClass(completed, skipped)} data-set={setIndex}>
-      <span className="text-xs text-[#4a4a4a] w-6 shrink-0 font-medium">#{setIndex + 1}</span>
+      <span className="text-xs text-[#858585] w-6 shrink-0 font-medium">#{setIndex + 1}</span>
 
       {/* Target hold — no reps, no weight */}
-      <div className="text-xs text-[#6a6a6a] shrink-0 w-16">
+      <div className="text-xs text-[#949494] shrink-0 w-16">
         {secondsToDisplay(target)} hold
       </div>
       <RowBreak />
@@ -192,7 +199,7 @@ function TimedSetRow({ setIndex, plannedSet, loggedSet, onComplete, onUncomplete
         ) : running ? (
           <span className="text-base font-bold text-[#d97756] tabular-nums">{secondsToDisplay(elapsed)}</span>
         ) : (
-          <span className="text-xs text-[#4a4a4a]">Tap start to begin</span>
+          <span className="text-xs text-[#858585]">Tap start to begin</span>
         )}
       </div>
 
@@ -201,18 +208,22 @@ function TimedSetRow({ setIndex, plannedSet, loggedSet, onComplete, onUncomplete
         <CompleteButton setIndex={setIndex} completed onClick={() => setConfirmEdit(true)} />
       ) : running ? (
         <button
+          type="button"
           onClick={stop}
-          className="flex items-center gap-1.5 h-8 px-3 rounded-nested bg-[#d97756] text-white text-xs font-semibold transition-all active:scale-95 shrink-0"
+          aria-label={`Stop set ${setIndex + 1}`}
+          className="relative hit-target flex items-center gap-1.5 h-8 px-3 rounded-nested bg-accent-fill text-white text-xs font-semibold transition-all active:scale-95 shrink-0"
         >
-          <Square size={13} strokeWidth={2.5} fill="currentColor" />
+          <Square size={13} strokeWidth={2.5} fill="currentColor" aria-hidden />
           Stop
         </button>
       ) : (
         <button
+          type="button"
           onClick={start}
-          className="flex items-center gap-1.5 h-8 px-3 rounded-nested bg-[#2a2a2a] text-[#d97756] text-xs font-semibold transition-all hover:bg-[#d97756]/20 active:scale-95 shrink-0"
+          aria-label={`Start set ${setIndex + 1}`}
+          className="relative hit-target flex items-center gap-1.5 h-8 px-3 rounded-nested bg-[#2a2a2a] text-[#d97756] text-xs font-semibold transition-all hover:bg-[#d97756]/20 active:scale-95 shrink-0"
         >
-          <Play size={13} strokeWidth={2.5} fill="currentColor" />
+          <Play size={13} strokeWidth={2.5} fill="currentColor" aria-hidden />
           Start
         </button>
       )}
@@ -256,7 +267,8 @@ function SetClock({ since }: { since: number }) {
   }, [])
   const s = Math.max(0, Math.floor((now - since) / 1000))
   return (
-    <span className="text-2xs text-[#f59e0b] w-6 shrink-0 font-bold tabular-nums" aria-label={`Set time ${secondsToDisplay(s)}`}>
+    <span className="text-2xs text-[#f59e0b] w-6 shrink-0 font-bold tabular-nums">
+      <span className="sr-only">Set time </span>
       {secondsToDisplay(s)}
     </span>
   )
@@ -282,18 +294,19 @@ function rowClass(completed: boolean, skipped: boolean, timing = false, unconfir
 function CompleteButton({ setIndex, completed, unconfirmed, onClick }: { setIndex: number; completed: boolean; unconfirmed?: boolean; onClick: () => void }) {
   return (
     <button
+      type="button"
       onClick={onClick}
       data-tick
       aria-label={completed ? `Edit set ${setIndex + 1}` : unconfirmed ? `Confirm set ${setIndex + 1}` : `Complete set ${setIndex + 1}`}
-      className={`w-8 h-8 rounded-nested flex items-center justify-center transition-all shrink-0 ${
+      className={`relative hit-target w-8 h-8 rounded-nested flex items-center justify-center transition-all shrink-0 ${
         completed
-          ? 'bg-emerald-500 text-white active:scale-90'
+          ? 'bg-emerald-600 text-white active:scale-90'
           : unconfirmed
-          ? 'bg-[#d97756] text-white shadow-md shadow-[#d97756]/30 active:scale-90'
-          : 'bg-[#2a2a2a] text-[#4a4a4a] hover:bg-[#d97756]/20 hover:text-[#d97756] active:scale-90'
+          ? 'bg-accent-fill text-white shadow-md shadow-[#d97756]/30 active:scale-90'
+          : 'bg-[#2a2a2a] text-[#858585] hover:bg-[#d97756]/20 hover:text-[#d97756] active:scale-90'
       }`}
     >
-      <Check size="0.875em" strokeWidth={2.5} />
+      <Check size="0.875em" strokeWidth={2.5} aria-hidden />
     </button>
   )
 }

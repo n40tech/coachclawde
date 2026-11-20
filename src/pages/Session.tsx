@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type PointerEvent as ReactPointerEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { wantsCheckIns } from '../lib/checkInTriggers'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useAppStore } from '../store/useAppStore'
@@ -8,7 +8,7 @@ import { Button } from '../components/shared/Button'
 import { ExerciseTile } from '../components/session/ExerciseTile'
 import { ReorderList } from '../components/session/ReorderList'
 import { RestTimerOverlay } from '../components/session/RestTimer'
-import { afterPopstate, withViewTransition } from '../lib/viewTransition'
+import { afterPopstate, scrollBehavior, withViewTransition } from '../lib/viewTransition'
 import { WorkoutComplete, type SessionCompleteData } from '../components/session/WorkoutComplete'
 import { QuickLogSheet } from '../components/session/QuickLogSheet'
 import { useWakeLock } from '../hooks/useWakeLock'
@@ -55,7 +55,8 @@ export function Session() {
     weekPlans, loggedSessions, addLoggedSession, updateLoggedSession, setActiveSession, profile, dismissCheckIn,
     setClock, startSetClock,
   } = useAppStore()
-  const { startTimer, skipTimer, isActive: resting } = useRestTimer()
+  const { startTimer, skipTimer, isActive: resting, label: restLabel } = useRestTimer()
+  const restEndsAt = useAppStore((s) => s.timer.endTime)
   const restBarShowing = useSettingsStore((s) => s.restTimerMinimised) && resting
   const units = useUnits()
   const { syncSession, removeSession } = useAutoSync()
@@ -77,6 +78,20 @@ export function Session() {
     // No invitation for athletes who turned check-ins off (or just track).
     return remaining.length === 0 && wantsCheckIns(profile)
   }, [weekPlan, id, loggedSessions, profile])
+
+  // When a rest runs out on screen, only a tone plays: say it too, for screen
+  // reader users with the sound off. Not when it was skipped (that's a tap).
+  const [restOver, setRestOver] = useState('')
+  const lastRest = useRef<{ endsAt: number; label: string } | null>(null)
+  useEffect(() => {
+    if (resting && restEndsAt) {
+      lastRest.current = { endsAt: restEndsAt, label: restLabel }
+      return
+    }
+    const ended = lastRest.current
+    lastRest.current = null
+    if (ended && Date.now() >= ended.endsAt - 1000) setRestOver(`Rest over. ${ended.label}`)
+  }, [resting, restEndsAt, restLabel])
 
   // Keep the screen on while a workout is being logged.
   useWakeLock(!!loggedSession && loggedSession.status !== 'complete')
@@ -107,7 +122,7 @@ export function Session() {
     if (!reveal.n) return
     const frame = requestAnimationFrame(() => {
       document.querySelector(`[data-exercise="${CSS.escape(reveal.target)}"]`)
-        ?.scrollIntoView({ block: 'start', behavior: 'smooth' })
+        ?.scrollIntoView({ block: 'start', behavior: scrollBehavior() })
     })
     return () => cancelAnimationFrame(frame)
   }, [reveal])
@@ -122,8 +137,9 @@ export function Session() {
   if (!planned) {
     return (
       <div className="flex flex-col items-center justify-center min-h-svh gap-4 px-4">
-        <AlertTriangle size={40} className="text-[#4a4a4a]" />
-        <p className="text-[#6a6a6a] text-center">Session not found. It may belong to a different week's plan.</p>
+        <AlertTriangle size={40} className="text-[#858585]" aria-hidden />
+        <h1 className="text-lg font-bold text-[#f5f5f0]">Session not found</h1>
+        <p className="text-[#949494] text-center">It may belong to a different week's plan.</p>
         <Button variant="secondary" onClick={() => navigate('/')}>Back to home</Button>
       </div>
     )
@@ -378,24 +394,21 @@ export function Session() {
 
       {/* Progress bar */}
       {loggedSession && !legacyCardio && (
-        <div className="h-1 bg-[#1a1a1a]">
-          <div
-            className="h-full bg-[#d97756] transition-all duration-500 ease-out"
-            style={{ width: `${progressPercent}%` }}
-          />
+        <div className="h-1">
+          <progress className="meter" value={progressPercent} max={100} aria-label="Workout progress" />
         </div>
       )}
 
       <div className="flex-1 overflow-y-auto pb-edge" onPointerDownCapture={maybeAutoFinish}>
         {/* Session meta */}
         <div className="px-4 py-4 flex items-center gap-4">
-          <div className="flex items-center gap-1.5 text-xs text-[#6a6a6a]">
-            <Clock size={13} />
+          <div className="flex items-center gap-1.5 text-xs text-[#949494]">
+            <Clock size={13} aria-hidden />
             {formatDuration(planned.estimatedMinutes)}
           </div>
           {!!planned.exercises?.length && (
-            <div className="flex items-center gap-1.5 text-xs text-[#6a6a6a]">
-              <Dumbbell size={13} />
+            <div className="flex items-center gap-1.5 text-xs text-[#949494]">
+              <Dumbbell size={13} aria-hidden />
               {planned.exercises.length} exercises
             </div>
           )}
@@ -420,7 +433,7 @@ export function Session() {
             </div>
             <div>
               <p className="text-lg font-bold text-[#f5f5f0]">Cardio session</p>
-              <p className="text-sm text-[#6a6a6a] mt-1 max-w-xs">
+              <p className="text-sm text-[#949494] mt-1 max-w-xs">
                 Coach Clawde is weights-first now, so cardio is logged by hand. Log what you did and it still counts towards your week.
               </p>
             </div>
@@ -437,7 +450,7 @@ export function Session() {
             </div>
             <div className="text-center">
               <p className="text-lg font-bold text-[#f5f5f0]">Ready to train?</p>
-              <p className="text-sm text-[#6a6a6a] mt-1">This will start logging your session.</p>
+              <p className="text-sm text-[#949494] mt-1">This will start logging your session.</p>
             </div>
             <Button onClick={startSession} size="lg">
               Start Session
@@ -448,10 +461,10 @@ export function Session() {
 
         {isAlreadyComplete && (
           <div className="mx-4 mb-4 flex items-center gap-3 bg-emerald-500/10 rounded-2xl px-4 py-3 border border-emerald-500/20">
-            <CheckCircle2 size={18} className="text-emerald-400 shrink-0" />
+            <CheckCircle2 size={18} className="text-emerald-400 shrink-0" aria-hidden />
             <div>
               <p className="text-sm font-semibold text-emerald-400">Session complete</p>
-              {existingLog?.feelings && <p className="text-xs text-[#6a6a6a] mt-0.5">Felt {['', 'terrible', 'poor', 'ok', 'good', 'great'][existingLog.feelings]}</p>}
+              {existingLog?.feelings && <p className="text-xs text-[#949494] mt-0.5">Felt {['', 'terrible', 'poor', 'ok', 'good', 'great'][existingLog.feelings]}</p>}
               {existingLog?.substitute && <p className="text-xs text-[#a8a29e] mt-0.5">Did something else: {describeSubstitute(existingLog.substitute)}</p>}
             </div>
           </div>
@@ -461,17 +474,16 @@ export function Session() {
         {!legacyCardio && logged.length > 0 && (
           <div className="px-4 flex flex-col gap-3">
             <div className="flex items-center justify-between px-1">
-              <p className="text-xs text-[#4a4a4a] uppercase tracking-widest font-medium">Exercises</p>
+              <h2 className="text-xs text-[#858585] uppercase tracking-widest font-medium">Exercises</h2>
               {logged.length > 1 && (
                 <button
                   type="button"
                   onClick={() => setReordering((r) => !r)}
-                  aria-pressed={reordering}
-                  className={`flex items-center gap-1.5 h-8 px-3 rounded-xl text-xs font-medium transition-colors ${
-                    reordering ? 'bg-[#d97756] text-white' : 'bg-[#1a1a1a] text-[#a8a29e] hover:text-[#f5f5f0]'
+                  className={`relative hit-target flex items-center gap-1.5 h-8 px-3 rounded-xl text-xs font-medium transition-colors ${
+                    reordering ? 'bg-accent-fill text-white' : 'bg-[#1a1a1a] text-[#a8a29e] hover:text-[#f5f5f0]'
                   }`}
                 >
-                  {reordering ? <Check size={14} /> : <ArrowUpDown size={14} />}
+                  {reordering ? <Check size={14} aria-hidden /> : <ArrowUpDown size={14} aria-hidden />}
                   {reordering ? 'Done' : 'Reorder'}
                 </button>
               )}
@@ -522,7 +534,7 @@ export function Session() {
         {!legacyCardio && loggedSession && !isAlreadyComplete && (
           <div className="px-4 mt-6 flex flex-col items-center gap-3">
             <Button onClick={openComplete} fullWidth size="lg">
-              <CheckCircle2 size={18} />
+              <CheckCircle2 size={18} aria-hidden />
               Complete Session
             </Button>
             <DidSomethingElse onClick={() => setShowQuickLog(true)} />
@@ -536,6 +548,7 @@ export function Session() {
 
       {/* Rest timer overlay */}
       <RestTimerOverlay onFlickAway={leaveToHome} />
+      <p role="status" className="sr-only">{restOver}</p>
 
       {/* Workout complete: full screen, the breakdown, sharing and how it felt */}
       {summary && (
@@ -567,9 +580,9 @@ function DidSomethingElse({ onClick }: { onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className="flex items-center gap-1.5 text-sm text-[#6a6a6a] hover:text-[#a8a29e] py-2 px-3 rounded-xl"
+      className="flex items-center gap-1.5 text-sm text-[#949494] hover:text-[#a8a29e] py-2 px-3 rounded-xl"
     >
-      <Shuffle size={14} />
+      <Shuffle size={14} aria-hidden />
       Did something else?
     </button>
   )

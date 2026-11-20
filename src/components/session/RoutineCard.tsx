@@ -28,26 +28,27 @@ export function RoutineCard({ title, summary, items }: RoutineCardProps) {
   return (
     <div className="bg-[#1a1a1a] rounded-3xl border border-[#2a2a2a] overflow-hidden [--nest-radius:1.5rem] [--nest-inset:0.75rem]">
       <div className="px-4 py-3">
-        <p className="text-xs font-semibold text-[#6a6a6a] uppercase tracking-widest mb-1">{title}</p>
+        <h2 className="text-xs font-semibold text-[#949494] uppercase tracking-widest mb-1">{title}</h2>
         {summary && <p className="text-sm text-[#a8a29e]">{localize(summary, units)}</p>}
       </div>
 
       {moves.length > 0 && (
         <>
           <button
+            type="button"
             onClick={() => setExpanded((e) => !e)}
             aria-expanded={expanded}
             className="w-full flex items-center justify-between px-4 py-2.5 border-t border-[#2a2a2a] text-xs font-medium text-[#d97756] hover:bg-[#d97756]/5 transition-colors"
           >
             {expanded ? 'Hide' : 'Show'} full {title.toLowerCase()} · {moves.length} moves
-            {expanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+            {expanded ? <ChevronUp size={15} aria-hidden /> : <ChevronDown size={15} aria-hidden />}
           </button>
 
           {expanded && (
             <ol className="px-3 pb-3 flex flex-col gap-1.5 fade-in">
               {moves.map((item, i) => (
                 <li key={i} className="flex items-start gap-2.5 bg-[#161616] border border-[#2a2a2a] rounded-nested pl-3 pr-1.5 py-2.5">
-                  <span className="w-5 h-5 rounded-full bg-[#d97756]/15 text-[#d97756] text-2xs font-bold flex items-center justify-center shrink-0 mt-0.5">
+                  <span aria-hidden className="w-5 h-5 rounded-full bg-[#d97756]/15 text-[#d97756] text-2xs font-bold flex items-center justify-center shrink-0 mt-0.5">
                     {i + 1}
                   </span>
                   <div className="flex-1 min-w-0">
@@ -57,14 +58,15 @@ export function RoutineCard({ title, summary, items }: RoutineCardProps) {
                         <span className="text-xs text-[#a8a29e] shrink-0 tabular-nums">{localize(item.prescription, units)}</span>
                       )}
                     </div>
-                    {item.notes && <p className="text-xs text-[#6a6a6a] mt-0.5 leading-relaxed">{localize(item.notes, units)}</p>}
+                    {item.notes && <p className="text-xs text-[#949494] mt-0.5 leading-relaxed">{localize(item.notes, units)}</p>}
                   </div>
                   <button
+                    type="button"
                     onClick={() => setGuide(item)}
                     aria-label={`How to do ${item.name}`}
-                    className="w-8 h-8 -my-1 rounded-xl flex items-center justify-center text-[#6a6a6a] hover:text-[#d97756] hover:bg-[#d97756]/10 transition-colors shrink-0"
+                    className="relative hit-target w-8 h-8 -my-1 rounded-xl flex items-center justify-center text-[#949494] hover:text-[#d97756] hover:bg-[#d97756]/10 transition-colors shrink-0"
                   >
-                    <CircleQuestionMark size={17} />
+                    <CircleQuestionMark size={17} aria-hidden />
                   </button>
                 </li>
               ))}

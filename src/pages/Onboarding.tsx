@@ -4,6 +4,9 @@ import { useAppStore } from '../store/useAppStore'
 import { useAutoSync } from '../hooks/useAutoSync'
 import { Button } from '../components/shared/Button'
 import { ClawdeMark } from '../components/shared/ClawdeMark'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
+import { ChoiceChip, ChoiceGroup } from '../components/shared/Choice'
+import { chipLook } from '../components/shared/chipLook'
 import { markVersionSeen } from '../lib/appVersion'
 import { FixedLayer } from '../components/layout/FixedLayer'
 import {
@@ -37,6 +40,7 @@ export function Onboarding() {
   const [now] = useState(() => new Date())
   const [a, setA] = useState<BasicAnswers>(() => (returning ? basicsFromProfile(profile, now) : EMPTY))
   const [activityChosen, setActivityChosen] = useState(returning)
+  useDocumentTitle(returning ? 'Your basics' : 'Welcome')
   const [step, setStep] = useState<'form' | 'finish'>('form')
   const [finishing, setFinishing] = useState(false)
   const [tried, setTried] = useState(false)
@@ -126,7 +130,7 @@ function StepHeading({ title, subtitle }: { title: string; subtitle?: string }) 
   return (
     <div>
       <h1 className="text-2xl font-bold text-[#f5f5f0] leading-tight">{title}</h1>
-      {subtitle && <p className="text-sm text-[#6a6a6a] mt-2 leading-relaxed">{subtitle}</p>}
+      {subtitle && <p className="text-sm text-[#949494] mt-2 leading-relaxed">{subtitle}</p>}
     </div>
   )
 }
@@ -135,7 +139,7 @@ function TextInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
   return (
     <input
       {...props}
-      className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl px-4 py-3 text-base text-[#f5f5f0] placeholder-[#3a3a3a] focus:outline-none focus:border-[#d97756]/50 transition-colors"
+      className="w-full bg-[#1a1a1a] border border-[#666666] rounded-2xl px-4 py-3 text-base text-[#f5f5f0] placeholder-[#858585] focus:outline-none focus:border-[#d97756] focus:ring-1 focus:ring-[#d97756] transition-colors"
     />
   )
 }
@@ -146,22 +150,23 @@ function FieldLabel({ htmlFor, children }: { htmlFor?: string; children: React.R
   return htmlFor ? <label htmlFor={htmlFor} className={className}>{children}</label> : <p className={className}>{children}</p>
 }
 
-function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; children: React.ReactNode }) {
+/** One option: a native radio (`name` shared by the group) or checkbox. */
+function Chip({ type = 'radio', name, value, on, onClick, children }: {
+  type?: 'radio' | 'checkbox'
+  name: string
+  value: string
+  on: boolean
+  onClick: () => void
+  children: React.ReactNode
+}) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={on}
-      className={`px-3 py-2.5 rounded-2xl text-sm font-medium transition-all duration-150 ${
-        on
-          ? 'bg-[#d97756] text-white shadow-lg shadow-[#d97756]/20'
-          : 'bg-[#1a1a1a] text-[#a8a29e] border border-[#2a2a2a] hover:text-[#f5f5f0]'
-      }`}
-    >
+    <ChoiceChip type={type} name={name} value={value} checked={on} onChange={onClick} className={chipLook(on)}>
       {children}
-    </button>
+    </ChoiceChip>
   )
 }
+
+const GROUP_LEGEND = 'block text-xs font-medium text-[#a8a29e] mb-2'
 
 function BasicsForm({ a, set, activityChosen, onActivity, tried, returning }: {
   a: BasicAnswers
@@ -191,14 +196,11 @@ function BasicsForm({ a, set, activityChosen, onActivity, tried, returning }: {
         </div>
 
         <div className="grid grid-cols-[1fr_6rem] gap-3">
-          <div>
-            <FieldLabel>Gender</FieldLabel>
-            <div className="grid grid-cols-3 gap-1.5">
-              <Chip on={a.sex === 'male'} onClick={() => { set({ sex: 'male' }); setOther(false) }}>Male</Chip>
-              <Chip on={a.sex === 'female'} onClick={() => { set({ sex: 'female' }); setOther(false) }}>Female</Chip>
-              <Chip on={other} onClick={() => { set({ sex: undefined }); setOther(true) }}>Other</Chip>
-            </div>
-          </div>
+          <ChoiceGroup legend="Gender" legendClassName={GROUP_LEGEND} className="grid grid-cols-3 gap-1.5">
+            <Chip name="ob-gender" value="male" on={a.sex === 'male'} onClick={() => { set({ sex: 'male' }); setOther(false) }}>Male</Chip>
+            <Chip name="ob-gender" value="female" on={a.sex === 'female'} onClick={() => { set({ sex: 'female' }); setOther(false) }}>Female</Chip>
+            <Chip name="ob-gender" value="other" on={other} onClick={() => { set({ sex: undefined }); setOther(true) }}>Other</Chip>
+          </ChoiceGroup>
           <div>
             <FieldLabel htmlFor="ob-age">Age</FieldLabel>
             <TextInput
@@ -212,27 +214,25 @@ function BasicsForm({ a, set, activityChosen, onActivity, tried, returning }: {
         </div>
 
         <div>
-          <FieldLabel>How active are you right now? *</FieldLabel>
-          <div className="grid grid-cols-2 gap-2">
+          <ChoiceGroup legend={<>How active are you right now? <span aria-hidden>*</span><span className="sr-only">(required)</span></>} legendClassName={GROUP_LEGEND} className="grid grid-cols-2 gap-2">
             {(Object.keys(ACTIVITY_LABEL) as ActivityLevel[]).map((v) => (
-              <Chip key={v} on={activityChosen && a.activity === v} onClick={() => onActivity(v)}>{ACTIVITY_LABEL[v]}</Chip>
+              <Chip key={v} name="ob-activity" value={v} on={activityChosen && a.activity === v} onClick={() => onActivity(v)}>{ACTIVITY_LABEL[v]}</Chip>
             ))}
-          </div>
+          </ChoiceGroup>
           {tried && !activityChosen && <p role="alert" className="text-xs text-red-400 mt-2">Pick the closest one.</p>}
         </div>
 
         <div>
-          <FieldLabel>Where will you train? *</FieldLabel>
-          <div className="flex flex-wrap gap-2">
+          <ChoiceGroup legend={<>Where will you train? <span aria-hidden>*</span><span className="sr-only">(required, pick any)</span></>} legendClassName={GROUP_LEGEND} className="flex flex-wrap gap-2">
             {(Object.keys(WHERE_LABEL) as TrainWhere[]).map((v) => {
               const on = a.where.includes(v)
               return (
-                <Chip key={v} on={on} onClick={() => set({ where: on ? a.where.filter((w) => w !== v) : [...a.where, v] })}>
+                <Chip key={v} type="checkbox" name="ob-where" value={v} on={on} onClick={() => set({ where: on ? a.where.filter((w) => w !== v) : [...a.where, v] })}>
                   {WHERE_LABEL[v]}
                 </Chip>
               )
             })}
-          </div>
+          </ChoiceGroup>
           {tried && !a.where.length && <p role="alert" className="text-xs text-red-400 mt-2">Pick at least one, so I only plan exercises you can do.</p>}
         </div>
 
@@ -244,7 +244,7 @@ function BasicsForm({ a, set, activityChosen, onActivity, tried, returning }: {
             onChange={(e) => set({ injuries: e.target.value })}
             placeholder="One per line, e.g. Left knee sore on deep squats"
             rows={2}
-            className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl px-4 py-3 text-base text-[#f5f5f0] placeholder-[#3a3a3a] resize-none focus:outline-none focus:border-[#d97756]/50"
+            className="w-full bg-[#1a1a1a] border border-[#666666] rounded-2xl px-4 py-3 text-base text-[#f5f5f0] placeholder-[#858585] resize-y field-sizing-content min-h-24 max-h-[50svh] focus:outline-none focus:border-[#d97756] focus:ring-1 focus:ring-[#d97756]"
           />
           <label className="mt-3 flex items-start gap-3 text-sm text-[#a8a29e]">
             <input type="checkbox" checked={a.medical} onChange={(e) => set({ medical: e.target.checked, cleared: false })} className="mt-0.5 w-5 h-5 accent-[#d97756] shrink-0" />
@@ -268,7 +268,7 @@ function BasicsForm({ a, set, activityChosen, onActivity, tried, returning }: {
             aria-expanded={more}
             className="flex items-center gap-2 text-sm text-[#a8a29e] py-1"
           >
-            Anything else Clawde should know? {more ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+            Anything else Clawde should know? {more ? <ChevronUp size={16} aria-hidden /> : <ChevronDown size={16} aria-hidden />}
           </button>
           {more && (
             <textarea
@@ -277,7 +277,7 @@ function BasicsForm({ a, set, activityChosen, onActivity, tried, returning }: {
               onChange={(e) => set({ notes: e.target.value })}
               placeholder="Goals, sports you play, lifts you love or hate…"
               rows={3}
-              className="mt-2 w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl px-4 py-3 text-base text-[#f5f5f0] placeholder-[#3a3a3a] resize-none focus:outline-none focus:border-[#d97756]/50 fade-in"
+              className="mt-2 w-full bg-[#1a1a1a] border border-[#666666] rounded-2xl px-4 py-3 text-base text-[#f5f5f0] placeholder-[#858585] resize-y field-sizing-content min-h-24 max-h-[50svh] focus:outline-none focus:border-[#d97756] focus:ring-1 focus:ring-[#d97756] fade-in"
             />
           )}
         </div>
@@ -298,7 +298,7 @@ function FinishStep({ name }: { name: string }) {
         <h1 className="text-3xl font-bold text-[#f5f5f0]">
           You're all set{first ? `, ${first}` : ''}!
         </h1>
-        <p className="text-sm text-[#6a6a6a] leading-relaxed max-w-xs">
+        <p className="text-sm text-[#949494] leading-relaxed max-w-xs">
           Your profile's ready. Head to the home screen and plan your first week.
           I'll have a personalised plan waiting.
         </p>
@@ -342,9 +342,9 @@ function InstallTips() {
         </div>
         <div className="flex-1">
           <p className="text-sm font-semibold text-[#f5f5f0]">Add Coach Clawde to your home screen</p>
-          <p className="text-xs text-[#6a6a6a]">Full-screen and offline-ready. No app store needed.</p>
+          <p className="text-xs text-[#949494]">Full-screen and offline-ready. No app store needed.</p>
         </div>
-        {open ? <ChevronUp size={16} className="text-[#4a4a4a]" /> : <ChevronDown size={16} className="text-[#4a4a4a]" />}
+        {open ? <ChevronUp size={16} className="text-[#858585]" /> : <ChevronDown size={16} className="text-[#858585]" />}
       </button>
       {open && (
         <div className="px-4 pb-4 flex flex-col gap-3 fade-in">
@@ -373,7 +373,7 @@ function InstallTips() {
             />
           )}
           {!isIOS && !isAndroid && (
-            <p className="text-xs text-[#6a6a6a] px-1">
+            <p className="text-xs text-[#949494] px-1">
               On desktop, look for the <Smartphone size={12} className="inline -mt-0.5" /> install
               icon in your browser's address bar.
             </p>
@@ -423,7 +423,7 @@ function FlightToHome({ name }: { name: string }) {
     <FixedLayer>
       <div className="absolute inset-0 z-50 bg-[#0a0a0a] overflow-hidden">
         <p
-          className="absolute left-0 right-0 text-center text-sm text-[#6a6a6a] transition-opacity duration-300"
+          className="absolute left-0 right-0 text-center text-sm text-[#949494] transition-opacity duration-300"
           style={{ top: '58%', opacity: landed ? 0 : 1 }}
         >
           See you in there{name.trim() ? `, ${name.trim().split(' ')[0]}` : ''}…

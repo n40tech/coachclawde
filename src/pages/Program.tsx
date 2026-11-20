@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useAppStore } from '../store/useAppStore'
-import { PageHeader } from '../components/layout/PageHeader'
+import { HeaderIconLink, PageHeader } from '../components/layout/PageHeader'
 import { Card, CardSection } from '../components/shared/Card'
 import { Badge } from '../components/shared/Badge'
 import { Reveal } from '../components/shared/Reveal'
@@ -16,7 +16,6 @@ const WEIGHTS_COLOR = '#d97756'
 const CARDIO_COLOR = '#60a5fa'
 
 export function Program() {
-  const navigate = useNavigate()
   const profile = useAppStore((s) => s.profile)
   const lengthWeeks = profile.program?.lengthWeeks ?? 12
 
@@ -27,13 +26,9 @@ export function Program() {
         subtitle={`Your ${lengthWeeks}-week training, week by week`}
         backTo="/progress"
         right={
-          <button
-            onClick={() => navigate('/program/edit')}
-            aria-label="Edit program"
-            className="w-9 h-9 flex items-center justify-center rounded-2xl bg-[#1a1a1a] text-[#6a6a6a] hover:text-[#f5f5f0] transition-colors"
-          >
-            <SlidersHorizontal size={18} />
-          </button>
+          <HeaderIconLink to="/program/edit" label="Edit program">
+            <SlidersHorizontal size={18} aria-hidden />
+          </HeaderIconLink>
         }
       />
 
@@ -79,6 +74,12 @@ function ProgramBarChart() {
   const max = Math.max(1, ...weeks.map((w) => w.weights + w.cardio))
   const todayWeek = toLocalISODate(getMonday(new Date()))
   const CHART_H = 112
+  // The chart is a picture; this is its text alternative.
+  const total = weeks.reduce((n, w) => n + w.weights + w.cardio, 0)
+  const thisWeek = weeks[weeks.length - 1]
+  const summary = total
+    ? `Sessions by week, last 12 weeks: ${total} in all, ${thisWeek.weights + thisWeek.cardio} this week, most in a week ${max}.`
+    : 'Sessions by week, last 12 weeks: none yet.'
 
   return (
     <Card>
@@ -91,7 +92,7 @@ function ProgramBarChart() {
           </div>
         </div>
 
-        <div className="flex items-end justify-between gap-1" style={{ height: CHART_H }}>
+        <div role="img" aria-label={summary} className="flex items-end justify-between gap-1" style={{ height: CHART_H }}>
           {weeks.map((w) => {
             const total = w.weights + w.cardio
             const isCurrent = toLocalISODate(w.weekStart) === todayWeek
@@ -113,7 +114,7 @@ function ProgramBarChart() {
                 ) : (
                   <div className="w-full max-w-[20px] h-1 rounded-full bg-[#1f1f1f]" />
                 )}
-                <span className={`text-2xs mt-1.5 ${isCurrent ? 'text-[#d97756] font-semibold' : 'text-[#4a4a4a]'}`}>
+                <span className={`text-2xs mt-1.5 ${isCurrent ? 'text-[#d97756] font-semibold' : 'text-[#858585]'}`}>
                   {format(w.weekStart, 'd/M')}
                 </span>
               </div>
@@ -127,8 +128,8 @@ function ProgramBarChart() {
 
 function LegendDot({ color, label }: { color: string; label: string }) {
   return (
-    <span className="flex items-center gap-1.5 text-xs text-[#6a6a6a]">
-      <span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: color }} />
+    <span className="flex items-center gap-1.5 text-xs text-[#949494]">
+      <span aria-hidden className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: color }} />
       {label}
     </span>
   )
@@ -142,7 +143,6 @@ interface WeekGroup {
 }
 
 function ProgramHistory() {
-  const navigate = useNavigate()
   const { loggedSessions } = useAppStore()
   const [open, setOpen] = useState<string | null>(null)
   const units = useUnits()
@@ -174,10 +174,10 @@ function ProgramHistory() {
   if (weeks.length === 0) {
     return (
       <div>
-        <p className="text-xs text-[#4a4a4a] uppercase tracking-widest font-medium px-1 mb-3">Week by week</p>
+        <h2 className="text-xs text-[#858585] uppercase tracking-widest font-medium px-1 mb-3">Week by week</h2>
         <Card>
           <CardSection className="py-5">
-            <p className="text-sm text-[#6a6a6a]">Complete some sessions and your week-by-week breakdown will appear here.</p>
+            <p className="text-sm text-[#949494]">Complete some sessions and your week-by-week breakdown will appear here.</p>
           </CardSection>
         </Card>
       </div>
@@ -186,7 +186,7 @@ function ProgramHistory() {
 
   return (
     <div>
-      <p className="text-xs text-[#4a4a4a] uppercase tracking-widest font-medium px-1 mb-3">Week by week</p>
+      <h2 className="text-xs text-[#858585] uppercase tracking-widest font-medium px-1 mb-3">Week by week</h2>
       <div className="flex flex-col gap-2">
         {weeks.map((w, i) => {
           const feels = w.sessions.map((s) => s.feelings).filter((f): f is NonNullable<typeof f> => f != null)
@@ -195,17 +195,17 @@ function ProgramHistory() {
           return (
             <Reveal key={w.key} index={i}>
               <Card>
-                <button onClick={() => setOpen(isOpen ? null : w.key)} className="w-full text-left">
+                <button type="button" onClick={() => setOpen(isOpen ? null : w.key)} aria-expanded={isOpen} className="w-full text-left">
                   <CardSection className="flex items-center gap-3 py-3.5">
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-[#f5f5f0]">{w.label}</p>
                       <div className="flex items-center gap-3 mt-1">
-                        <span className="text-xs text-[#6a6a6a]">
+                        <span className="text-xs text-[#949494]">
                           {w.sessions.length} session{w.sessions.length !== 1 ? 's' : ''}
                         </span>
                         {avgFeel && (
-                          <span className="flex items-center gap-1 text-xs text-[#6a6a6a]">
-                            <Star size={11} className="text-[#d97756] fill-[#d97756]" />
+                          <span className="flex items-center gap-1 text-xs text-[#949494]">
+                            <Star size={11} className="text-[#d97756] fill-[#d97756]" aria-hidden />
                             {avgFeel}/5 avg feel
                           </span>
                         )}
@@ -213,7 +213,8 @@ function ProgramHistory() {
                     </div>
                     <ChevronDown
                       size={16}
-                      className={`text-[#4a4a4a] shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+                      aria-hidden
+                      className={`text-[#858585] shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`}
                     />
                   </CardSection>
                 </button>
@@ -221,9 +222,9 @@ function ProgramHistory() {
                 {isOpen && (
                   <div className="border-t border-[#2a2a2a] px-3 py-2 flex flex-col gap-1">
                     {w.sessions.map((s) => (
-                      <button
+                      <Link
                         key={s.id}
-                        onClick={() => navigate(`/session/${s.plannedSessionId}`)}
+                        to={`/session/${s.plannedSessionId}`}
                         className="flex items-center gap-3 px-2 py-2 rounded-2xl hover:bg-[#1a1a1a] transition-colors text-left"
                       >
                         <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
@@ -235,12 +236,12 @@ function ProgramHistory() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-[#f5f5f0] truncate">{localize(s.title, units)}</p>
-                          <p className="text-xs text-[#6a6a6a] mt-0.5">{format(parseISO(s.date), 'EEE dd MMM')}</p>
+                          <p className="text-xs text-[#949494] mt-0.5">{format(parseISO(s.date), 'EEE dd MMM')}</p>
                         </div>
                         {s.feelings && (
                           <Badge label={`${s.feelings}/5`} variant="accent" />
                         )}
-                      </button>
+                      </Link>
                     ))}
                   </div>
                 )}

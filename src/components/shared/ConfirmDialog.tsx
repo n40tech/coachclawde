@@ -43,7 +43,7 @@ export function ConfirmDialog({
             <div className="w-10 h-10 rounded-2xl bg-[#d97756]/15 flex items-center justify-center shrink-0 text-[#d97756]">
               {icon}
             </div>
-            <h3 id={`${id}-title`} className="text-base font-semibold text-[#f5f5f0]">{title}</h3>
+            <h2 id={`${id}-title`} className="text-base font-semibold text-[#f5f5f0]">{title}</h2>
           </div>
           <div id={`${id}-body`} className="text-sm text-[#a8a29e] leading-relaxed">{children}</div>
           <div className="flex gap-3 pt-1">

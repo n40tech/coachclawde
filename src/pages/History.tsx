@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useAppStore } from '../store/useAppStore'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Card, CardSection } from '../components/shared/Card'
@@ -15,7 +14,6 @@ import { localize } from '../lib/units'
 import { format, parseISO, startOfWeek, isSameWeek } from 'date-fns'
 
 export function History() {
-  const navigate = useNavigate()
   const { loggedSessions, weekPlans } = useAppStore()
   const { removeSession } = useAutoSync()
   // Edit mode: tap tiles to select them, then delete them all at once.
@@ -66,8 +64,8 @@ export function History() {
             <ClawdeMark size={48} sweat />
           </div>
           <div className="text-center">
-            <p className="text-lg font-bold text-[#f5f5f0]">No sessions yet</p>
-            <p className="text-sm text-[#6a6a6a] mt-1">Complete your first session — Clawde's warmed up and waiting.</p>
+            <h2 className="text-lg font-bold text-[#f5f5f0]">No sessions yet</h2>
+            <p className="text-sm text-[#949494] mt-1">Complete your first session — Clawde's warmed up and waiting.</p>
           </div>
         </div>
       </div>
@@ -83,8 +81,8 @@ export function History() {
           <button
             type="button"
             onClick={editing ? stopEditing : () => setEditing(true)}
-            className={`h-9 px-3.5 rounded-2xl text-sm font-medium transition-colors ${
-              editing ? 'bg-[#d97756] text-white' : 'bg-[#1a1a1a] text-[#a8a29e] hover:text-[#f5f5f0]'
+            className={`relative hit-target h-9 px-3.5 rounded-2xl text-sm font-medium transition-colors ${
+              editing ? 'bg-accent-fill text-white' : 'bg-[#1a1a1a] text-[#a8a29e] hover:text-[#f5f5f0]'
             }`}
           >
             {editing ? 'Done' : 'Edit'}
@@ -96,7 +94,7 @@ export function History() {
       {editing && (
         <div className="sticky top-[calc(max(0.5rem,var(--safe-top))+3rem)] z-30 mx-4 mt-3 flex items-center gap-2 rounded-2xl bg-[#161616] border border-[#2a2a2a] pl-4 pr-1.5 py-1.5 fade-in">
           <p role="status" className="flex-1 text-sm text-[#a8a29e]">
-            {selected.size ? `${selected.size} selected` : 'Tap sessions to select'}
+            {selected.size ? `${selected.size} selected` : 'Tick sessions to delete'}
           </p>
           <button
             type="button"
@@ -111,7 +109,7 @@ export function History() {
             disabled={!selected.size}
             className="h-9 px-3 rounded-xl flex items-center gap-1.5 text-sm font-semibold bg-red-500/15 text-red-400 hover:bg-red-500/25 disabled:opacity-40 transition-colors"
           >
-            <Trash2 size={15} />
+            <Trash2 size={15} aria-hidden />
             Delete
           </button>
         </div>
@@ -120,61 +118,70 @@ export function History() {
       <div className="flex flex-col gap-6 px-4 pt-4 pb-tabbar">
         {grouped.map(({ weekLabel, sessions }) => (
           <div key={weekLabel}>
-            <p className="text-xs text-[#4a4a4a] uppercase tracking-widest font-medium px-1 mb-3">{weekLabel}</p>
+            <h2 className="text-xs text-[#858585] uppercase tracking-widest font-medium px-1 mb-3">{weekLabel}</h2>
             <div className="grid grid-cols-1 gap-2 @3xl/app:grid-cols-2">
               {sessions.map((session) => {
                 const planned = getPlanned(session)
                 const isSelected = selected.has(session.id)
-                return (
-                  <Card
-                    key={session.id}
-                    accent={editing && isSelected}
-                    onClick={() => (editing ? toggle(session.id) : navigate(`/session/${session.plannedSessionId}`))}
-                  >
-                    <CardSection className="flex items-center gap-3 py-3">
-                      <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${
-                        session.type === 'weights' ? 'bg-[#d97756]/15' : 'bg-blue-500/15'
-                      }`}>
-                        {session.type === 'weights'
-                          ? <Dumbbell size={18} className="text-[#d97756]" />
-                          : <Waves size={18} className="text-blue-400" />
-                        }
-                      </div>
+                const body = (
+                  <CardSection className="flex items-center gap-3 py-3">
+                    <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${
+                      session.type === 'weights' ? 'bg-[#d97756]/15' : 'bg-blue-500/15'
+                    }`}>
+                      {session.type === 'weights'
+                        ? <Dumbbell size={18} className="text-[#d97756]" aria-hidden />
+                        : <Waves size={18} className="text-blue-400" aria-hidden />
+                      }
+                    </div>
 
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-[#f5f5f0] truncate">{localize(session.title, units)}</p>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-xs text-[#6a6a6a]">{formatSessionDate(session.date)}</span>
-                          {planned && (
-                            <Badge label={planned.intensity} variant={planned.intensity as Intensity} />
-                          )}
-                          {session.feelings && (
-                            <div className="flex items-center gap-0.5">
-                              <Star size={10} className="text-[#d97756] fill-[#d97756]" />
-                              <span className="text-xs text-[#6a6a6a]">{session.feelings}/5</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="shrink-0 flex items-center gap-2">
-                        {planned && <span className="text-xs text-[#4a4a4a]">{formatDuration(planned.estimatedMinutes)}</span>}
-                        {editing ? (
-                          <span
-                            role="checkbox"
-                            aria-checked={isSelected}
-                            aria-label={`Select ${session.title}`}
-                            className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors ${
-                              isSelected ? 'bg-[#d97756] text-white' : 'border-2 border-[#3a3a3a]'
-                            }`}
-                          >
-                            {isSelected && <Check size={14} strokeWidth={3} />}
-                          </span>
-                        ) : (
-                          <ChevronRight size={14} className="text-[#3a3a3a]" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-[#f5f5f0] truncate">{localize(session.title, units)}</p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-xs text-[#949494]">{formatSessionDate(session.date)}</span>
+                        {planned && (
+                          <Badge label={planned.intensity} variant={planned.intensity as Intensity} />
+                        )}
+                        {session.feelings && (
+                          <div className="flex items-center gap-0.5">
+                            <Star size={10} className="text-[#d97756] fill-[#d97756]" aria-hidden />
+                            <span className="text-xs text-[#949494]"><span className="sr-only">felt </span>{session.feelings}/5</span>
+                          </div>
                         )}
                       </div>
-                    </CardSection>
+                    </div>
+
+                    <div className="shrink-0 flex items-center gap-2">
+                      {planned && <span className="text-xs text-[#858585]">{formatDuration(planned.estimatedMinutes)}</span>}
+                      {editing ? (
+                        <span
+                          aria-hidden
+                          className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors ${
+                            isSelected ? 'bg-accent-fill text-white' : 'border-2 border-[#3a3a3a]'
+                          }`}
+                        >
+                          {isSelected && <Check size={14} strokeWidth={3} />}
+                        </span>
+                      ) : (
+                        <ChevronRight size={14} className="text-[#858585]" aria-hidden />
+                      )}
+                    </div>
+                  </CardSection>
+                )
+                // Editing: each tile is a checkbox (a choice card); otherwise a
+                // link to the session.
+                return editing ? (
+                  <label
+                    key={session.id}
+                    className={`block cursor-pointer bg-[#161616] rounded-3xl border overflow-hidden has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-[#d97756] ${
+                      isSelected ? 'border-[#d97756]/30' : 'border-[#2a2a2a]'
+                    }`}
+                  >
+                    <input type="checkbox" className="sr-only" checked={isSelected} onChange={() => toggle(session.id)} />
+                    {body}
+                  </label>
+                ) : (
+                  <Card key={session.id} to={`/session/${session.plannedSessionId}`}>
+                    {body}
                   </Card>
                 )
               })}

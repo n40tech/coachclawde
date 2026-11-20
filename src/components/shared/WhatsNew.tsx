@@ -40,7 +40,7 @@ export function WhatsNewSheet({ releases, onClose }: { releases: Release[]; onCl
           What's new · v{latest.version}
         </p>
         <h2 className="text-xl font-bold text-[#f5f5f0] mt-1 leading-tight">You asked, we built it</h2>
-        <p className="text-sm text-[#6a6a6a] mt-2 leading-relaxed">{latest.headline}</p>
+        <p className="text-sm text-[#949494] mt-2 leading-relaxed">{latest.headline}</p>
       </div>
 
       <div className="flex-1 overflow-y-auto px-5 pb-4 flex flex-col gap-5">
@@ -50,7 +50,7 @@ export function WhatsNewSheet({ releases, onClose }: { releases: Release[]; onCl
       </div>
 
       <div className="px-5 pt-3 pb-safe border-t border-[#1a1a1a]">
-        <p className="text-xs text-[#6a6a6a] text-center mb-3">
+        <p className="text-xs text-[#949494] text-center mb-3">
           Thanks for all the feedback. Keep it coming!
         </p>
         <div className="pb-2 flex flex-col gap-2">
@@ -65,7 +65,7 @@ export function WhatsNewSheet({ releases, onClose }: { releases: Release[]; onCl
                 navigate(action.to)
               }}
             >
-              <RefreshCw size={18} />
+              <RefreshCw size={18} aria-hidden />
               {action.label}
             </Button>
           )}
@@ -104,14 +104,14 @@ function NoteList({
 }: { icon: React.ReactNode; title: string; items: string[]; accent?: boolean }) {
   return (
     <div className={`rounded-2xl border p-4 ${accent ? 'bg-[#d97756]/8 border-[#d97756]/25' : 'bg-[#161616] border-[#2a2a2a]'}`}>
-      <p className={`flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest mb-3 ${accent ? 'text-[#d97756]' : 'text-[#6a6a6a]'}`}>
-        {icon}
+      <h3 className={`flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest mb-3 ${accent ? 'text-[#d97756]' : 'text-[#949494]'}`}>
+        <span aria-hidden>{icon}</span>
         {title}
-      </p>
+      </h3>
       <ul className="flex flex-col gap-2.5">
         {items.map((item, i) => (
           <li key={i} className="flex items-start gap-2.5">
-            <span className="w-4 h-4 rounded-full bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
+            <span aria-hidden className="w-4 h-4 rounded-full bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
               <Check size={10} strokeWidth={3} />
             </span>
             <span className="text-sm text-[#e5e5e0] leading-snug">{item}</span>

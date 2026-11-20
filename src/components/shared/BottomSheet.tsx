@@ -59,9 +59,9 @@ export function SheetCloseButton({ onClose, label = 'Close' }: { onClose: () => 
     <button
       onClick={onClose}
       aria-label={label}
-      className="w-11 h-11 -mr-2 -mt-1.5 shrink-0 flex items-center justify-center rounded-full text-[#6a6a6a] hover:text-[#f5f5f0] hover:bg-[#1a1a1a] transition-colors"
+      className="w-11 h-11 -mr-2 -mt-1.5 shrink-0 flex items-center justify-center rounded-full text-[#949494] hover:text-[#f5f5f0] hover:bg-[#1a1a1a] transition-colors"
     >
-      <X size="1.25em" />
+      <X size="1.25em" aria-hidden />
     </button>
   )
 }

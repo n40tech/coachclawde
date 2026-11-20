@@ -1,8 +1,8 @@
-import { useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useAppStore } from '../store/useAppStore'
 import { useUnits } from '../store/useSettingsStore'
 import { toWeight, type WeightUnit } from '../lib/units'
-import { PageHeader } from '../components/layout/PageHeader'
+import { HeaderIconLink, PageHeader } from '../components/layout/PageHeader'
 import { Card, CardSection } from '../components/shared/Card'
 import { Reveal } from '../components/shared/Reveal'
 import { SyncIndicator } from '../components/shared/SyncIndicator'
@@ -15,7 +15,6 @@ import { getMonday, addDays, toLocalISODate, WEEK_DAYS_MON } from '../lib/weekUt
 import type { LoggedSession } from '../types'
 
 export function Progress() {
-  const navigate = useNavigate()
   const { loggedSessions, profile } = useAppStore()
   const weightUnit = useUnits().weight
 
@@ -57,12 +56,9 @@ export function Progress() {
         right={
           <div className="flex items-center gap-2">
             <SyncIndicator />
-            <button
-              onClick={() => navigate('/settings')}
-              className="w-9 h-9 flex items-center justify-center rounded-2xl bg-[#1a1a1a] text-[#6a6a6a] hover:text-[#f5f5f0] transition-colors"
-            >
-              <Settings size={16} />
-            </button>
+            <HeaderIconLink to="/settings" label="Settings">
+              <Settings size={16} aria-hidden />
+            </HeaderIconLink>
           </div>
         }
       />
@@ -70,7 +66,7 @@ export function Progress() {
       <div className="flex flex-col gap-6 w-full px-4 pt-4 pb-tabbar">
         {/* Program progress — tap to configure & see week-by-week history */}
         <Reveal>
-          <Card accent onClick={() => navigate('/program')}>
+          <Card accent to="/program">
             <CardSection>
               <div className="flex items-center justify-between mb-3">
                 <p className="text-sm font-semibold text-[#f5f5f0]">{program.length}-Week Program</p>
@@ -78,19 +74,21 @@ export function Progress() {
                   <span className="text-xs text-[#d97756]">
                     {program.isComplete ? 'Complete' : `Week ${program.week}`}
                   </span>
-                  <ChevronRight size={15} className="text-[#4a4a4a]" />
+                  <ChevronRight size={15} className="text-[#858585]" aria-hidden />
                 </div>
               </div>
-              <div className="h-2 bg-[#1a1a1a] rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-[#d97756] to-[#f5a07a] rounded-full transition-all"
-                  style={{ width: `${program.percent}%` }}
+              <div className="h-2 rounded-full overflow-hidden">
+                <progress
+                  className="meter [--meter-fill:linear-gradient(to_right,#d97756,#f5a07a)]"
+                  value={program.percent}
+                  max={100}
+                  aria-hidden
                 />
               </div>
               <div className="flex justify-between mt-1.5">
-                <span className="text-xs text-[#4a4a4a]">Start</span>
-                <span className="text-xs text-[#4a4a4a]">{program.percent}% complete</span>
-                <span className="text-xs text-[#4a4a4a]">Week {program.length}</span>
+                <span className="text-xs text-[#858585]">Start</span>
+                <span className="text-xs text-[#858585]">{program.percent}% complete</span>
+                <span className="text-xs text-[#858585]">Week {program.length}</span>
               </div>
             </CardSection>
           </Card>
@@ -131,7 +129,7 @@ export function Progress() {
                   </div>
                   <div>
                     <p className="text-lg font-bold text-[#f5f5f0]">{formatVolume(totalVolume, weightUnit)}</p>
-                    <p className="text-xs text-[#6a6a6a]">Total volume lifted</p>
+                    <p className="text-xs text-[#949494]">Total volume lifted</p>
                   </div>
                 </CardSection>
               </Card>
@@ -148,7 +146,7 @@ export function Progress() {
                   <div className="w-10 h-10 rounded-2xl bg-[#d97756]/15 flex items-center justify-center shrink-0">
                     <Trophy size={18} className="text-[#d97756]" />
                   </div>
-                  <p className="text-sm text-[#6a6a6a]">
+                  <p className="text-sm text-[#949494]">
                     Log some sessions and your personal bests for each lift will show up here.
                   </p>
                 </CardSection>
@@ -156,13 +154,13 @@ export function Progress() {
             ) : (
               <div className="flex flex-col gap-3">
                 {weightPRs.length > 0 && <WeightPRCard prs={weightPRs} limit={3} />}
-                <button
-                  onClick={() => navigate('/progress/best-efforts')}
+                <Link
+                  to="/progress/best-efforts"
                   className="flex items-center justify-center gap-1 py-2 text-sm font-medium text-[#d97756] hover:underline"
                 >
-                  View all
-                  <ChevronRight size={15} />
-                </button>
+                  View all<span className="sr-only"> best efforts</span>
+                  <ChevronRight size={15} aria-hidden />
+                </Link>
               </div>
             )}
           </Section>
@@ -187,12 +185,21 @@ function ActivityCalendar({ sessions }: { sessions: LoggedSession[] }) {
     Array.from({ length: 7 }, (_, d) => addDays(start, w * 7 + d))
   )
 
+  // The grid is a picture; this is its text alternative.
+  const inWindow = [...counts.entries()].filter(([k]) => k >= toLocalISODate(start) && k <= todayKey)
+  const activeDays = inWindow.length
+  const total = inWindow.reduce((n, [, c]) => n + c, 0)
+  const summary = total
+    ? `Last 4 weeks: ${total} session${total !== 1 ? 's' : ''} on ${activeDays} day${activeDays !== 1 ? 's' : ''}.`
+    : 'Last 4 weeks: no sessions yet.'
+
   return (
     <Card>
-      <CardSection className="flex flex-col gap-2">
+      <CardSection className="flex flex-col gap-2" >
+        <div role="img" aria-label={summary} className="flex flex-col gap-2">
         <div className="grid grid-cols-7 gap-1.5 mb-0.5">
           {WEEK_DAYS_MON.map((d, i) => (
-            <span key={i} className="text-2xs text-[#4a4a4a] text-center">{d[0]}</span>
+            <span key={i} className="text-2xs text-[#858585] text-center">{d[0]}</span>
           ))}
         </div>
         {weeks.map((week, wi) => (
@@ -213,12 +220,13 @@ function ActivityCalendar({ sessions }: { sessions: LoggedSession[] }) {
             })}
           </div>
         ))}
-        <div className="flex items-center justify-end gap-1.5 mt-1">
-          <span className="text-2xs text-[#4a4a4a]">Less</span>
+        </div>
+        <div aria-hidden className="flex items-center justify-end gap-1.5 mt-1">
+          <span className="text-2xs text-[#858585]">Less</span>
           {[0, 1, 2, 3].map((n) => (
             <div key={n} className={`w-2.5 h-2.5 rounded-sm ${heatClass(n, false)}`} />
           ))}
-          <span className="text-2xs text-[#4a4a4a]">More</span>
+          <span className="text-2xs text-[#858585]">More</span>
         </div>
       </CardSection>
     </Card>
@@ -236,7 +244,7 @@ function heatClass(count: number, future: boolean): string {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="w-full">
-      <p className="text-xs text-[#4a4a4a] uppercase tracking-widest font-medium px-1 mb-3">{title}</p>
+      <h2 className="text-xs text-[#858585] uppercase tracking-widest font-medium px-1 mb-3">{title}</h2>
       {children}
     </div>
   )
@@ -251,7 +259,7 @@ function StatCard({ icon, value, label }: { icon: React.ReactNode; value: string
         </div>
         <div>
           <p className="text-xl font-bold text-[#f5f5f0] leading-tight">{value}</p>
-          <p className="text-xs text-[#6a6a6a] mt-0.5">{label}</p>
+          <p className="text-xs text-[#949494] mt-0.5">{label}</p>
         </div>
       </CardSection>
     </Card>

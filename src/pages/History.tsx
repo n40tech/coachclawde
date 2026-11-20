@@ -4,12 +4,12 @@ import { useAppStore } from '../store/useAppStore'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Card, CardSection } from '../components/shared/Card'
 import { Badge } from '../components/shared/Badge'
-import { ChevronRight, Dumbbell, Waves, Star, Trash2 } from 'lucide-react'
+import { Check, ChevronRight, Dumbbell, Waves, Star, Trash2 } from 'lucide-react'
 import { ConfirmDialog } from '../components/shared/ConfirmDialog'
 import { useAutoSync } from '../hooks/useAutoSync'
 import { ClawdeMark } from '../components/shared/ClawdeMark'
 import { formatSessionDate, formatDuration } from '../lib/dateUtils'
-import type { Intensity, LoggedSession } from '../types'
+import type { Intensity } from '../types'
 import { useUnits } from '../store/useSettingsStore'
 import { localize } from '../lib/units'
 import { format, parseISO, startOfWeek, isSameWeek } from 'date-fns'
@@ -18,7 +18,10 @@ export function History() {
   const navigate = useNavigate()
   const { loggedSessions, weekPlans } = useAppStore()
   const { removeSession } = useAutoSync()
-  const [toDelete, setToDelete] = useState<LoggedSession | null>(null)
+  // Edit mode: tap tiles to select them, then delete them all at once.
+  const [editing, setEditing] = useState(false)
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [confirmDelete, setConfirmDelete] = useState(false)
   const units = useUnits()
 
   const completed = [...loggedSessions]
@@ -31,6 +34,28 @@ export function History() {
   function getPlanned(session: (typeof completed)[0]) {
     return weekPlans.flatMap((p) => p.sessions).find((s) => s.id === session.plannedSessionId)
   }
+
+  function toggle(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  function stopEditing() {
+    setEditing(false)
+    setSelected(new Set())
+  }
+
+  function deleteSelected() {
+    for (const id of selected) void removeSession(id)
+    setConfirmDelete(false)
+    stopEditing()
+  }
+
+  const allSelected = completed.length > 0 && selected.size === completed.length
 
   if (completed.length === 0) {
     return (
@@ -51,7 +76,46 @@ export function History() {
 
   return (
     <div className="flex flex-col min-h-svh bg-[#0a0a0a]">
-      <PageHeader title="History" subtitle={`${completed.length} session${completed.length !== 1 ? 's' : ''} completed`} />
+      <PageHeader
+        title="History"
+        subtitle={`${completed.length} session${completed.length !== 1 ? 's' : ''} completed`}
+        right={
+          <button
+            type="button"
+            onClick={editing ? stopEditing : () => setEditing(true)}
+            className={`h-9 px-3.5 rounded-2xl text-sm font-medium transition-colors ${
+              editing ? 'bg-[#d97756] text-white' : 'bg-[#1a1a1a] text-[#a8a29e] hover:text-[#f5f5f0]'
+            }`}
+          >
+            {editing ? 'Done' : 'Edit'}
+          </button>
+        }
+      />
+
+      {/* Selection bar, under the header while editing. */}
+      {editing && (
+        <div className="sticky top-[calc(max(0.5rem,var(--safe-top))+3rem)] z-30 mx-4 mt-3 flex items-center gap-2 rounded-2xl bg-[#161616] border border-[#2a2a2a] pl-4 pr-1.5 py-1.5 fade-in">
+          <p role="status" className="flex-1 text-sm text-[#a8a29e]">
+            {selected.size ? `${selected.size} selected` : 'Tap sessions to select'}
+          </p>
+          <button
+            type="button"
+            onClick={() => setSelected(allSelected ? new Set() : new Set(completed.map((s) => s.id)))}
+            className="h-9 px-3 rounded-xl text-sm font-medium text-[#a8a29e] hover:text-[#f5f5f0]"
+          >
+            {allSelected ? 'Select none' : 'Select all'}
+          </button>
+          <button
+            type="button"
+            onClick={() => setConfirmDelete(true)}
+            disabled={!selected.size}
+            className="h-9 px-3 rounded-xl flex items-center gap-1.5 text-sm font-semibold bg-red-500/15 text-red-400 hover:bg-red-500/25 disabled:opacity-40 transition-colors"
+          >
+            <Trash2 size={15} />
+            Delete
+          </button>
+        </div>
+      )}
 
       <div className="flex flex-col gap-6 px-4 pt-4 pb-tabbar">
         {grouped.map(({ weekLabel, sessions }) => (
@@ -60,10 +124,12 @@ export function History() {
             <div className="grid grid-cols-1 gap-2 @3xl/app:grid-cols-2">
               {sessions.map((session) => {
                 const planned = getPlanned(session)
+                const isSelected = selected.has(session.id)
                 return (
                   <Card
                     key={session.id}
-                    onClick={() => navigate(`/session/${session.plannedSessionId}`)}
+                    accent={editing && isSelected}
+                    onClick={() => (editing ? toggle(session.id) : navigate(`/session/${session.plannedSessionId}`))}
                   >
                     <CardSection className="flex items-center gap-3 py-3">
                       <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${
@@ -93,15 +159,20 @@ export function History() {
 
                       <div className="shrink-0 flex items-center gap-2">
                         {planned && <span className="text-xs text-[#4a4a4a]">{formatDuration(planned.estimatedMinutes)}</span>}
-                        <button
-                          type="button"
-                          onClick={(e) => { e.stopPropagation(); setToDelete(session) }}
-                          aria-label={`Delete ${session.title}`}
-                          className="p-2 -m-1 rounded-xl text-[#4a4a4a] hover:text-red-400 hover:bg-red-500/10 transition-colors"
-                        >
-                          <Trash2 size={15} />
-                        </button>
-                        <ChevronRight size={14} className="text-[#3a3a3a]" />
+                        {editing ? (
+                          <span
+                            role="checkbox"
+                            aria-checked={isSelected}
+                            aria-label={`Select ${session.title}`}
+                            className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors ${
+                              isSelected ? 'bg-[#d97756] text-white' : 'border-2 border-[#3a3a3a]'
+                            }`}
+                          >
+                            {isSelected && <Check size={14} strokeWidth={3} />}
+                          </span>
+                        ) : (
+                          <ChevronRight size={14} className="text-[#3a3a3a]" />
+                        )}
                       </div>
                     </CardSection>
                   </Card>
@@ -112,15 +183,15 @@ export function History() {
         ))}
       </div>
 
-      {toDelete && (
+      {confirmDelete && (
         <ConfirmDialog
           icon={<Trash2 size={20} />}
-          title="Delete this session?"
+          title={`Delete ${selected.size} session${selected.size !== 1 ? 's' : ''}?`}
           confirmLabel="Delete"
-          onConfirm={() => { void removeSession(toDelete.id); setToDelete(null) }}
-          onCancel={() => setToDelete(null)}
+          onConfirm={deleteSelected}
+          onCancel={() => setConfirmDelete(false)}
         >
-          {toDelete.title} on {formatSessionDate(toDelete.date)} will be removed from your history and progress. This can't be undone.
+          {selected.size === 1 ? 'It' : 'They'} will be removed from your history and progress. This can't be undone.
         </ConfirmDialog>
       )}
     </div>

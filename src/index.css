@@ -113,11 +113,13 @@ html {
   /* Screen edge → bar: clear of the home indicator, never flush. */
   --tabbar-offset: max(var(--tabbar-gap), var(--safe-bottom));
   --tabbar-side: var(--tabbar-gap);
-  /* Room content must leave beneath it so the last row isn't hidden. The
-     page ends at the (reported) viewport bottom, which in the installed
-     iPhone app can sit `--viewport-gap` above the screen bottom the bar is
-     anchored to. */
-  --tabbar-clearance: calc(var(--tabbar-offset) + var(--tabbar-h) + var(--tabbar-gap) - var(--viewport-gap, 0px));
+  /* Room content must leave beneath it so the last row isn't hidden. This
+     used to subtract `--viewport-gap` (the installed iPhone app can report a
+     viewport shorter than the screen), but iOS still scrolls the page's end
+     under the bar there, so the last card on long pages (Progress) was
+     covered. Clearing the full bar is always safe: at worst a little extra
+     space at the end of a page. */
+  --tabbar-clearance: calc(var(--tabbar-offset) + var(--tabbar-h) + var(--tabbar-gap));
 
   /* iPad / wide layout: sidebar navigation replaces the tab bar. */
   --sidebar-w: 14rem;

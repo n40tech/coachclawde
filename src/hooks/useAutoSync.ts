@@ -40,11 +40,16 @@ export function useAutoSync() {
       const local = useAppStore.getState().loggedSessions
       const remoteIds = new Set(remote.loggedSessions.map((s) => s.id))
       const localOnly = local.filter((s) => !remoteIds.has(s.id))
+      // A workout still in progress on this device is newer here than in the
+      // database (reps typed since the last ticked set), and the pull now runs
+      // in the background while the app is already open: keep the local copy.
+      const liveHere = new Map(local.filter((s) => s.status === 'in-progress').map((s) => [s.id, s]))
+      const merged = remote.loggedSessions.map((s) => (s.status === 'in-progress' && liveHere.get(s.id)) || s)
       restoreFromRemote({
         // Keep the local profile if the database has none yet (first sign-in).
         profile: remote.profile ?? useAppStore.getState().profile,
         weekPlans: remote.weekPlans,
-        loggedSessions: [...remote.loggedSessions, ...localOnly],
+        loggedSessions: [...merged, ...localOnly],
         // Same merge for check-ins; none at all if the table is missing.
         checkIns: remote.checkIns
           ? [...remote.checkIns, ...useAppStore.getState().checkIns.filter((c) => !remote.checkIns!.some((r) => r.id === c.id))]

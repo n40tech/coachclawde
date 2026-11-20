@@ -31,9 +31,15 @@ self.addEventListener('notificationclick', (event) => {
   event.waitUntil(
     (async () => {
       const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true })
-      // Bring the app back as it was (mid-workout); only open a page if it's closed.
+      // Bring the app back as it was (mid-workout), then ask it to go to the
+      // alert's page in-app (the exercise up next: no reload, nothing lost).
+      // Only open a page if the app is closed.
       const open = windows.find((w) => w.url.startsWith(self.location.origin))
-      if (open) return open.focus()
+      if (open) {
+        const focused = await open.focus()
+        ;(focused || open).postMessage({ type: 'open-url', url: new URL(url).pathname })
+        return
+      }
       return self.clients.openWindow(url)
     })(),
   )

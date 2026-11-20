@@ -17,12 +17,19 @@ interface ExerciseTileProps {
   onSetConfirm: (setIndex: number) => void
   isActive: boolean
   onActivate: () => void
+  /** Bumped to open this tile from outside (a rest alert opening the workout here). */
+  revealNonce?: number
   /** The set under way in this exercise since the last rest, if any (see SetClock). */
   timedSet?: { setIndex: number; startedAt: number }
 }
 
-export function ExerciseTile({ planned, logged, onUpdateSet, onSetComplete, onSetUncomplete, onSetConfirm, isActive, onActivate, timedSet }: ExerciseTileProps) {
+export function ExerciseTile({ planned, logged, onUpdateSet, onSetComplete, onSetUncomplete, onSetConfirm, isActive, onActivate, timedSet, revealNonce }: ExerciseTileProps) {
   const [expanded, setExpanded] = useState(isActive)
+  const [prevReveal, setPrevReveal] = useState(revealNonce)
+  if (revealNonce !== prevReveal) {
+    setPrevReveal(revealNonce)
+    if (revealNonce) setExpanded(true)
+  }
   // The timed set's tile opens so the orange tick is in view. The tap that
   // started the timer may be on this header: its click mustn't close it again.
   const [prevTimed, setPrevTimed] = useState(timedSet)
@@ -44,7 +51,8 @@ export function ExerciseTile({ planned, logged, onUpdateSet, onSetComplete, onSe
   return (
     <div
       data-exercise={planned.id}
-      className={`rounded-[2rem] border overflow-hidden transition-all duration-200 ${
+      // Scrolled to from a rest alert: clear of the sticky page header.
+      className={`scroll-mt-[calc(max(0.5rem,var(--safe-top))+4.5rem)] rounded-[2rem] border overflow-hidden transition-all duration-200 ${
         isActive
           ? 'border-[#d97756]/40 bg-gradient-to-br from-[#d97756]/5 to-[#161616]'
           : allDone

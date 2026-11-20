@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
+import { isAcceptedAlertUrl } from './lib/alertLink'
 import { useEffect } from 'react'
 import { applyPendingUpdate } from './lib/appUpdate'
 import type { ReactNode } from 'react'
@@ -37,6 +38,7 @@ function App() {
     <AuthProvider>
       <BrowserRouter>
         <UpdateOnNavigate />
+        <ServiceWorkerLinks />
         {/* The `app` container drives the phone ↔ iPad layout switch: container
             queries (`@3xl/app:`) rather than media queries, so the shell
             responds to the space it actually has. */}
@@ -98,6 +100,28 @@ function UpdateOnNavigate() {
   return null
 }
 
+/**
+ * A tapped rest alert, with the app already open: the service worker
+ * (public/push-sw.js) focuses the app and posts the alert's path, opened here
+ * in-app (the workout at the exercise up next).
+ */
+function ServiceWorkerLinks() {
+  const navigate = useNavigate()
+  useEffect(() => {
+    const sw = typeof navigator !== 'undefined' ? navigator.serviceWorker : undefined
+    if (!sw) return
+    const onMessage = (e: MessageEvent) => {
+      const d = e.data as { type?: unknown; url?: unknown } | null
+      if (d?.type === 'open-url' && typeof d.url === 'string' && isAcceptedAlertUrl(d.url)) navigate(d.url)
+    }
+    sw.addEventListener('message', onMessage)
+    // Deliver any message that arrived before this listener.
+    sw.startMessages()
+    return () => sw.removeEventListener('message', onMessage)
+  }, [navigate])
+  return null
+}
+
 /** Single centred phone-width column, for the screens without navigation. */
 function PhoneColumn({ children }: { children: ReactNode }) {
   return (
@@ -122,6 +146,7 @@ function MainApp() {
               <Route path="/" element={<Home />} />
               <Route path="/plan" element={<WeekPlanner />} />
               <Route path="/session/:id" element={<Session />} />
+              <Route path="/session/:id/next/:exerciseId" element={<Session />} />
               <Route path="/history" element={<History />} />
               <Route path="/progress" element={<Progress />} />
               <Route path="/progress/best-efforts" element={<BestEfforts />} />

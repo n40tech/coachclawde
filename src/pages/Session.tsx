@@ -39,7 +39,8 @@ function usePlannedSession(sessionId: string | undefined): PlannedSession | unde
 }
 
 export function Session() {
-  const { id } = useParams<{ id: string }>()
+  // `/session/:id/next/:exerciseId` (a rest alert): open at the exercise up next.
+  const { id, exerciseId: revealId } = useParams<{ id: string; exerciseId?: string }>()
   const navigate = useNavigate()
   const location = useLocation()
   const planned = usePlannedSession(id)
@@ -91,6 +92,29 @@ export function Session() {
   useEffect(() => {
     if (planned?.type !== 'cardio') warmExerciseDb()
   }, [planned?.type])
+
+  // Opened from a rest alert: make the exercise up next the active one,
+  // expand it and scroll to it, then drop it from the URL.
+  const [reveal, setReveal] = useState<{ target: string; n: number }>({ target: '', n: 0 })
+  const [seenReveal, setSeenReveal] = useState<string | undefined>(undefined)
+  if (revealId !== seenReveal) {
+    setSeenReveal(revealId)
+    if (revealId) {
+      setActiveExerciseId(revealId)
+      setReveal((r) => ({ target: revealId, n: r.n + 1 }))
+    }
+  }
+  useEffect(() => {
+    if (!reveal.n) return
+    const frame = requestAnimationFrame(() => {
+      document.querySelector(`[data-exercise="${CSS.escape(reveal.target)}"]`)
+        ?.scrollIntoView({ block: 'start', behavior: 'smooth' })
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [reveal])
+  useEffect(() => {
+    if (revealId && id) navigate(`/session/${id}`, { replace: true })
+  }, [revealId, id, navigate])
 
   if (!planned && existingLog?.substitute) {
     return <LoggedActivityView log={existingLog} onBack={goBack} />
@@ -204,7 +228,9 @@ export function Session() {
           ? `Up next: ${upNext.name}`
           : 'Last set — finish up'
         : `Up next: ${done.name} · set ${setIndex + 2}`
-      startTimer(restSeconds, label, planned!.id)
+      // The alert opens the workout at what's next: this exercise, or the next one after its last set.
+      const nextId = isLastSet ? upNext?.plannedExerciseId : exerciseId
+      startTimer(restSeconds, label, planned!.id, nextId)
     } else {
       startSetClock(planned!.id)
     }
@@ -477,6 +503,7 @@ export function Session() {
                     onSetComplete={(setIdx, payload) => completeSet(i, setIdx, payload)}
                     onSetUncomplete={(setIdx) => uncompleteSet(i, setIdx)}
                     isActive={le.plannedExerciseId === activeId}
+                    revealNonce={reveal.target === le.plannedExerciseId ? reveal.n : undefined}
                     onActivate={() => setActiveExerciseId(le.plannedExerciseId)}
                     onSetConfirm={(setIdx) => confirmSet(i, setIdx)}
                     timedSet={inProgress?.exerciseIdx === i && clockHere ? { setIndex: inProgress.setIndex, startedAt: clockHere.startedAt } : undefined}

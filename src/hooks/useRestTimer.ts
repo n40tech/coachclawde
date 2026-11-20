@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useAppStore } from '../store/useAppStore'
 import { combine, scheduleEarcon, unlockAudio, type CueHandle } from '../lib/audioCues'
 import { restAlarm, watchVisibilityForRestAlarm } from '../lib/restAlerts'
+import { restAlertUrl } from '../lib/alertLink'
 
 // The pending end-of-rest alarm. Module-level because several components use
 // this hook, but only one rest timer runs at a time.
@@ -73,12 +74,13 @@ export function useRestTimer() {
     return () => clearInterval(id)
   }, [timer.isActive, timer.endTime, clearTimer])
 
-  function startTimer(seconds: number, label: string, sessionId?: string) {
+  /** `nextExerciseId`: the exercise up next, so tapping the rest alert opens the workout there. */
+  function startTimer(seconds: number, label: string, sessionId?: string, nextExerciseId?: string) {
     scheduleAlarm(seconds)
     retimeAudioOnReturn()
     watchVisibilityForRestAlarm()
     const endTime = Date.now() + seconds * 1000
-    restAlarm.start(endTime, label, window.location.pathname)
+    restAlarm.start(endTime, label, restAlertUrl(sessionId, nextExerciseId, window.location.pathname))
     setTimer({
       isActive: true,
       endTime,

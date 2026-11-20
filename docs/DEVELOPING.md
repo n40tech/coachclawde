@@ -201,6 +201,11 @@ are marked as seen when they finish onboarding.
     only while the app is hidden mid-rest, armed by beacon, cancelled on return.
   - `public/push-sw.js` — the service worker's push and notification-click
     handlers, pulled into the generated worker by `workbox.importScripts`.
+    A tapped alert opens the workout at the exercise up next: the alarm's URL
+    is `/session/<id>/next/<exerciseId>` (`lib/alertLink`; a path, because
+    the function only accepts word characters, `-`, `.` and `/`). With the
+    app already open the worker focuses it and posts the path, which
+    `ServiceWorkerLinks` in `App.tsx` navigates to in-app.
     Push only works in a build (`npm run build && npm run preview`), never
     `npm run dev`, which registers no service worker.
   - `supabase/functions/rest-alarm` — arms, cancels and (from the pg_cron

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Check, ChevronDown, ChevronUp, Share2, Trash2 } from 'lucide-react'
+import { ChevronDown, ChevronUp, Share2, Trash2 } from 'lucide-react'
 import { FixedLayer } from '../layout/FixedLayer'
 import { ClawdeMark } from '../shared/ClawdeMark'
 import { ConfirmDialog } from '../shared/ConfirmDialog'
@@ -8,7 +8,7 @@ import { useUnits } from '../../store/useSettingsStore'
 import { toWeight } from '../../lib/units'
 import { formatSessionDate } from '../../lib/dateUtils'
 import { formatWorkoutTime, type WorkoutSummary } from '../../lib/workoutSummary'
-import { SHARE_STYLES, buildShareFile, formatVolumeCompact, shareFile, type ShareStyle } from '../../lib/shareCard'
+import { SHARE_STYLES, buildShareFile, formatVolume, shareFile, type ShareStyle } from '../../lib/shareCard'
 import type { Rating, SessionOutcome } from '../../types'
 
 export interface SessionCompleteData {
@@ -86,30 +86,29 @@ export function WorkoutComplete({ summary, isLastSessionOfWeek, onSave, onCheckI
                 <p className="font-mono text-2xs font-bold uppercase tracking-[0.12em] text-[#a39e98]">
                   {summary.title} · {formatSessionDate(summary.date)}
                 </p>
-                <h2 className="font-pixel uppercase text-[3.25rem] leading-[0.92] tracking-[0.02em] text-[#f5f5f0] mt-3">
-                  Workout<br />complete
-                  <Check aria-hidden size="0.8em" strokeWidth={3} className="inline-block align-baseline ml-2 text-[#e07f5e]" />
+                <h2 className="font-pixel uppercase text-3xl leading-none tracking-[0.02em] text-[#f5f5f0] mt-3">
+                  Workout complete
                 </h2>
               </div>
 
-              {/* Stats beside Clawde */}
-              <div className="grid grid-cols-[1fr_auto] items-center gap-3">
-                <dl className="grid grid-cols-2 gap-x-4 gap-y-4">
-                  <Stat value={String(summary.reps)} label="Reps" />
-                  <Stat value={String(summary.sets)} label="Sets" />
-                  <Stat value={formatWorkoutTime(summary.durationSeconds).replace(' ', '')} label="Time" />
-                  <Stat value={formatVolumeCompact(summary.totalVolumeKg, unit)} label="Lifted" />
+              {/* Stats as a list beside Clawde */}
+              <div className="grid grid-cols-[1fr_auto] items-center gap-5">
+                <dl className="flex flex-col divide-y divide-[#272523] border-y border-[#272523]">
+                  <Stat label="Reps" value={String(summary.reps)} />
+                  <Stat label="Sets" value={String(summary.sets)} />
+                  <Stat label="Time" value={formatWorkoutTime(summary.durationSeconds)} />
+                  <Stat label="Lifted" value={formatVolume(summary.totalVolumeKg, unit)} />
                 </dl>
                 <div className="relative">
                   <div aria-hidden className="absolute inset-0 -m-4 rounded-full bg-[#d97756]/20 blur-2xl" />
-                  <ClawdeMark size={132} cheer sweat className="relative" />
+                  <ClawdeMark size={120} cheer sweat className="relative" />
                 </div>
               </div>
 
               {/* New PBs */}
               {summary.pbs.length > 0 && (
                 <section className="rounded-[1.75rem] bg-[#121211] dot-grid border border-[#272523] p-5">
-                  <h3 className="font-pixel uppercase text-3xl leading-none text-[#e07f5e]">
+                  <h3 className="text-lg font-bold leading-none text-[#e07f5e]">
                     New PB{summary.pbs.length > 1 ? 's' : ''}!
                   </h3>
                   <ul className="mt-4 flex flex-col gap-2.5">
@@ -139,7 +138,7 @@ export function WorkoutComplete({ summary, isLastSessionOfWeek, onSave, onCheckI
                       aria-checked={feelings === r}
                       aria-label={`${r}, ${FEEL[r]}`}
                       onClick={() => setFeelings(r)}
-                      className={`aspect-square rounded-2xl font-pixel text-2xl transition-all duration-150 ${
+                      className={`aspect-square rounded-2xl text-lg font-semibold transition-all duration-150 ${
                         feelings === r
                           ? 'bg-[#e07f5e] text-white scale-105 shadow-lg shadow-[#d97756]/25'
                           : 'bg-[#121211] text-[#6a6560] border border-[#272523] hover:text-[#f5f5f0]'
@@ -199,7 +198,7 @@ export function WorkoutComplete({ summary, isLastSessionOfWeek, onSave, onCheckI
           ) : (
             <div className="min-h-[80svh] flex flex-col items-center justify-center text-center gap-5">
               <ClawdeMark size={120} cheer sweat />
-              <h2 className="font-pixel uppercase text-4xl leading-none text-[#f5f5f0]">Week done</h2>
+              <h2 className="text-2xl font-bold text-[#f5f5f0]">That's your week done</h2>
               <p className="text-sm text-[#a39e98] leading-relaxed max-w-xs">
                 Workout saved. A 1-minute check-in? Your answers shape next week’s plan. Totally optional.
               </p>
@@ -229,9 +228,9 @@ export function WorkoutComplete({ summary, isLastSessionOfWeek, onSave, onCheckI
 
 function Stat({ value, label }: { value: string; label: string }) {
   return (
-    <div className="min-w-0 flex flex-col-reverse">
-      <dt className="font-mono text-2xs font-bold uppercase tracking-[0.12em] text-[#6a6560] mt-1.5">{label}</dt>
-      <dd className="font-pixel text-[2.5rem] leading-none text-[#f5f5f0] tabular-nums truncate">{value}</dd>
+    <div className="flex items-baseline justify-between gap-3 py-2.5">
+      <dt className="font-mono text-2xs font-bold uppercase tracking-[0.12em] text-[#6a6560]">{label}</dt>
+      <dd className="text-lg font-semibold text-[#f5f5f0] tabular-nums truncate">{value}</dd>
     </div>
   )
 }

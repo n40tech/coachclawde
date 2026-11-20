@@ -4,10 +4,9 @@ import { toWeight, type WeightUnit } from './units'
 import { formatSessionDate } from './dateUtils'
 
 /**
- * Square (1080 × 1080) workout images to share, in three designs. All are a
- * premium monotone grey: charcoal with the website's dot grid, Clawde large in
- * greys, the website's pixel lettering for numbers and the wordmark at the
- * foot.
+ * Square (1080 × 1080) workout images to share, in three designs, in the
+ * app's colours: near-black with a warm glow and the website's dot grid,
+ * Clawde large in his orange, stats as a list, and the wordmark at the foot.
  */
 export type ShareStyle = 'summary' | 'headline' | 'log'
 
@@ -19,24 +18,15 @@ export const SHARE_STYLES: { id: ShareStyle; label: string }[] = [
 
 const SIZE = 1080
 const PAD = 84
-const BG_TOP = '#1b1a19'
-const BG_BOTTOM = '#080808'
-const PANEL = 'rgba(255,255,255,0.045)'
-const LINE = 'rgba(255,255,255,0.09)'
-const INK = '#f2f1ee'
-const INK_2 = '#9b9792'
-const INK_3 = '#64605c'
-const PIXEL = '"Tiny5", "Space Mono", monospace'
+const BG_TOP = '#1d1410'
+const BG_BOTTOM = '#090909'
+const LINE = 'rgba(255,255,255,0.10)'
+const INK = '#f5f5f0'
+const INK_2 = '#a8a29e'
+const INK_3 = '#6a6560'
+const ACCENT = '#e07f5e'
 const MONO = '"Space Mono", ui-monospace, monospace'
 const SANS = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif"
-
-/** Clawde in greys: same pixels, monotone. */
-const GREY: Record<string, string> = {
-  '#d97756': '#8d8984', // body
-  '#bd5f38': '#5c5955', // legs
-  '#2a1712': '#141312', // eyes
-  '#fbf7f0': '#e9e7e3', // sweatband
-}
 
 /** "12.4 t", "8,450 kg" or the lb equivalent. */
 export function formatVolume(kg: number, unit: WeightUnit): string {
@@ -56,7 +46,6 @@ export function formatVolumeCompact(kg: number, unit: WeightUnit): string {
 export async function loadShareFonts(): Promise<void> {
   if (typeof document === 'undefined' || !document.fonts) return
   await Promise.all([
-    document.fonts.load(`80px ${PIXEL}`),
     document.fonts.load(`700 30px ${MONO}`),
     document.fonts.load(`400 30px ${MONO}`),
   ]).catch(() => undefined)
@@ -82,7 +71,7 @@ function fitSize(ctx: CanvasRenderingContext2D, text: string, font: (px: number)
 
 function crab(ctx: CanvasRenderingContext2D, x: number, y: number, cell: number) {
   for (const c of crabCells()) {
-    ctx.fillStyle = GREY[c.fill] ?? '#8d8984'
+    ctx.fillStyle = c.fill
     ctx.fillRect(x + c.x * cell, y + c.y * cell, cell + 0.6, cell + 0.6)
   }
 }
@@ -93,14 +82,14 @@ function backdrop(ctx: CanvasRenderingContext2D, glowX: number, glowY: number) {
   bg.addColorStop(1, BG_BOTTOM)
   ctx.fillStyle = bg
   ctx.fillRect(0, 0, SIZE, SIZE)
-  // A soft grey light behind Clawde.
-  const glow = ctx.createRadialGradient(glowX, glowY, 10, glowX, glowY, 460)
-  glow.addColorStop(0, 'rgba(255,255,255,0.10)')
-  glow.addColorStop(1, 'rgba(255,255,255,0)')
+  // A warm light behind Clawde.
+  const glow = ctx.createRadialGradient(glowX, glowY, 10, glowX, glowY, 480)
+  glow.addColorStop(0, 'rgba(217,119,86,0.30)')
+  glow.addColorStop(1, 'rgba(217,119,86,0)')
   ctx.fillStyle = glow
   ctx.fillRect(0, 0, SIZE, SIZE)
   // The website's dot grid.
-  ctx.fillStyle = 'rgba(255,255,255,0.05)'
+  ctx.fillStyle = 'rgba(255,255,255,0.045)'
   for (let y = 12; y < SIZE; y += 24) for (let x = 12; x < SIZE; x += 24) ctx.fillRect(x, y, 2, 2)
 }
 
@@ -132,8 +121,8 @@ function label(ctx: CanvasRenderingContext2D, text: string, x: number, y: number
 
 function stats(s: WorkoutSummary, unit: WeightUnit): [string, string][] {
   return [
-    [formatWorkoutTime(s.durationSeconds).replace(' ', ''), 'Time'],
-    [formatVolume(s.totalVolumeKg, unit).replace(' ', ''), 'Lifted'],
+    [formatWorkoutTime(s.durationSeconds), 'Time'],
+    [formatVolume(s.totalVolumeKg, unit), 'Lifted'],
     [String(s.sets), s.sets === 1 ? 'Set' : 'Sets'],
     [String(s.reps), s.reps === 1 ? 'Rep' : 'Reps'],
   ]
@@ -158,27 +147,26 @@ function drawSummary(ctx: CanvasRenderingContext2D, s: WorkoutSummary, unit: Wei
   }
   out.push(line)
   out.slice(0, 2).forEach((l, i) => ctx.fillText(fit(ctx, l, titleMax), PAD, 232 + i * 72))
-  if (s.pbs.length) label(ctx, `★ ${s.pbs.length} new PB${s.pbs.length > 1 ? 's' : ''}`, PAD, 232 + Math.min(out.length, 2) * 72 + 20, INK)
+  if (s.pbs.length) label(ctx, `★ ${s.pbs.length} new PB${s.pbs.length > 1 ? 's' : ''}`, PAD, 232 + Math.min(out.length, 2) * 72 + 20, ACCENT)
 
-  const gap = 20
-  const w = (SIZE - PAD * 2 - gap) / 2
-  const h = 196
-  const top = 520
-  stats(s, unit).forEach(([value, name], i) => {
-    const x = PAD + (i % 2) * (w + gap)
-    const y = top + Math.floor(i / 2) * (h + gap)
-    ctx.fillStyle = PANEL
-    ctx.beginPath()
-    ctx.roundRect(x, y, w, h, 28)
-    ctx.fill()
+  // Stats as a list: label left, value right, rules between.
+  const top = 560
+  const row = 88
+  const list = stats(s, unit)
+  list.forEach(([value, name], i) => {
+    const y = top + i * row
+    label(ctx, name, PAD, y + 54, INK_3)
+    ctx.fillStyle = INK
+    ctx.font = `700 48px ${SANS}`
+    const vw = ctx.measureText(value).width
+    ctx.fillText(value, SIZE - PAD - vw, y + 60)
+    if (i === list.length - 1) return // the footer's rule closes the list
     ctx.strokeStyle = LINE
     ctx.lineWidth = 2
+    ctx.beginPath()
+    ctx.moveTo(PAD, y + row)
+    ctx.lineTo(SIZE - PAD, y + row)
     ctx.stroke()
-    const px = fitSize(ctx, value, (n) => `${n}px ${PIXEL}`, 96, w - 64)
-    ctx.font = `${px}px ${PIXEL}`
-    ctx.fillStyle = INK
-    ctx.fillText(value, x + 32, y + 118)
-    label(ctx, name, x + 32, y + 162, INK_3)
   })
   footer(ctx, s.date)
 }
@@ -189,17 +177,17 @@ function drawHeadline(ctx: CanvasRenderingContext2D, s: WorkoutSummary, unit: We
   const cell = 34
   crab(ctx, (SIZE - 13 * cell) / 2, 96, cell)
   const pb = s.pbs[0]
-  const big = pb ? `${toWeight(pb.weightKg, unit)}${unit} × ${pb.reps}` : formatVolume(s.totalVolumeKg, unit).replace(' ', '')
+  const big = pb ? `${toWeight(pb.weightKg, unit)} ${unit} × ${pb.reps}` : formatVolume(s.totalVolumeKg, unit)
   const kicker = pb ? `New PB · ${pb.name}` : 'Total lifted'
   ctx.textAlign = 'center'
   ctx.textBaseline = 'alphabetic'
-  ctx.fillStyle = INK_2
+  ctx.fillStyle = pb ? ACCENT : INK_2
   ctx.font = `700 26px ${MONO}`
   ctx.fillText(fit(ctx, kicker.toUpperCase(), SIZE - PAD * 2), SIZE / 2, 618)
-  const px = fitSize(ctx, big.toUpperCase(), (n) => `${n}px ${PIXEL}`, 168, SIZE - PAD * 2)
-  ctx.font = `${px}px ${PIXEL}`
+  const px = fitSize(ctx, big, (n) => `800 ${n}px ${SANS}`, 150, SIZE - PAD * 2)
+  ctx.font = `800 ${px}px ${SANS}`
   ctx.fillStyle = INK
-  ctx.fillText(big.toUpperCase(), SIZE / 2, 618 + 26 + px * 0.86)
+  ctx.fillText(big, SIZE / 2, 618 + 26 + px * 0.86)
   ctx.fillStyle = INK_3
   ctx.font = `400 26px ${MONO}`
   const sub = [s.title, formatWorkoutTime(s.durationSeconds), `${s.sets} sets`].join('  ·  ').toUpperCase()
@@ -236,7 +224,7 @@ function drawLog(ctx: CanvasRenderingContext2D, s: WorkoutSummary, unit: WeightU
     ctx.fillStyle = INK
     ctx.fillText(best, SIZE - PAD - bw, y)
     ctx.font = `500 32px ${SANS}`
-    ctx.fillStyle = pbNames.has(l.name.toLowerCase()) ? INK : '#cfccc8'
+    ctx.fillStyle = pbNames.has(l.name.toLowerCase()) ? ACCENT : '#d6d3cf'
     const name = `${pbNames.has(l.name.toLowerCase()) ? '★ ' : ''}${l.name}`
     ctx.fillText(fit(ctx, name, SIZE - PAD * 2 - bw - 40), PAD, y)
     ctx.strokeStyle = LINE

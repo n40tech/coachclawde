@@ -128,8 +128,8 @@ are marked as seen when they finish onboarding.
   is the expandable warm-up/cool-down.
 - `src/components/session/` — the live-workout UI (exercise tiles, set rows, rest
   timer, `ReorderList`, and `WorkoutComplete`: the full-screen finish page in
-  the website's style, using its fonts from `public/fonts` (`font-pixel`,
-  `font-mono`, `dot-grid`).
+  the website's style, using its fonts from `public/fonts` (`font-mono` for
+  labels, `dot-grid`; `font-pixel` only for the title, sparingly).
 - **Weights-first (v1.1):** plans never schedule cardio (`promptScope` in
   `lib/promptBuilder`); Run Mode, interval rows and the run engine were removed
   (preserved on the `cardio-archive` branch). `lib/workout` and `lib/zones`
@@ -145,7 +145,7 @@ are marked as seen when they finish onboarding.
   (`lib/exerciseOrder`: reorder, and promote an exercise started early).
 - **Completion & sharing:** `lib/workoutSummary` (time, volume, sets, reps, PBs
   vs. earlier sessions, per-exercise best sets) and `lib/shareCard`: three
-  monotone-grey 1080² card designs (summary, headline, logbook), all built
+  1080² card designs in the app's colours (summary, headline, logbook), all built
   when the page opens so iOS opens the share sheet straight from the tap.
 - **Beta features** (Settings): `autoSetTimer` in the settings store turns the
   set timer off.

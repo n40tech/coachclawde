@@ -54,9 +54,10 @@ export function RequireAuth({ children }: { children: ReactNode }) {
   // once and let the pull refresh it in the background.
   if (loading || (identity && !pulled && !hasLocalData)) {
     return (
-      <div className="flex items-center justify-center min-h-svh bg-[#0a0a0a]">
+      <main className="flex items-center justify-center min-h-svh bg-[#0a0a0a]">
         <ClawdeMark size={56} idle />
-      </div>
+        <p role="status" className="sr-only">Loading your training…</p>
+      </main>
     )
   }
 

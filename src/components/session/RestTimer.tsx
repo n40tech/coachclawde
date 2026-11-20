@@ -66,17 +66,18 @@ export function RestTimerOverlay({ onFlickAway }: {
             <Ring elapsed={elapsed} className="w-9 h-9 shrink-0" strokeWidth={12} />
             <span className="flex-1 min-w-0">
               <span className={`block text-lg font-bold text-[#f5f5f0] tabular-nums leading-tight ${pulse}`}>{time}</span>
-              <span className="block text-xs text-[#6a6a6a] truncate">{label}</span>
+              <span className="block text-xs text-[#949494] truncate">{label}</span>
             </span>
-            <ChevronUp size={18} className="text-[#6a6a6a] shrink-0" />
+            <ChevronUp size={18} className="text-[#949494] shrink-0" aria-hidden />
           </button>
           <button
+            type="button"
             onClick={skipTimer}
             aria-label="Skip rest"
             title="Skip rest"
             className="h-full aspect-square shrink-0 rounded-(--tabbar-item-radius) flex items-center justify-center text-[#a8a29e] hover:text-[#d97756] hover:bg-[#d97756]/10 transition-colors"
           >
-            <SkipForward size={18} />
+            <SkipForward size={18} aria-hidden />
           </button>
         </div>
       </FixedLayer>
@@ -127,28 +128,30 @@ function RestCard({
           className="relative bg-[#111] rounded-3xl border border-[#2a2a2a] p-8 short:p-5 w-72 flex flex-col items-center gap-5 short:gap-3 slide-up outline-none"
         >
           <button
+            type="button"
             onClick={onMinimise}
             aria-label="Minimise rest timer"
             title="Minimise"
-            className="absolute top-3 right-3 w-10 h-10 rounded-xl flex items-center justify-center text-[#6a6a6a] hover:text-[#f5f5f0] hover:bg-[#1a1a1a] transition-colors"
+            className="absolute hit-target top-3 right-3 w-10 h-10 rounded-xl flex items-center justify-center text-[#949494] hover:text-[#f5f5f0] hover:bg-[#1a1a1a] transition-colors"
           >
-            <ChevronDown size={20} />
+            <ChevronDown size={20} aria-hidden />
           </button>
-          <p className="text-xs text-[#6a6a6a] uppercase tracking-widest font-medium">Rest</p>
+          <p className="text-xs text-[#949494] uppercase tracking-widest font-medium">Rest</p>
           <p className="text-sm text-[#a8a29e] text-center">{label}</p>
 
           <div className="relative w-32 h-32 short:w-24 short:h-24">
             <Ring elapsed={elapsed} className="w-full h-full" strokeWidth={8} />
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className={`text-4xl short:text-3xl font-bold text-[#f5f5f0] tabular-nums ${pulse}`}>{time}</span>
+              <span role="timer" aria-label="Rest left" className={`text-4xl short:text-3xl font-bold text-[#f5f5f0] tabular-nums ${pulse}`}>{time}</span>
             </div>
           </div>
 
           <button
+            type="button"
             onClick={onSkip}
-            className="flex items-center gap-2 text-sm text-[#6a6a6a] hover:text-[#d97756] transition-colors py-2 px-4 rounded-xl hover:bg-[#d97756]/10"
+            className="flex items-center gap-2 text-sm text-[#949494] hover:text-[#d97756] transition-colors py-2 px-4 rounded-xl hover:bg-[#d97756]/10"
           >
-            <SkipForward size={16} />
+            <SkipForward size={16} aria-hidden />
             Skip rest
           </button>
 
@@ -226,7 +229,7 @@ function RestAlertOffer() {
       {!justEnabled && (
         <div className="flex flex-col items-center gap-3 text-center">
           <div>
-            <p className="text-xs text-[#6a6a6a] leading-relaxed">
+            <p className="text-xs text-[#949494] leading-relaxed">
               Get a notification when rest is over, even with your phone locked.
             </p>
             <div role="alert">
@@ -235,7 +238,7 @@ function RestAlertOffer() {
           </div>
           <div className="flex gap-2 whitespace-nowrap">
             <Button size="sm" variant="secondary" onClick={turnOn} loading={busy}>
-              {!busy && <Bell size={14} />}
+              {!busy && <Bell size={14} aria-hidden />}
               Turn on
             </Button>
             {!busy && (

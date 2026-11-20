@@ -63,6 +63,8 @@ export function ExerciseTile({ planned, logged, onUpdateSet, onSetComplete, onSe
       {/* Header */}
       <div className="flex items-center pr-2">
         <button
+          type="button"
+          aria-expanded={expanded}
           className="flex-1 min-w-0 flex items-center gap-3 pl-4 pr-2 py-4 text-left"
           onClick={() => {
             if (Date.now() - autoOpenedAt > 600) setExpanded((e) => !e)
@@ -70,7 +72,7 @@ export function ExerciseTile({ planned, logged, onUpdateSet, onSetComplete, onSe
           }}
         >
           {/* Set progress indicator */}
-          <div className="flex gap-1 shrink-0">
+          <div aria-hidden className="flex gap-1 shrink-0">
             {planned.sets.map((_, i) => (
               <span
                 key={i}
@@ -82,23 +84,24 @@ export function ExerciseTile({ planned, logged, onUpdateSet, onSetComplete, onSe
           </div>
 
           <div className="flex-1 min-w-0">
-            <p className={`font-semibold text-sm leading-tight ${allDone ? 'text-[#6a6a6a] line-through' : 'text-[#f5f5f0]'}`}>
+            <p className={`font-semibold text-sm leading-tight ${allDone ? 'text-[#949494] line-through' : 'text-[#f5f5f0]'}`}>
               {planned.name}
             </p>
-            <p className="text-xs text-[#4a4a4a] mt-0.5">
+            <p className="text-xs text-[#858585] mt-0.5">
               {completedSets}/{totalSets} sets · rest {formatRestTime(planned.sets[0]?.restSeconds ?? 90)}
             </p>
           </div>
 
-          {expanded ? <ChevronUp size={16} className="text-[#4a4a4a] shrink-0" /> : <ChevronDown size={16} className="text-[#4a4a4a] shrink-0" />}
+          {expanded ? <ChevronUp size={16} aria-hidden className="text-[#858585] shrink-0" /> : <ChevronDown size={16} aria-hidden className="text-[#858585] shrink-0" />}
         </button>
 
         <button
+          type="button"
           onClick={() => setShowGuide(true)}
           aria-label={`How to do ${planned.name}`}
-          className="w-9 h-9 rounded-xl flex items-center justify-center text-[#6a6a6a] hover:text-[#d97756] hover:bg-[#d97756]/10 transition-colors shrink-0"
+          className="relative hit-target w-9 h-9 rounded-xl flex items-center justify-center text-[#949494] hover:text-[#d97756] hover:bg-[#d97756]/10 transition-colors shrink-0"
         >
-          <CircleQuestionMark size={18} />
+          <CircleQuestionMark size={18} aria-hidden />
         </button>
       </div>
 
@@ -107,7 +110,7 @@ export function ExerciseTile({ planned, logged, onUpdateSet, onSetComplete, onSe
           {/* Coach notes */}
           {planned.coachNotes && (
             <div className="flex items-start gap-2 bg-[#d97756]/8 rounded-nested px-3 py-2.5 mb-1">
-              <Info size={13} className="text-[#d97756] mt-0.5 shrink-0" />
+              <Info size={13} className="text-[#d97756] mt-0.5 shrink-0" aria-hidden />
               <p className="text-xs text-[#d97756]/90">{localize(planned.coachNotes, units)}</p>
             </div>
           )}

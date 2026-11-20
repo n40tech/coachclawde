@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAppStore } from '../store/useAppStore'
 import { toLocalISODate } from '../lib/weekUtils'
 import { Card, CardSection } from '../components/shared/Card'
@@ -20,6 +20,7 @@ import { getWeekday, formatDuration } from '../lib/dateUtils'
 import { format } from 'date-fns'
 import type { Intensity, PlannedSession, SessionType } from '../types'
 import { useUnits } from '../store/useSettingsStore'
+import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { localize } from '../lib/units'
 
 export function Home() {
@@ -31,6 +32,7 @@ export function Home() {
   const { bump } = useScrollDirection()
   const { syncSession } = useAutoSync()
   const [showLog, setShowLog] = useState(false)
+  useDocumentTitle('Home')
 
   function handleQuickLog(input: QuickLogInput) {
     const log = buildQuickLog(input)
@@ -71,20 +73,20 @@ export function Home() {
         {/* Top bar with plan action */}
         <div className="flex items-center justify-end gap-2 pt-2">
           <button
+            type="button"
             onClick={() => setShowLog(true)}
-            aria-label="Log a session"
-            className="h-9 px-3 flex items-center gap-1.5 rounded-2xl bg-[#1a1a1a] text-[#6a6a6a] hover:text-[#f5f5f0] transition-colors text-xs font-medium"
+            className="relative hit-target h-9 px-3 flex items-center gap-1.5 rounded-2xl bg-[#1a1a1a] text-[#949494] hover:text-[#f5f5f0] transition-colors text-xs font-medium"
           >
-            <Plus size={16} />
+            <Plus size={16} aria-hidden />
             Log a session
           </button>
-          <button
-            onClick={() => navigate('/plan')}
+          <Link
+            to="/plan"
             aria-label="Plan your week"
-            className="w-9 h-9 flex items-center justify-center rounded-2xl bg-[#1a1a1a] text-[#6a6a6a] hover:text-[#f5f5f0] transition-colors"
+            className="relative hit-target w-9 h-9 flex items-center justify-center rounded-2xl bg-[#1a1a1a] text-[#949494] hover:text-[#f5f5f0] transition-colors"
           >
-            <CalendarPlus size={18} />
-          </button>
+            <CalendarPlus size={18} aria-hidden />
+          </Link>
         </div>
 
         {/* Centered greeting hero — Clawde, seamless on the background */}
@@ -96,7 +98,7 @@ export function Home() {
             />
             <ClawdeMark size={68} cheer={bump} sweat={bump} className="relative" />
           </div>
-          <p className="text-xs text-[#4a4a4a] uppercase tracking-widest font-medium">
+          <p className="text-xs text-[#858585] uppercase tracking-widest font-medium">
             {format(new Date(), 'EEEE, dd MMM')}
           </p>
           <h1 className="text-2xl font-bold text-[#f5f5f0] mt-1">
@@ -127,24 +129,18 @@ export function Home() {
         ) : (
           <>
             {nextSession && (
-              <NextSessionCard
-                session={nextSession}
-                onClick={() => navigate(`/session/${nextSession.id}`)}
-              />
+              <NextSessionCard session={nextSession} />
             )}
 
             {futureSessions.length > 0 && (
               <div>
-                <p className="text-xs text-[#4a4a4a] uppercase tracking-widest font-medium mb-3 px-1">
+                <h2 className="text-xs text-[#858585] uppercase tracking-widest font-medium mb-3 px-1">
                   This week
-                </p>
+                </h2>
                 <div className="grid grid-cols-1 gap-2 @3xl/app:grid-cols-2">
                   {futureSessions.map((s, i) => (
                     <Reveal key={s.id} index={i}>
-                      <UpcomingTile
-                        session={s}
-                        onClick={() => navigate(`/session/${s.id}`)}
-                      />
+                      <UpcomingTile session={s} />
                     </Reveal>
                   ))}
                 </div>
@@ -153,17 +149,13 @@ export function Home() {
 
             {missed.length > 0 && (
               <div>
-                <p className="text-xs text-amber-500/80 uppercase tracking-widest font-medium mb-3 px-1">
+                <h2 className="text-xs text-amber-500/80 uppercase tracking-widest font-medium mb-3 px-1">
                   Missed
-                </p>
+                </h2>
                 <div className="grid grid-cols-1 gap-2 @3xl/app:grid-cols-2">
                   {missed.map((s, i) => (
                     <Reveal key={s.id} index={i}>
-                      <UpcomingTile
-                        session={s}
-                        missed
-                        onClick={() => navigate(`/session/${s.id}`)}
-                      />
+                      <UpcomingTile session={s} missed />
                     </Reveal>
                   ))}
                 </div>
@@ -176,7 +168,7 @@ export function Home() {
         {plan && (
           <Reveal>
             <div className="flex items-center justify-between bg-[#161616] rounded-2xl px-4 py-3 border border-[#2a2a2a]">
-              <span className="text-sm text-[#6a6a6a]">Week {program.week} of {program.length}</span>
+              <span className="text-sm text-[#949494]">Week {program.week} of {program.length}</span>
               <span className="text-sm font-medium text-[#f5f5f0]">
                 {plan.sessions.filter((s) => isSessionLogged(s.id)).length}/{plan.sessions.length} sessions
               </span>
@@ -214,8 +206,8 @@ function InvitationCard({ invite, onOpen, onDismiss }: { invite: HomeInvitation;
           </div>
         )}
       </div>
-      <button onClick={onDismiss} aria-label="Dismiss" className="w-9 h-9 -mr-1 -mt-1 flex items-center justify-center rounded-full text-[#4a4a4a] hover:text-[#a8a29e] shrink-0">
-        <X size={16} />
+      <button type="button" onClick={onDismiss} aria-label={`Dismiss: ${invite.title}`} className="relative hit-target w-9 h-9 -mr-1 -mt-1 flex items-center justify-center rounded-full text-[#858585] hover:text-[#a8a29e] shrink-0">
+        <X size={16} aria-hidden />
       </button>
     </div>
   )
@@ -227,10 +219,10 @@ function TrackerLogCTA({ onLog, onConvert }: { onLog: () => void; onConvert: () 
     <div className="fade-in rounded-3xl bg-gradient-to-br from-[#d97756]/10 to-[#1a1a1a] border border-[#d97756]/20 p-6 flex flex-col items-center text-center gap-4">
       <div>
         <h2 className="text-xl font-bold text-[#f5f5f0]">Your plan, your way</h2>
-        <p className="text-sm text-[#6a6a6a] mt-1 leading-relaxed">Log each session as you do it. I'll keep score and send a short weekly summary.</p>
+        <p className="text-sm text-[#949494] mt-1 leading-relaxed">Log each session as you do it. I'll keep score and send a short weekly summary.</p>
       </div>
       <Button onClick={onLog} size="lg" fullWidth><Plus size={18} /> Log a session</Button>
-      <button onClick={onConvert} className="text-xs text-[#6a6a6a] hover:text-[#a8a29e]">or paste your plan and convert it</button>
+      <button onClick={onConvert} className="text-xs text-[#949494] hover:text-[#a8a29e]">or paste your plan and convert it</button>
     </div>
   )
 }
@@ -244,7 +236,7 @@ function NoPlanCTA({ onPlan, tracker }: { onPlan: () => void; tracker?: boolean 
         </div>
         <div>
           <h2 className="text-xl font-bold text-[#f5f5f0]">{tracker ? 'Bring in your plan' : 'Plan Your Week'}</h2>
-          <p className="text-sm text-[#6a6a6a] mt-1 leading-relaxed">
+          <p className="text-sm text-[#949494] mt-1 leading-relaxed">
             {tracker
               ? 'Paste this week of your plan and Clawde converts it for the app, so you can log it here.'
               : 'Select your available training days, add any notes, and let Clawde create your personalised workout plan.'}
@@ -267,7 +259,7 @@ function WeekCompleteBanner({ onPlan }: { onPlan: () => void }) {
       </div>
       <div>
         <h2 className="text-xl font-bold text-[#f5f5f0]">Week complete!</h2>
-        <p className="text-sm text-[#6a6a6a] mt-1">All sessions done. Plan your next week to keep the momentum.</p>
+        <p className="text-sm text-[#949494] mt-1">All sessions done. Plan your next week to keep the momentum.</p>
       </div>
       <Button onClick={onPlan} size="lg" fullWidth>
         <Calendar size={18} />
@@ -285,7 +277,7 @@ function ProgramCompleteBanner({ length, onRestart }: { length: number; onRestar
       </div>
       <div>
         <h2 className="text-xl font-bold text-[#f5f5f0]">Program complete! 🎉</h2>
-        <p className="text-sm text-[#6a6a6a] mt-1 leading-relaxed">
+        <p className="text-sm text-[#949494] mt-1 leading-relaxed">
           You've finished your {length}-week block. A quick check-in on how it went, then your
           next block starts. No need to set everything up again.
         </p>
@@ -298,10 +290,10 @@ function ProgramCompleteBanner({ length, onRestart }: { length: number; onRestar
   )
 }
 
-function NextSessionCard({ session, onClick }: { session: PlannedSession; onClick: () => void }) {
+function NextSessionCard({ session }: { session: PlannedSession }) {
   const units = useUnits()
   return (
-    <Card accent glow onClick={onClick} className="fade-in">
+    <Card accent glow to={`/session/${session.id}`} className="fade-in">
       <div className="bg-gradient-to-br from-[#d97756]/8 to-transparent">
         <CardSection>
           <div className="flex items-center justify-between mb-3">
@@ -315,12 +307,12 @@ function NextSessionCard({ session, onClick }: { session: PlannedSession; onClic
             </div>
             <div className="flex items-center gap-2">
               <Badge label={session.intensity} variant={session.intensity as Intensity} />
-              <ChevronRight size={16} className="text-[#4a4a4a]" />
+              <ChevronRight size={16} className="text-[#858585]" aria-hidden />
             </div>
           </div>
 
           <h2 className="text-xl font-bold text-[#f5f5f0] leading-tight">{localize(session.title, units)}</h2>
-          <p className="text-sm text-[#6a6a6a] mt-1">{localize(session.focus, units)}</p>
+          <p className="text-sm text-[#949494] mt-1">{localize(session.focus, units)}</p>
 
           <div className="flex items-center gap-4 mt-4 pt-4 border-t border-[#2a2a2a]">
             <StatPill label={formatDuration(session.estimatedMinutes)} icon="⏱" />
@@ -332,26 +324,26 @@ function NextSessionCard({ session, onClick }: { session: PlannedSession; onClic
   )
 }
 
-function UpcomingTile({ session, missed = false, onClick }: { session: PlannedSession; missed?: boolean; onClick: () => void }) {
+function UpcomingTile({ session, missed = false }: { session: PlannedSession; missed?: boolean }) {
   const units = useUnits()
   return (
-    <Card onClick={onClick}>
+    <Card to={`/session/${session.id}`}>
       <CardSection className="flex items-center gap-3 py-3">
         <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${
           missed ? 'bg-amber-500/15' : 'bg-[#2a2a2a]'
         }`}>
-          <SessionIcon type={session.type} size={18} className={missed ? 'text-amber-500' : 'text-[#6a6a6a]'} />
+          <SessionIcon type={session.type} size={18} className={missed ? 'text-amber-500' : 'text-[#949494]'} />
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-[#f5f5f0] truncate">{localize(session.title, units)}</p>
-          <p className="text-xs text-[#6a6a6a] mt-0.5">
+          <p className="text-xs text-[#949494] mt-0.5">
             {missed && <span className="text-amber-500/80">Missed · </span>}
             {getWeekday(session.date)} · {formatDuration(session.estimatedMinutes)}
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <Badge label={session.intensity} variant={session.intensity as Intensity} />
-          <ChevronRight size={14} className="text-[#3a3a3a]" />
+          <ChevronRight size={14} className="text-[#858585]" aria-hidden />
         </div>
       </CardSection>
     </Card>
@@ -361,8 +353,8 @@ function UpcomingTile({ session, missed = false, onClick }: { session: PlannedSe
 function StatPill({ label, icon }: { label: string; icon: string }) {
   return (
     <div className="flex items-center gap-1.5">
-      <span className="text-sm">{icon}</span>
-      <span className="text-xs text-[#6a6a6a]">{label}</span>
+      <span className="text-sm" aria-hidden>{icon}</span>
+      <span className="text-xs text-[#949494]">{label}</span>
     </div>
   )
 }

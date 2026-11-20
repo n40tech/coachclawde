@@ -10,8 +10,8 @@ export function SyncIndicator() {
   // Signed out (or running in local-only mode) — nothing is syncing.
   if (!configured || !user) {
     return (
-      <div className="flex items-center gap-1.5 text-[#3a3a3a]">
-        <CloudOff size={13} />
+      <div className="flex items-center gap-1.5 text-[#858585]">
+        <CloudOff size={13} aria-hidden />
         <span className="text-2xs">{configured ? 'Signed out' : 'Local only'}</span>
       </div>
     )
@@ -19,18 +19,20 @@ export function SyncIndicator() {
 
   if (syncStatus === 'syncing') {
     return (
-      <div className="flex items-center gap-1.5 text-[#6a6a6a]">
-        <Loader size={13} className="animate-spin" />
+      <div className="flex items-center gap-1.5 text-[#949494]">
+        <Loader size={13} className="motion-safe:animate-spin" aria-hidden />
         <span className="text-2xs">Syncing…</span>
       </div>
     )
   }
 
   if (syncStatus === 'error') {
+    // The reason is shown on hover and read out with the label (a `title`
+    // alone is mouse-only).
     return (
       <div className="flex items-center gap-1.5 text-red-400" title={syncError ?? ''}>
-        <AlertCircle size={13} />
-        <span className="text-2xs">Sync failed</span>
+        <AlertCircle size={13} aria-hidden />
+        <span className="text-2xs">Sync failed{syncError && <span className="sr-only">: {syncError}</span>}</span>
       </div>
     )
   }
@@ -38,15 +40,15 @@ export function SyncIndicator() {
   if (syncStatus === 'success' && lastSyncAt) {
     return (
       <div className="flex items-center gap-1.5 text-emerald-500">
-        <CheckCircle size={13} />
+        <CheckCircle size={13} aria-hidden />
         <span className="text-2xs">{formatDistanceToNow(parseISO(lastSyncAt), { addSuffix: true })}</span>
       </div>
     )
   }
 
   return (
-    <div className="flex items-center gap-1.5 text-[#4a4a4a]">
-      <Cloud size={13} />
+    <div className="flex items-center gap-1.5 text-[#858585]">
+      <Cloud size={13} aria-hidden />
       <span className="text-2xs">Auto-sync on</span>
     </div>
   )

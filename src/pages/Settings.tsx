@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useSettingsStore } from '../store/useSettingsStore'
 import { useAppStore } from '../store/useAppStore'
 import { useAutoSync } from '../hooks/useAutoSync'
@@ -10,6 +10,8 @@ import { Card, CardSection } from '../components/shared/Card'
 import { SyncIndicator } from '../components/shared/SyncIndicator'
 import { UserCircle, CheckCircle, AlertCircle, RefreshCw, LogOut, Sparkles, ChevronRight, Gift, MessageCircle, ShieldCheck, Bell, Timer } from 'lucide-react'
 import { ConfirmDialog } from '../components/shared/ConfirmDialog'
+import { Switch } from '../components/shared/Switch'
+import { ChoiceChip, ChoiceGroup } from '../components/shared/Choice'
 import { goalOrLegacy } from '../lib/goalProfile'
 import { WhatsNewSheet } from '../components/shared/WhatsNew'
 import { APP_VERSION } from '../lib/appVersion'
@@ -21,7 +23,6 @@ import { fromWeight, toWeight, type DistanceUnit, type WeightUnit } from '../lib
 import { checkRestAlerts, disableRestAlerts, enableRestAlerts, prepareRestAlerts, restAlertSupport, sendTestAlert } from '../lib/restAlerts'
 
 export function Settings() {
-  const navigate = useNavigate()
   const { user, configured, signOut } = useAuth()
   const { syncStatus, syncError, units, setUnits } = useSettingsStore()
   const { profile, setProfile } = useAppStore()
@@ -89,9 +90,9 @@ export function Settings() {
       <div className="flex flex-col gap-5 px-4 pt-4">
         {/* Account & Sync */}
         <div>
-          <p className="text-xs text-[#4a4a4a] uppercase tracking-widest font-medium px-1 mb-3">
+          <h2 className="text-xs text-[#858585] uppercase tracking-widest font-medium px-1 mb-3">
             Account &amp; Sync
-          </p>
+          </h2>
           <Card accent={!!user}>
             <CardSection>
               <div className="flex items-center justify-between mb-4">
@@ -106,7 +107,7 @@ export function Settings() {
 
               {user ? (
                 <div className="flex flex-col gap-3">
-                  <div className="text-xs text-[#6a6a6a] leading-relaxed bg-[#1a1a1a] rounded-2xl px-4 py-3">
+                  <div className="text-xs text-[#949494] leading-relaxed bg-[#1a1a1a] rounded-2xl px-4 py-3">
                     <p className="font-medium text-[#a8a29e] mb-1">✓ Syncing to your account</p>
                     <p>Workouts and plans save to the cloud automatically, and load each time you open the app. Sign in on any device to pick up where you left off.</p>
                   </div>
@@ -120,15 +121,18 @@ export function Settings() {
                       Sign out
                     </Button>
                   </div>
-                  {syncStatus === 'error' && (
-                    <div className="flex items-start gap-2 text-red-400 bg-red-500/10 rounded-xl p-3">
-                      <AlertCircle size={14} className="shrink-0 mt-0.5" />
-                      <p className="text-xs">{syncError}</p>
-                    </div>
-                  )}
+                  {/* Always in the page, so a failed sync is announced. */}
+                  <div role="alert">
+                    {syncStatus === 'error' && (
+                      <div className="flex items-start gap-2 text-red-400 bg-red-500/10 rounded-xl p-3">
+                        <AlertCircle size={14} className="shrink-0 mt-0.5" aria-hidden />
+                        <p className="text-xs">{syncError}</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               ) : (
-                <p className="text-xs text-[#6a6a6a] leading-relaxed">
+                <p className="text-xs text-[#949494] leading-relaxed">
                   {configured
                     ? 'You are signed out. Data is stored only on this device until you sign in.'
                     : 'Running in local-only mode — no backend is configured, so data stays on this device.'}
@@ -140,10 +144,10 @@ export function Settings() {
 
         {/* Profile */}
         <div>
-          <p className="text-xs text-[#4a4a4a] uppercase tracking-widest font-medium px-1 mb-3">Profile</p>
+          <h2 className="text-xs text-[#858585] uppercase tracking-widest font-medium px-1 mb-3">Profile</h2>
           <Card>
             <CardSection className="flex flex-col gap-3">
-              <p className="text-xs text-[#6a6a6a] leading-relaxed">
+              <p className="text-xs text-[#949494] leading-relaxed">
                 Saved to your account and included in the plan prompt so Clawde can program around your details.
               </p>
               <Field label="Name" htmlFor="settings-name">
@@ -186,6 +190,7 @@ export function Settings() {
                 <input
                   id="settings-birth-date"
                   autoComplete="bday"
+                  aria-describedby="settings-birth-date-hint"
                   type="date"
                   value={birthDate}
                   onChange={(e) => setBirthDate(e.target.value)}
@@ -195,24 +200,13 @@ export function Settings() {
                   className={inputClass}
                 />
               </Field>
-              <Field label="Gender">
-                <div className="grid grid-cols-2 gap-2">
-                  {(['male', 'female'] as const).map((g) => (
-                    <button
-                      key={g}
-                      onClick={() => setSex(g)}
-                      aria-pressed={sex === g}
-                      className={`px-4 py-3 rounded-2xl text-sm font-medium capitalize transition-all duration-150 ${
-                        sex === g
-                          ? 'bg-[#d97756] text-white shadow-lg shadow-[#d97756]/20'
-                          : 'bg-[#1a1a1a] text-[#6a6a6a] border border-[#2a2a2a] hover:text-[#a8a29e]'
-                      }`}
-                    >
-                      {g}
-                    </button>
-                  ))}
-                </div>
-              </Field>
+              <ChoiceGroup legend="Gender" legendClassName="block text-xs font-medium text-[#a8a29e] mb-1.5" className="grid grid-cols-2 gap-2">
+                {(['male', 'female'] as const).map((g) => (
+                  <ChoiceChip key={g} name="settings-gender" value={g} checked={sex === g} onChange={() => setSex(g)} className={toggleLook(sex === g)}>
+                    <span className="capitalize">{g}</span>
+                  </ChoiceChip>
+                ))}
+              </ChoiceGroup>
               <Button variant="secondary" onClick={handleSaveProfile} fullWidth>
                 {profileSaved ? <CheckCircle size={16} /> : null}
                 {profileSaved ? 'Saved' : 'Save profile'}
@@ -225,18 +219,14 @@ export function Settings() {
 
         {/* Units */}
         <div>
-          <p className="text-xs text-[#4a4a4a] uppercase tracking-widest font-medium px-1 mb-3">Units</p>
+          <h2 className="text-xs text-[#858585] uppercase tracking-widest font-medium px-1 mb-3">Units</h2>
           <Card>
             <CardSection className="flex flex-col gap-3">
-              <p className="text-xs text-[#6a6a6a] leading-relaxed">
+              <p className="text-xs text-[#949494] leading-relaxed">
                 How weights and distances are shown on this device. Clawde always plans in metric; the app converts.
               </p>
-              <Field label="Weight">
-                <UnitToggle options={['kg', 'lb'] as WeightUnit[]} value={units.weight} onChange={setWeightUnit} />
-              </Field>
-              <Field label="Distance">
-                <UnitToggle options={['km', 'mi'] as DistanceUnit[]} value={units.distance} onChange={(d) => setUnits({ distance: d })} />
-              </Field>
+              <UnitToggle legend="Weight" name="unit-weight" options={['kg', 'lb'] as WeightUnit[]} value={units.weight} onChange={setWeightUnit} />
+              <UnitToggle legend="Distance" name="unit-distance" options={['km', 'mi'] as DistanceUnit[]} value={units.distance} onChange={(d) => setUnits({ distance: d })} />
             </CardSection>
           </Card>
         </div>
@@ -247,25 +237,17 @@ export function Settings() {
 
         {/* Check-ins & health */}
         <div>
-          <p className="text-xs text-[#4a4a4a] uppercase tracking-widest font-medium px-1 mb-3">Check-ins & privacy</p>
+          <h2 className="text-xs text-[#858585] uppercase tracking-widest font-medium px-1 mb-3">Check-ins & privacy</h2>
           <Card>
             <CardSection className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-2xl bg-[#d97756]/15 flex items-center justify-center shrink-0">
                 <MessageCircle size={18} className="text-[#d97756]" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-[#f5f5f0]">Suggest weekly check-ins</p>
-                <p className="text-xs text-[#6a6a6a] mt-0.5">A one-minute chat at the end of the week. Never required.</p>
+                <p id="checkins-title" className="text-sm font-semibold text-[#f5f5f0]">Suggest weekly check-ins</p>
+                <p id="checkins-desc" className="text-xs text-[#949494] mt-0.5">A one-minute chat at the end of the week. Never required.</p>
               </div>
-              <button
-                role="switch"
-                aria-checked={checkInsOn}
-                aria-label="Suggest weekly check-ins"
-                onClick={() => setCheckIns(!checkInsOn)}
-                className={`w-12 h-7 rounded-full p-0.5 transition-colors shrink-0 ${checkInsOn ? 'bg-[#d97756]' : 'bg-[#2a2a2a]'}`}
-              >
-                <span className={`block w-6 h-6 rounded-full bg-white transition-transform ${checkInsOn ? 'translate-x-5' : ''}`} />
-              </button>
+              <Switch checked={checkInsOn} onChange={setCheckIns} labelledBy="checkins-title" describedBy="checkins-desc" />
             </CardSection>
             <div className="border-t border-[#2a2a2a]" />
             <CardSection className="flex items-start gap-3">
@@ -274,7 +256,7 @@ export function Settings() {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-[#f5f5f0]">Health screen</p>
-                <p className="text-xs text-[#6a6a6a] mt-0.5 leading-relaxed">
+                <p className="text-xs text-[#949494] mt-0.5 leading-relaxed">
                   {healthFlags.some((f) => f !== 'injury')
                     ? 'We keep only which boxes you ticked (never any details) so plans stay safe. You can delete them.'
                     : 'Nothing stored beyond your injury list. We only ever keep which boxes you tick, never details.'}
@@ -291,39 +273,39 @@ export function Settings() {
 
         {/* Onboarding */}
         <div>
-          <p className="text-xs text-[#4a4a4a] uppercase tracking-widest font-medium px-1 mb-3">Onboarding</p>
+          <h2 className="text-xs text-[#858585] uppercase tracking-widest font-medium px-1 mb-3">Onboarding</h2>
           <Card>
-            <button onClick={() => navigate('/onboarding')} className="w-full text-left">
+            <Link to="/onboarding" className="block w-full text-left">
               <CardSection className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-[#d97756]/15 flex items-center justify-center shrink-0">
                   <Sparkles size={18} className="text-[#d97756]" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-[#f5f5f0]">Redo onboarding</p>
-                  <p className="text-xs text-[#6a6a6a] mt-0.5">
+                  <p className="text-xs text-[#949494] mt-0.5">
                     Start over with a new goal. Your history stays.
                   </p>
                 </div>
-                <ChevronRight size={16} className="text-[#4a4a4a] shrink-0" />
+                <ChevronRight size={16} className="text-[#858585] shrink-0" aria-hidden />
               </CardSection>
-            </button>
+            </Link>
           </Card>
         </div>
 
         {/* What's new */}
         <div>
-          <p className="text-xs text-[#4a4a4a] uppercase tracking-widest font-medium px-1 mb-3">About</p>
+          <h2 className="text-xs text-[#858585] uppercase tracking-widest font-medium px-1 mb-3">About</h2>
           <Card>
-            <button onClick={() => setShowWhatsNew(true)} className="w-full text-left">
+            <button type="button" onClick={() => setShowWhatsNew(true)} className="w-full text-left">
               <CardSection className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-[#d97756]/15 flex items-center justify-center shrink-0">
                   <Gift size={18} className="text-[#d97756]" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-[#f5f5f0]">What's new</p>
-                  <p className="text-xs text-[#6a6a6a] mt-0.5">Coach Clawde v{APP_VERSION} · release notes</p>
+                  <p className="text-xs text-[#949494] mt-0.5">Coach Clawde v{APP_VERSION} · release notes</p>
                 </div>
-                <ChevronRight size={16} className="text-[#4a4a4a] shrink-0" />
+                <ChevronRight size={16} className="text-[#858585] shrink-0" />
               </CardSection>
             </button>
           </Card>
@@ -370,7 +352,7 @@ function DisplayInfo() {
     shape.screenRadius ? `corners ${shape.screenRadius}pt` : 'corners —',
     shape.standalone ? `app${shape.viewportGap ? ` +${shape.viewportGap}` : ''}` : 'browser',
   ]
-  return <p className="text-2xs text-[#3a3a3a] text-center mt-3 tabular-nums">Display: {parts.join(' · ')}</p>
+  return <p className="text-2xs text-[#858585] text-center mt-3 tabular-nums">Display: {parts.join(' · ')}</p>
 }
 
 /** Rest alerts: push notifications when a rest ends with the app in the background. */
@@ -417,40 +399,31 @@ function RestAlertsSetting() {
 
   return (
     <div>
-      <p className="text-xs text-[#4a4a4a] uppercase tracking-widest font-medium px-1 mb-3">Notifications</p>
+      <h2 className="text-xs text-[#858585] uppercase tracking-widest font-medium px-1 mb-3">Notifications</h2>
       <Card>
         <CardSection className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-2xl bg-[#d97756]/15 flex items-center justify-center shrink-0">
             <Bell size={18} className="text-[#d97756]" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-[#f5f5f0]">Rest alerts</p>
-            <p className="text-xs text-[#6a6a6a] mt-0.5">A notification when rest is over, even with your phone locked.</p>
+            <p id="rest-alerts-title" className="text-sm font-semibold text-[#f5f5f0]">Rest alerts</p>
+            <p id="rest-alerts-desc" className="text-xs text-[#949494] mt-0.5">A notification when rest is over, even with your phone locked.</p>
           </div>
           {support === 'available' && (
-            <button
-              role="switch"
-              aria-checked={restAlerts}
-              aria-label="Rest alerts"
-              disabled={busy}
-              onClick={toggle}
-              className={`w-12 h-7 rounded-full p-0.5 transition-colors shrink-0 disabled:opacity-50 ${restAlerts ? 'bg-[#d97756]' : 'bg-[#2a2a2a]'}`}
-            >
-              <span className={`block w-6 h-6 rounded-full bg-white transition-transform ${restAlerts ? 'translate-x-5' : ''}`} />
-            </button>
+            <Switch checked={restAlerts} onChange={() => void toggle()} busy={busy} labelledBy="rest-alerts-title" describedBy="rest-alerts-desc" />
           )}
         </CardSection>
         {(showInfo || message) && <div className="border-t border-[#2a2a2a]" />}
         {showInfo && (
           <CardSection className="flex flex-col gap-3">
             {support === 'install' && (
-              <p className="text-xs text-[#6a6a6a] leading-relaxed">
+              <p className="text-xs text-[#949494] leading-relaxed">
                 On iPhone and iPad, add Coach Clawde to your Home Screen first (Share → Add to Home Screen), then open it
                 from there and turn this on.
               </p>
             )}
             {support === 'blocked' && (
-              <p className="text-xs text-[#6a6a6a] leading-relaxed">
+              <p className="text-xs text-[#949494] leading-relaxed">
                 Notifications are turned off for Coach Clawde. Turn them on in your phone’s Settings → Notifications →
                 Coach Clawde, then come back here.
               </p>
@@ -475,40 +448,37 @@ function RestAlertsSetting() {
 }
 
 /** A labelled row. Pass `htmlFor` (the control's id) when it wraps a single input. */
-function Field({ label, hint, htmlFor, children }: { label: string; hint?: string; htmlFor?: string; children: React.ReactNode }) {
+function Field({ label, hint, htmlFor, children }: { label: string; hint?: string; htmlFor: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-1.5">
-      {htmlFor ? (
-        <label htmlFor={htmlFor} className="text-xs font-medium text-[#a8a29e]">{label}</label>
-      ) : (
-        <p className="text-xs font-medium text-[#a8a29e]">{label}</p>
-      )}
-      {hint && <p className="text-2xs text-[#4a4a4a]">{hint}</p>}
+      <label htmlFor={htmlFor} className="text-xs font-medium text-[#a8a29e]">{label}</label>
+      {/* The input names this hint with aria-describedby={`${htmlFor}-hint`}. */}
+      {hint && <p id={`${htmlFor}-hint`} className="text-2xs text-[#858585]">{hint}</p>}
       {children}
     </div>
   )
 }
 
-const inputClass = 'w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl px-4 py-3 text-base text-[#f5f5f0] placeholder-[#3a3a3a] focus:outline-none focus:border-[#d97756]/50 transition-colors'
+const inputClass = 'w-full bg-[#1a1a1a] border border-[#666666] rounded-2xl px-4 py-3 text-base text-[#f5f5f0] placeholder-[#858585] focus:outline-none focus:border-[#d97756] focus:ring-1 focus:ring-[#d97756] transition-colors'
 
-function UnitToggle<T extends string>({ options, value, onChange }: { options: T[]; value: T; onChange: (v: T) => void }) {
+function toggleLook(on: boolean): string {
+  return `px-4 py-3 rounded-2xl text-sm font-medium text-center transition-all duration-150 ${
+    on
+      ? 'bg-[#d97756] text-white shadow-lg shadow-[#d97756]/20'
+      : 'bg-[#1a1a1a] text-[#949494] border border-[#2a2a2a] hover:text-[#a8a29e]'
+  }`
+}
+
+/** Two units as a radio group (one of them is always picked). */
+function UnitToggle<T extends string>({ legend, name, options, value, onChange }: { legend: string; name: string; options: T[]; value: T; onChange: (v: T) => void }) {
   return (
-    <div className="grid grid-cols-2 gap-2">
+    <ChoiceGroup legend={legend} legendClassName="block text-xs font-medium text-[#a8a29e] mb-1.5" className="grid grid-cols-2 gap-2">
       {options.map((o) => (
-        <button
-          key={o}
-          onClick={() => onChange(o)}
-          aria-pressed={value === o}
-          className={`px-4 py-3 rounded-2xl text-sm font-medium transition-all duration-150 ${
-            value === o
-              ? 'bg-[#d97756] text-white shadow-lg shadow-[#d97756]/20'
-              : 'bg-[#1a1a1a] text-[#6a6a6a] border border-[#2a2a2a] hover:text-[#a8a29e]'
-          }`}
-        >
+        <ChoiceChip key={o} name={name} value={o} checked={value === o} onChange={() => onChange(o)} className={toggleLook(value === o)}>
           {o}
-        </button>
+        </ChoiceChip>
       ))}
-    </div>
+    </ChoiceGroup>
   )
 }
 
@@ -518,25 +488,17 @@ function BetaFeatures() {
   const setAutoSetTimer = useSettingsStore((s) => s.setAutoSetTimer)
   return (
     <div>
-      <p className="text-xs text-[#4a4a4a] uppercase tracking-widest font-medium px-1 mb-3">Beta features</p>
+      <h2 className="text-xs text-[#858585] uppercase tracking-widest font-medium px-1 mb-3">Beta features</h2>
       <Card>
         <CardSection className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-2xl bg-[#d97756]/15 flex items-center justify-center shrink-0">
             <Timer size={18} className="text-[#d97756]" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-[#f5f5f0]">Auto-finish sets</p>
-            <p className="text-xs text-[#6a6a6a] mt-0.5">After a rest and a 15-second grace period, your next tap finishes the set (orange tick) and starts the next rest. Fix reps or weight, then tap the tick to confirm.</p>
+            <p id="auto-finish-title" className="text-sm font-semibold text-[#f5f5f0]">Auto-finish sets</p>
+            <p id="auto-finish-desc" className="text-xs text-[#949494] mt-0.5">After a rest and a 15-second grace period, your next tap finishes the set (orange tick) and starts the next rest. Fix reps or weight, then tap the tick to confirm.</p>
           </div>
-          <button
-            role="switch"
-            aria-checked={autoSetTimer}
-            aria-label="Auto-finish sets"
-            onClick={() => setAutoSetTimer(!autoSetTimer)}
-            className={`w-12 h-7 rounded-full p-0.5 transition-colors shrink-0 ${autoSetTimer ? 'bg-[#d97756]' : 'bg-[#2a2a2a]'}`}
-          >
-            <span className={`block w-6 h-6 rounded-full bg-white transition-transform ${autoSetTimer ? 'translate-x-5' : ''}`} />
-          </button>
+          <Switch checked={autoSetTimer} onChange={setAutoSetTimer} labelledBy="auto-finish-title" describedBy="auto-finish-desc" />
         </CardSection>
       </Card>
     </div>

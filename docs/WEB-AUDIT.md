@@ -1,4 +1,4 @@
-# Web platform audit (2026-11-17)
+# Web platform audit (2026-11-17, third pass 2026-11-20)
 
 Scope: an audit of the front end against the `modern-web-guidance` guides
 (skill version `2026_10_12-dacb5911`), done on 2026-11-17 against v1.0.6. The
@@ -141,97 +141,176 @@ alert regions; Enter submits sign-in; a missing Settings chunk reloads into a
 working page, and a second failure shows the error boundary; the injury
 question names the chat's reply box.
 
-## Backlog
+## Third pass (v1.1.2, 2026-11-20)
 
-### High
+A full re-audit of the v1.1 code (the workout dock and view transitions,
+auto-finish, reorder, Workout complete and share cards, History edit mode,
+planning methods, slim onboarding) plus the open backlog, against the same
+skill version. Extra guides consulted: `card`, `checkbox`, `switch`, `navbar`,
+`color`, `same-document-transitions`, `faster-spa-view-transitions`, `drag`,
+`dynamic-sort`, `drag-and-drop`, `copy-button`, `ime-safe-enter-submit`,
+`form-fields-automatically-fit-contents`, `visually-stable-font-fallbacks`,
+`break-up-long-tasks`, `identify-inp-causes`, `optimize-image-priority`,
+`progress-ring`. Everything below is fixed unless marked otherwise.
 
-All done (items 5–9 above).
+### New findings, fixed
 
-### Medium
+10. **Tappable cards keyboards couldn't reach.** `Card` was a `<div onClick>`:
+    Home's next/upcoming/missed sessions, every History tile and the Progress
+    program tile could not be focused or opened without a pointer, and had no
+    role. `Card` now takes `to` and renders one native link (the `card`
+    guide's single-destination card). History's edit mode renders each tile as
+    a `<label>` around a real (visually hidden) checkbox instead of a
+    `span role="checkbox"` inside a clickable div. Guides: `card`,
+    `accessibility` (prefer native HTML), `checkbox`.
+11. **Unnamed buttons.** `PageHeader`'s back button (every sub-page) and
+    Progress's Settings button had only an icon. Back is now "Back"; header
+    icon actions that navigate (Settings, Edit program, Plan your week) are
+    `HeaderIconLink`s with a label. Guide: `accessibility` (names).
+12. **Navigation as buttons.** The tab bar and sidebar were
+    `<button onClick={navigate}>`. They're `NavLink`s in a `<ul>` (current page
+    gets `aria-current="page"`), as are "View all", Program's session rows and
+    Settings → Redo onboarding. The workout dock stays a button: it's a timer
+    with a drag gesture, and a link would start a native link-drag. Guide:
+    `navbar`.
+13. **Choice groups.** ARIA `role="radio"` buttons without arrow-key
+    behaviour (How did it feel, share card design, plan method) and
+    `aria-pressed` chips in unnamed groups (gender, units, activity, where you
+    train, days, session length, effort, quick-log activity, program setup,
+    chat chips) are now native radios/checkboxes in a `<fieldset>`/`<legend>`
+    (`shared/Choice`: `ChoiceGroup`, `ChoiceChip`; the input is visually
+    hidden, the chip shows a focus ring). The planner's day buttons were named
+    "M", "T", "W", "T", "F", "S", "S"; they now read "Monday" … and say when a
+    day has passed. Guides: `forms` (selection controls), `checkbox`, `card`
+    (choice cards).
+14. **Switches.** The three `role="switch"` buttons are `shared/Switch`: a
+    native `<input type="checkbox" switch role="switch">`, styled by `.switch`
+    in index.css (same look everywhere, so no polyfill), named and described
+    by its row, with a 44px hit area; busy uses `aria-disabled` so focus
+    stays. Guide: `switch`.
+15. **The chat was silent.** Clawde's messages weren't in a live region. The
+    message list is `role="log"`; the typing dots are hidden; chip answers are
+    grouped and named by the question; the multi-select chips are checkboxes.
+    Guide: `accessibility` (live regions).
+16. **Enter in the chat sent half-composed text.** The free-text reply used an
+    `onKeyDown` Enter handler, which fires while a Japanese/Chinese/Korean IME
+    is still composing. It's a `<form>` now (native implicit submission waits
+    for the IME); the set row's Enter-to-next-field checks `isComposing` and
+    `keyCode 229`. Guide: `ime-safe-enter-submit`.
+17. **Text contrast.** Secondary text `#6a6a6a` (about 3.3:1 on the cards),
+    faint text `#4a4a4a`/`#3a3a3a` (about 2:1) and placeholders failed 4.5:1;
+    text-field borders `#2a2a2a` failed 3:1. Now `#949494`, `#858585`,
+    placeholders `#858585`, field borders `#666666` (warm equivalents on
+    Workout complete). Guide: `color`.
+18. **State not exposed.** Exercise tile headers and Program's week rows now
+    have `aria-expanded`; the workout progress bar is a native `<progress>`
+    (`.meter`); the Progress calendar and Program chart are `role="img"` with a
+    written summary (they were divs with `title` only); the rest countdown is
+    `role="timer"`. Guides: `accessibility`, `progress`.
+19. **Status messages.** Workout complete's share message used `empty:hidden`
+    (`display: none` until filled, so not announced): now always rendered.
+    "Copied" in the prompt sheet and the Settings sync error are in
+    always-present `role="status"`/`role="alert"` containers. Reordering
+    announces "Bench Press, moved to position 2 of 5"; the up/down buttons are
+    `aria-disabled` at the ends so focus isn't dropped. Guides:
+    `accessible-error-announcement`, `copy-button`, `dynamic-sort`.
+20. **Headings and landmarks.** Section labels (Home, History, Progress,
+    Settings, Program, warm-up, Exercises) were styled `<p>`s: now `<h2>`.
+    Check-in had no `<h1>`; sheets and dialogs use `<h2>`. The full-screen
+    routes and the loading screen are `<main>`; the loading screen has a
+    status message. `ClawdeMark` is decorative by default (it was announced as
+    "Clawde the crab, ready to train" beside every chat bubble). Emoji,
+    arrows and icons beside text are `aria-hidden`. Guide: `accessibility`.
+21. **Persistent animation.** Clawde's bob and sweat looped forever (WCAG
+    2.2.2 needs a way to stop motion over 5 s). They now play twice / once
+    and settle. All decoration (`clawde-*`, typing dots, rest pulse, scroll
+    reveal, spinners via `motion-safe:animate-spin`) is opted in under
+    `prefers-reduced-motion: no-preference`; sheets and fade-ins fall back to
+    opacity only. Programmatic smooth scrolling uses `scrollBehavior()`.
+    Guide: `motion`.
+22. **Focus after navigation.** Opening a session from a card removed the
+    focused card, leaving focus on `<body>` (the view-transition path handled
+    it, the plain path didn't). `RouteChange` in App.tsx now moves focus to
+    the new screen's `<h1>` whenever the old focus is gone. Guide:
+    `same-document-transitions` (focus routing).
+23. **Share cards drawn in one go.** Three 1080² canvases rendered back to
+    back as Workout complete opened; they're drawn one at a time with
+    `scheduler.yield()` (`setTimeout` fallback) in between. Guide:
+    `break-up-long-tasks`.
+24. **Fonts.** `font-size-adjust: from-font` (cap height for Tiny5) keeps the
+    fallback the same size while Space Mono/Tiny5 load. Guide:
+    `visually-stable-font-fallbacks`.
+25. **Smaller fixes.** External links say "(opens in a new tab)"; the set
+    clock's `aria-label` on a `<span>` is visually hidden text; the date-of-
+    birth hint is `aria-describedby`; the Reorder/Done button no longer
+    combines `aria-pressed` with a changing label; MovementGuide tags use
+    `text-2xs`; dead `ripple`/`clawde-pushup`/`clawde-run` CSS removed; the
+    reorder grip is `touch-pan-x` instead of `touch-none`; the website's hero
+    screenshot has `fetchpriority="high"`. Guides: `accessibility`,
+    `optimize-image-priority`.
 
-- **Buttons that go `disabled` while busy drop keyboard focus.**
-  `components/shared/Button.tsx` (`loading` sets `disabled`), the rest-alert
-  switch (`pages/Settings.tsx:423-427`, `disabled={busy}`). After activation
-  focus falls to `<body>`. Use `aria-disabled` and ignore clicks while busy.
-  Guides: `accessibility` (`disabled` vs `aria-disabled`), `install-web-app`
-  (the same pattern in its example). Effort: S.
-- **Input focus indicator is too faint.** Every text input uses
-  `focus:outline-none focus:border-[#d97756]/50`; the half-alpha border is
-  roughly 2.5:1 against the surrounding card (estimate), under the 3:1 the
-  guide requires for a replacement indicator. Use a solid `#d97756` border or
-  a `focus-visible:` outline. Guides: `accessibility` (Focus indicators),
-  `forms`. Effort: S.
-- **Touch targets under 44 px.** Set tick (`SetRow` `CompleteButton`, 32×32),
-  timed Start/Stop (32 px high), the two Settings switches (48×28), rest-timer
-  chevron (40×40). Grow the hit area (padding or a pseudo-element) without
-  changing the look. Guide: `form-factor-adaptation`. Effort: S.
-- **The minimised rest timer can hide the focused field.** Session no longer
-  has a pinned action bar ("Complete Session" moved to the end of the
-  workout), but the minimised rest timer docks over the bottom of the page and
-  nothing sets `scroll-padding-bottom`, so a set input focused from the
-  keyboard can scroll under it. Add `scroll-padding-bottom` on the Session
-  scroller equal to the dock (`--tabbar-h` + `--tabbar-offset`) while the
-  timer is minimised. Guide: `form-factor-adaptation`. Effort: S.
-- **Entrance animations ignore reduced motion.** `src/index.css`: `.slide-up`
-  (translateY 100%, used by every sheet, dialog and the rest bar), `.fade-in`
-  and `.timer-pulse` aren't in the `prefers-reduced-motion` block; Tailwind's
-  `animate-spin` in `Button` neither. Make `.slide-up` opacity-only under
-  reduce, and gate `timer-pulse` behind `no-preference`. Guide: `motion`.
-  Effort: S.
-- **One page title for every route.** `index.html` sets "Coach Clawde" and no
-  route changes it. Set `document.title` per route ("Session: Upper · Coach
-  Clawde"). Guide: `accessibility` (Titles). Effort: S.
-- **Native `<dialog>` for the overlays.** The guides' default for modals is
-  `<dialog>` + `showModal()` (inert page, focus return, Escape and back-gesture
-  close). Not done now because the top layer escapes `#fixed-layer`, which
-  carries the installed-iPhone `--app-h` sizing and the `app` container
-  queries; it needs device testing. Light dismiss needs the documented
-  `closedby` fallback on Safari. Guides: `dialog`, `light-dismiss-a-dialog`,
-  `platform-controls-dismiss-dialog`, `prevent-page-scroll-under-modal-dialog`.
-  Effort: L.
-- **Toggle groups as pressed buttons.** Gender and Units (`pages/Settings.tsx`
-  `UnitToggle`), QuickLog activity chips: exclusive choices are `aria-pressed`
-  buttons with no group name. Use a radio group (`fieldset` + `legend`, or
-  `role="radiogroup"` with a label). Guide: `forms` (Selection Control
-  Decision Matrix). Effort: S–M.
+### Backlog from the second pass, done
 
-### Low
+- **Busy buttons kept focus.** `Button`'s `loading` uses `aria-disabled` and
+  ignores presses instead of `disabled`; so do the busy switch and the
+  stepper ends.
+- **Input focus indicator.** Solid accent border plus a 1px ring (6:1).
+- **Touch targets.** `hit-target` (index.css) grows the hit area to
+  `--target-size` (24px, 44px on `pointer: coarse`) without changing the look:
+  set tick, timed Start/Stop, back and header icons, help buttons, steppers,
+  rest timer chevron, Reorder; switches get a 44px label.
+- **Minimised rest timer over the focused field.** `scroll-padding-bottom` on
+  `<html>` clears the dock (tab bar or rest bar), and `scroll-padding-top`
+  clears the sticky header.
+- **Reduced motion** for `.slide-up`, `.fade-in`, `.timer-pulse` and spinners
+  (finding 21).
+- **One title for every route.** `useDocumentTitle` (in `PageHeader`, Home,
+  Login, Onboarding, Check-in): "Upper Body · Coach Clawde"; reset on each
+  route change.
+- **Toggle groups as radios** (finding 13).
+- **`overflow-x: clip` on html/body** removed: nothing overflows at 320px on
+  any route (checked with the clip disabled); the app column keeps its own
+  clip.
+- **`no-store`** dropped from `vercel.json` (`no-cache` alone, so bfcache
+  works and every deploy is still seen).
+- **Manifest `id: '/'`.**
+- **Scrollbars:** `scrollbar-color` with a 3:1 thumb, legacy pseudo-elements
+  only under `@supports not (scrollbar-color: auto)`.
+- **Textareas** grow with their text (`field-sizing: content`, min/max
+  height, `resize-y` where unsupported).
+- **Android text size:** `<meta name="text-scale" content="scale">`
+  (`lib/dynamicType` stays iOS-only, so nothing double-scales).
+- **Native switch** (finding 14).
+- **No `<main>` on full-screen routes** (finding 20).
+- **Announce the end of a rest:** a polite "Rest over. Up next: …" when a rest
+  runs out on screen (not when it's skipped).
 
-- **`overflow-x: clip` on `html, body`.** `src/index.css:32`. The guide says to
-  fix the wide element instead, since anything past the edge becomes
-  unreachable. It was added deliberately to protect the centred shell; only
-  revisit with device testing. Guide: `form-factor-adaptation`. Effort: M.
-- **`no-store` on the HTML.** `vercel.json` sends `no-cache, no-store,
-  must-revalidate` for `/` and `/index.html`; `no-store` blocks the
-  back/forward cache. `no-cache` alone keeps "every deploy is seen". (Same
-  header on `sw.js` and the manifest is harmless.) Guide: `performance`.
-  Effort: S.
-- **Manifest has no `id`.** `vite.config.ts` manifest: add `id: '/'` (equal to
-  today's computed id, so installs keep their identity). Guide:
-  `install-web-app`. Effort: S.
-- **Scrollbar styling.** `src/index.css:219-229` uses only `::-webkit-scrollbar`
-  (4 px, `#2a2a2a` thumb on a transparent track, under 3:1 on `#0a0a0a`). Add
-  `scrollbar-color` with a lighter thumb and keep the webkit rules as fallback;
-  avoid `thin`. Guide: `customize-scrollbar-color-and-thickness`. Effort: S.
-- **Textareas use `resize-none`.** `CompleteFlow`, `RunMode`, `WeekPlanner`,
-  `QuickLogSheet`, `ChatFlow`, `ConfirmCard`. Use `resize-y` (or
-  `field-sizing: content` where supported). Guide: `browser-ui-theming`.
-  Effort: S.
-- **Android text size.** Add `<meta name="text-scale" content="scale">` (Chrome
-  146+; ignored elsewhere). Keep `lib/dynamicType` iOS-only so it never
-  double-scales. Guide: `respect-os-text-scale`. Effort: S.
-- **Native switch.** The two `role="switch"` buttons in Settings are correct
-  ARIA. `<input type="checkbox" switch>` is Safari-only today; only adopt it
-  with the guide's conditional polyfill. Guide: `switch`. Effort: S.
-- **Rest timer ring semantics.** The SVG ring is `aria-hidden` and the time is
-  plain text, which works; a `<progress>`-based ring would expose progress
-  natively. Low value. Guide: `progress-ring`. Effort: M.
-- **No `<main>` on the full-screen routes.** `PhoneColumn` in `src/App.tsx`
-  (Login, Onboarding, Check-in) renders a plain `<div>`; make it `<main>`.
-  Guide: `accessibility` (Landmarks). Effort: S.
-- **Announce the end of a rest.** When a rest ends on screen, only a
-  tone plays; a polite status ("Rest over") would help screen-reader users who
-  have the sound off. Guide: `accessibility` (Live regions). Effort: S.
+### Open
+
+- **White text on the accent orange.** `#d97756` with white text is 3.1:1
+  (needs 4.5:1): primary buttons, selected chips, the unconfirmed tick.
+  Passing needs a darker fill (about `#b85a3a`) or dark text on the orange.
+  That's a brand decision, so it's left for the owner.
+- **Native `<dialog>`: not adopted, by decision.** The `accessibility` guide's
+  custom-overlay rules (role, `aria-modal`, focus in, `inert` outside, focus
+  back) are what `useModal` does; `<dialog>`'s top layer would escape
+  `#fixed-layer`, which carries the installed-iPhone `--app-h` sizing and the
+  `app` container queries. Revisit if that layer is ever retired.
+- **Rest ring as `<progress>`.** The SVG ring stays decorative; the countdown
+  is `role="timer"` and the minimised bar is named with the time left, which
+  covers what the ring shows.
+
+Verified with Playwright (Chromium, 390×844, production build, local mode)
+and axe-core 4.10: keyboard-only onboarding (arrow keys in radio groups,
+focus ring on chips), Tab to a session card and Enter opens it with focus on
+the new `<h1>` and the title updated, set tick hit area, rest timer (Escape,
+`role="timer"`, "Rest over" announced), reorder announcement and focus at the
+top, Workout complete radios, Settings switches (Space) and unit radios,
+planner day names, History links and edit-mode checkboxes, reduced motion
+(mascot still), no horizontal overflow at 320px on nine routes. axe reports no
+violations on Home, Session (rest timer open), Workout complete, Progress,
+Settings, the planner and History; the only remaining one is the white-on-
+orange contrast above.
 
 ## Checked and fine
 

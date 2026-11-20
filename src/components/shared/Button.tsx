@@ -1,10 +1,15 @@
-import { type ButtonHTMLAttributes, type ReactNode } from 'react'
+import { type ButtonHTMLAttributes, type MouseEvent, type ReactNode } from 'react'
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'ghost' | 'danger'
   size?: 'sm' | 'md' | 'lg'
   children: ReactNode
   fullWidth?: boolean
+  /**
+   * Busy with the action this button started. It stays focusable (so
+   * keyboard focus isn't dropped mid-action, as `disabled` would) and
+   * ignores presses until done.
+   */
   loading?: boolean
 }
 
@@ -21,21 +26,29 @@ const sizes = {
   lg: 'px-6 py-4 text-lg rounded-2xl',
 }
 
-export function Button({ variant = 'primary', size = 'md', children, fullWidth, loading, className = '', disabled, ...props }: ButtonProps) {
+export function Button({ variant = 'primary', size = 'md', children, fullWidth, loading, className = '', disabled, onClick, ...props }: ButtonProps) {
   return (
     <button
       className={`
         inline-flex items-center justify-center gap-2 transition-all duration-150 select-none
         ${variants[variant]} ${sizes[size]}
         ${fullWidth ? 'w-full' : ''}
-        ${disabled || loading ? 'opacity-50 pointer-events-none' : ''}
+        ${disabled ? 'opacity-50 pointer-events-none' : loading ? 'opacity-50 cursor-progress' : ''}
         ${className}
       `}
-      disabled={disabled || loading}
+      disabled={disabled}
+      aria-disabled={loading || undefined}
+      onClick={(e: MouseEvent<HTMLButtonElement>) => {
+        if (loading) {
+          e.preventDefault()
+          return
+        }
+        onClick?.(e)
+      }}
       {...props}
     >
       {loading && (
-        <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+        <span aria-hidden className="w-4 h-4 border-2 border-current border-t-transparent rounded-full motion-safe:animate-spin" />
       )}
       {children}
     </button>

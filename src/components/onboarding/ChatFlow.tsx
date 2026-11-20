@@ -2,12 +2,14 @@ import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { Check, Send } from 'lucide-react'
 import { ClawdeMark } from '../shared/ClawdeMark'
 import { Button } from '../shared/Button'
+import { ChoiceChip, ChoiceGroup } from '../shared/Choice'
 import { TimeInput } from '../shared/TimeInput'
 import {
   answerLabel, fieldsOf, optionsOf, splitInline, walk,
   type ChatOption, type CompoundField, type Flow, type FlowAnswers, type FlowContext, type FlowNode, type FlowValue,
 } from '../../lib/flow'
 import { WEEK_DAYS_MON, toLocalISODate } from '../../lib/weekUtils'
+import { scrollBehavior } from '../../lib/viewTransition'
 
 interface ChatFlowProps {
   flow: Flow
@@ -71,7 +73,7 @@ export function ChatFlow({ flow, answers, ctx, onAnswer, onRewind, endLines, end
   // behind the composer.
   const bottomRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
+    bottomRef.current?.scrollIntoView({ behavior: scrollBehavior(), block: 'end' })
   }, [currentId, shownCount, typing])
 
   function rewind(id: string) {
@@ -83,7 +85,9 @@ export function ChatFlow({ flow, answers, ctx, onAnswer, onRewind, endLines, end
 
   return (
     <div className="flex-1 flex flex-col">
-      <div className="flex-1 flex flex-col gap-2 px-4 pt-4 pb-4">
+      {/* A chat log: each new bubble Clawde adds is read out (role="log" is a
+          polite live region for content appended at the end). */}
+      <div role="log" aria-label="Chat with Clawde" className="flex-1 flex flex-col gap-2 px-4 pt-4 pb-4">
         {path.map((id) => {
           const node = flow.nodes[id]
           return (
@@ -111,7 +115,7 @@ export function ChatFlow({ flow, answers, ctx, onAnswer, onRewind, endLines, end
         </div>
 
         {path.length > 0 && !typing && current && (
-          <p className="text-2xs text-[#4a4a4a] text-center mt-1">Tap any of your answers to change it</p>
+          <p className="text-2xs text-[#858585] text-center mt-1">Tap any of your answers to change it</p>
         )}
       </div>
 
@@ -155,7 +159,8 @@ function TypingBubble() {
   return (
     <div className="flex items-end gap-2">
       <Avatar visible />
-      <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl rounded-bl-md px-4 py-3.5 flex gap-1" aria-label="Clawde is typing">
+      {/* Visual only: announcing "typing" before every line would be noise. */}
+      <div aria-hidden className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl rounded-bl-md px-4 py-3.5 flex gap-1">
         {[0, 1, 2].map((i) => (
           <span key={i} className="typing-dot w-1.5 h-1.5 rounded-full bg-[#6a6a6a]" style={{ animationDelay: `${i * 0.15}s` }} />
         ))}
@@ -189,11 +194,11 @@ function chipClass(active: boolean): string {
 }
 
 const inputClass =
-  'flex-1 min-w-0 bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl px-4 py-3 text-base text-[#f5f5f0] placeholder-[#4a4a4a] focus:outline-none focus:border-[#d97756]/50 transition-colors'
+  'flex-1 min-w-0 bg-[#1a1a1a] border border-[#666666] rounded-2xl px-4 py-3 text-base text-[#f5f5f0] placeholder-[#858585] focus:outline-none focus:border-[#d97756] focus:ring-1 focus:ring-[#d97756] transition-colors'
 
 function SkipChip({ label, onClick }: { label: string; onClick: () => void }) {
   return (
-    <button onClick={onClick} className="self-center text-xs text-[#a8a29e] hover:text-[#f5f5f0] py-2 px-3 rounded-xl border border-[#2a2a2a] bg-[#161616]">
+    <button type="button" onClick={onClick} className="self-center text-xs text-[#a8a29e] hover:text-[#f5f5f0] py-2 px-3 rounded-xl border border-[#2a2a2a] bg-[#161616]">
       {label}
     </button>
   )
@@ -211,15 +216,15 @@ function Composer({
 }) {
   switch (node.kind) {
     case 'single':
-      return <SingleChoice options={optionsOf(node, answers)} selected={typeof draft === 'string' ? draft : undefined} onSubmit={onSubmit} />
+      return <SingleChoice options={optionsOf(node, answers)} selected={typeof draft === 'string' ? draft : undefined} questionId={questionId} onSubmit={onSubmit} />
     case 'multi': {
       const initial = Array.isArray(draft) ? draft : node.preselect?.(answers) ?? []
-      return <MultiChoice node={node} options={optionsOf(node, answers)} initial={initial} onSubmit={onSubmit} />
+      return <MultiChoice node={node} options={optionsOf(node, answers)} initial={initial} questionId={questionId} onSubmit={onSubmit} />
     }
     case 'date':
-      return <DateReply node={node} initial={typeof draft === 'string' && draft !== node.skip?.value ? draft : ''} onSubmit={onSubmit} />
+      return <DateReply node={node} initial={typeof draft === 'string' && draft !== node.skip?.value ? draft : ''} questionId={questionId} onSubmit={onSubmit} />
     case 'days':
-      return <DaysReply initial={draft && typeof draft === 'object' && !Array.isArray(draft) ? draft : {}} onSubmit={onSubmit} />
+      return <DaysReply initial={draft && typeof draft === 'object' && !Array.isArray(draft) ? draft : {}} questionId={questionId} onSubmit={onSubmit} />
     case 'compound':
       return <CompoundReply node={node} fields={fieldsOf(node, answers)} initial={draft && typeof draft === 'object' && !Array.isArray(draft) ? draft : undefined} onSubmit={onSubmit} />
     default:
@@ -227,9 +232,13 @@ function Composer({
   }
 }
 
+/**
+ * Tapping an option answers straight away, so these are buttons (actions),
+ * grouped and named by Clawde's question.
+ */
 function SingleChoice({
-  options, selected, onSubmit,
-}: { options: ChatOption[]; selected: string | undefined; onSubmit: (a: FlowValue) => void }) {
+  options, selected, questionId, onSubmit,
+}: { options: ChatOption[]; selected: string | undefined; questionId: string; onSubmit: (a: FlowValue) => void }) {
   const [open, setOpen] = useState<ChatOption | null>(() => {
     const s = splitInline(selected)
     return options.find((o) => o.input && o.value === s.value) ?? null
@@ -239,23 +248,24 @@ function SingleChoice({
   if (open) return <InlineInput option={open} initial={splitInline(selected).payload} onBack={() => setOpen(null)} onSubmit={onSubmit} />
 
   return (
-    <div className={`fade-in pb-2 ${withHints ? 'flex flex-col gap-2' : 'flex flex-wrap gap-2'}`}>
+    <div role="group" aria-labelledby={questionId} className={`fade-in pb-2 ${withHints ? 'flex flex-col gap-2' : 'flex flex-wrap gap-2'}`}>
       {options.map((o) => {
         const active = selected === o.value || (!!o.input && splitInline(selected).value === o.value)
         const click = () => (o.input ? setOpen(o) : onSubmit(o.value))
         return withHints ? (
           <button
             key={o.value}
+            type="button"
             onClick={click}
             className={`flex items-center justify-between gap-3 text-left px-4 py-2.5 rounded-2xl border transition-all duration-150 active:scale-[0.98] ${
               active ? 'bg-[#d97756]/12 border-[#d97756]/50' : 'bg-[#161616] border-[#2a2a2a] hover:border-[#3a3a3a]'
             }`}
           >
             <span className="text-sm font-semibold text-[#f5f5f0]">{o.label}</span>
-            {o.hint && <span className="text-xs text-[#6a6a6a] text-right">{o.hint}</span>}
+            {o.hint && <span className="text-xs text-[#949494] text-right">{o.hint}</span>}
           </button>
         ) : (
-          <button key={o.value} onClick={click} className={chipClass(active)}>
+          <button key={o.value} type="button" onClick={click} className={chipClass(active)}>
             {o.label}{o.input ? '…' : ''}
           </button>
         )
@@ -292,8 +302,8 @@ function InlineInput({
 }
 
 function MultiChoice({
-  node, options, initial, onSubmit,
-}: { node: FlowNode; options: ChatOption[]; initial: string[]; onSubmit: (a: FlowValue) => void }) {
+  node, options, initial, questionId, onSubmit,
+}: { node: FlowNode; options: ChatOption[]; initial: string[]; questionId: string; onSubmit: (a: FlowValue) => void }) {
   const [selected, setSelected] = useState<string[]>(initial)
   const toggle = (v: string) =>
     setSelected((s) => {
@@ -309,16 +319,17 @@ function MultiChoice({
 
   return (
     <div className="fade-in flex flex-col gap-3 pb-2">
-      <div className="flex flex-wrap gap-2">
+      {/* Checkboxes, named as a group by Clawde's question. */}
+      <div role="group" aria-labelledby={questionId} className="flex flex-wrap gap-2">
         {options.map((o) => {
           const active = selected.includes(o.value)
           return (
-            <button key={o.value} onClick={() => toggle(o.value)} aria-pressed={active} className={chipClass(active)}>
+            <ChoiceChip key={o.value} type="checkbox" name={`multi-${node.id}`} value={o.value} checked={active} onChange={() => toggle(o.value)} className={chipClass(active)}>
               <span className="inline-flex items-center gap-1.5">
-                {active && <Check size={14} strokeWidth={2.5} />}
+                {active && <Check size={14} strokeWidth={2.5} aria-hidden />}
                 {o.label}
               </span>
-            </button>
+            </ChoiceChip>
           )
         })}
       </div>
@@ -339,16 +350,25 @@ function TextReply({
     if (trimmed) onSubmit(trimmed)
   }
 
+  // A form, so Enter sends through the browser's own implicit submission,
+  // which waits for an input method (Japanese, Chinese, Korean…) to finish
+  // composing instead of sending half a word.
   return (
     <div className="fade-in flex flex-col gap-2 pb-2">
-      <div className="flex items-end gap-2">
+      <form
+        className="flex items-end gap-2"
+        onSubmit={(e) => {
+          e.preventDefault()
+          send()
+        }}
+      >
         {node.multiline ? (
-          <textarea value={value} onChange={(e) => setValue(e.target.value)} placeholder={node.placeholder} rows={3} autoFocus aria-labelledby={questionId} className={`${inputClass} resize-none`} />
+          <textarea value={value} onChange={(e) => setValue(e.target.value)} placeholder={node.placeholder} rows={3} autoFocus aria-labelledby={questionId} className={`${inputClass} resize-y field-sizing-content min-h-24 max-h-[50svh]`} />
         ) : (
           <input
             value={value}
             onChange={(e) => setValue(node.kind === 'number' ? e.target.value.replace(/[^0-9]/g, '') : e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') send() }}
+            enterKeyHint="send"
             placeholder={node.placeholder}
             inputMode={node.kind === 'number' ? 'numeric' : 'text'}
             autoFocus
@@ -357,27 +377,27 @@ function TextReply({
           />
         )}
         <button
-          onClick={send}
+          type="submit"
           disabled={!trimmed}
           aria-label="Send"
           className="w-12 h-12 shrink-0 rounded-2xl bg-[#d97756] text-white flex items-center justify-center transition-all active:scale-90 disabled:opacity-30"
         >
-          <Send size={18} />
+          <Send size={18} aria-hidden />
         </button>
-      </div>
+      </form>
       {node.optional && <SkipChip label="Skip" onClick={() => onSubmit('')} />}
       {node.skip && <SkipChip label={node.skip.label} onClick={() => onSubmit(node.skip!.value)} />}
     </div>
   )
 }
 
-function DateReply({ node, initial, onSubmit }: { node: FlowNode; initial: string; onSubmit: (a: FlowValue) => void }) {
+function DateReply({ node, initial, questionId, onSubmit }: { node: FlowNode; initial: string; questionId: string; onSubmit: (a: FlowValue) => void }) {
   const [value, setValue] = useState(initial)
   const today = toLocalISODate(new Date())
   return (
     <div className="fade-in flex flex-col gap-2 pb-2">
       <div className="flex items-center gap-2">
-        <input type="date" value={value} min={today} onChange={(e) => setValue(e.target.value)} className={inputClass} style={{ colorScheme: 'dark' }} aria-label="Date" />
+        <input type="date" value={value} min={today} onChange={(e) => setValue(e.target.value)} className={inputClass} style={{ colorScheme: 'dark' }} aria-labelledby={questionId} />
         <Button onClick={() => onSubmit(value)} disabled={!value || value < today}>Done</Button>
       </div>
       {node.skip && <SkipChip label={node.skip.label} onClick={() => onSubmit(node.skip!.value)} />}
@@ -386,7 +406,7 @@ function DateReply({ node, initial, onSubmit }: { node: FlowNode; initial: strin
 }
 
 /** Tap a day once for training, twice for a match, three times to clear. */
-function DaysReply({ initial, onSubmit }: { initial: Record<string, string>; onSubmit: (a: FlowValue) => void }) {
+function DaysReply({ initial, questionId, onSubmit }: { initial: Record<string, string>; questionId: string; onSubmit: (a: FlowValue) => void }) {
   const [days, setDays] = useState<Record<string, string>>(initial)
   const cycle = (d: string) =>
     setDays((cur) => {
@@ -399,20 +419,21 @@ function DaysReply({ initial, onSubmit }: { initial: Record<string, string>; onS
   const any = Object.keys(days).length > 0
   return (
     <div className="fade-in flex flex-col gap-3 pb-2">
-      <div className="flex justify-between gap-1.5">
+      <div role="group" aria-labelledby={questionId} className="flex justify-between gap-1.5">
         {WEEK_DAYS_MON.map((d) => {
           const kind = days[d]
           return (
             <button
               key={d}
+              type="button"
               onClick={() => cycle(d)}
               aria-label={`${d}: ${kind ?? 'free'}`}
               className={`flex-1 aspect-square max-w-12 rounded-full text-xs font-semibold flex flex-col items-center justify-center ${
-                kind === 'match' ? 'bg-[#d97756] text-white' : kind === 'training' ? 'bg-[#d97756]/25 text-[#f5f5f0] border border-[#d97756]/50' : 'bg-[#1a1a1a] text-[#6a6a6a] border border-[#2a2a2a]'
+                kind === 'match' ? 'bg-[#d97756] text-white' : kind === 'training' ? 'bg-[#d97756]/25 text-[#f5f5f0] border border-[#d97756]/50' : 'bg-[#1a1a1a] text-[#949494] border border-[#2a2a2a]'
               }`}
             >
-              {d[0]}
-              {kind && <span className="text-[0.55rem] leading-none mt-0.5">{kind === 'match' ? 'MATCH' : 'TRAIN'}</span>}
+              <span aria-hidden>{d[0]}</span>
+              {kind && <span aria-hidden className="text-[0.55rem] leading-none mt-0.5">{kind === 'match' ? 'MATCH' : 'TRAIN'}</span>}
             </button>
           )
         })}
@@ -437,15 +458,16 @@ function CompoundReply({
     <div className="fade-in flex flex-col gap-3 pb-2">
       {fields.map((f) => (
         <div key={f.key} className="flex flex-col gap-1.5">
-          <span className="text-2xs uppercase tracking-widest text-[#6a6a6a]">{f.label}</span>
-          {f.kind === 'chips' && (
-            <div className="flex flex-wrap gap-2">
+          {f.kind === 'chips' ? (
+            <ChoiceGroup legend={f.label} legendClassName="block text-2xs uppercase tracking-widest text-[#949494] mb-1.5" className="flex flex-wrap gap-2">
               {(f.options ?? []).map((o) => (
-                <button key={o.value} onClick={() => set(f.key, o.value)} aria-pressed={values[f.key] === o.value} className={chipClass(values[f.key] === o.value)}>
+                <ChoiceChip key={o.value} name={`${node.id}-${f.key}`} value={o.value} checked={values[f.key] === o.value} onChange={() => set(f.key, o.value)} className={chipClass(values[f.key] === o.value)}>
                   {o.label}
-                </button>
+                </ChoiceChip>
               ))}
-            </div>
+            </ChoiceGroup>
+          ) : (
+            <span aria-hidden className="text-2xs uppercase tracking-widest text-[#949494]">{f.label}</span>
           )}
           {f.kind === 'duration' && (
             <TimeInput
@@ -456,7 +478,7 @@ function CompoundReply({
               label={f.label}
             />
           )}
-          {f.kind === 'lift' && <LiftInput value={values[f.key] ?? ''} onChange={(v) => set(f.key, v)} />}
+          {f.kind === 'lift' && <LiftInput label={f.label} value={values[f.key] ?? ''} onChange={(v) => set(f.key, v)} />}
         </div>
       ))}
       <Button fullWidth disabled={!ok} onClick={() => onSubmit(values)}>Done</Button>
@@ -466,14 +488,14 @@ function CompoundReply({
 }
 
 /** kg × reps, stored as "100x5". */
-function LiftInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+function LiftInput({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
   const [kg, reps] = value.split('x')
-  const box = 'w-20 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl px-2 py-2 text-base text-center text-[#f5f5f0] placeholder-[#3a3a3a] focus:outline-none focus:border-[#d97756]/50'
+  const box = 'w-20 bg-[#1a1a1a] border border-[#666666] rounded-xl px-2 py-2 text-base text-center text-[#f5f5f0] placeholder-[#858585] focus:outline-none focus:border-[#d97756] focus:ring-1 focus:ring-[#d97756]'
   const emit = (k: string, r: string) => onChange(k && r ? `${k}x${r}` : k || r ? `${k}x${r}` : '')
   return (
-    <div className="flex items-center gap-2">
+    <div role="group" aria-label={label} className="flex items-center gap-2">
       <input className={box} inputMode="decimal" placeholder="kg" aria-label="Weight in kg" value={kg ?? ''} onChange={(e) => emit(e.target.value.replace(/[^0-9.]/g, ''), reps ?? '')} />
-      <span className="text-[#4a4a4a]">×</span>
+      <span aria-hidden className="text-[#858585]">×</span>
       <input className={box} inputMode="numeric" placeholder="reps" aria-label="Reps" value={reps ?? ''} onChange={(e) => emit(kg ?? '', e.target.value.replace(/[^0-9]/g, ''))} />
     </div>
   )

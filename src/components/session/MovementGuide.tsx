@@ -54,9 +54,9 @@ export function MovementGuide({ name, notes, onClose }: MovementGuideProps) {
       <div className="flex items-start justify-between gap-3 px-5 pt-5 pb-3">
         <div className="min-w-0">
           <p className="text-2xs font-semibold text-[#d97756] uppercase tracking-widest">Movement guide</p>
-          <h3 className="text-lg font-bold text-[#f5f5f0] leading-tight mt-0.5">{name}</h3>
+          <h2 className="text-lg font-bold text-[#f5f5f0] leading-tight mt-0.5">{name}</h2>
           {match && match.name.toLowerCase() !== name.toLowerCase() && (
-            <p className="text-xs text-[#6a6a6a] mt-1">Closest match: {match.name}</p>
+            <p className="text-xs text-[#949494] mt-1">Closest match: {match.name}</p>
           )}
         </div>
         <SheetCloseButton onClose={onClose} />
@@ -65,14 +65,14 @@ export function MovementGuide({ name, notes, onClose }: MovementGuideProps) {
       <div className="flex-1 overflow-y-auto px-5 pb-4 flex flex-col gap-4">
         {notes && (
           <div className="flex items-start gap-2 bg-[#d97756]/8 rounded-2xl px-3 py-2.5">
-            <Info size={13} className="text-[#d97756] mt-0.5 shrink-0" />
+            <Info size={13} className="text-[#d97756] mt-0.5 shrink-0" aria-hidden />
             <p className="text-xs text-[#d97756]/90">{localize(notes, units)}</p>
           </div>
         )}
 
         {loading && (
-          <div className="flex items-center justify-center gap-2 py-10 text-sm text-[#6a6a6a]">
-            <LoaderCircle size={16} className="animate-spin" />
+          <div className="flex items-center justify-center gap-2 py-10 text-sm text-[#949494]">
+            <LoaderCircle size={16} className="motion-safe:animate-spin" aria-hidden />
             Loading guide…
           </div>
         )}
@@ -97,8 +97,8 @@ export function MovementGuide({ name, notes, onClose }: MovementGuideProps) {
             rel="noopener noreferrer"
             className="inline-flex items-center justify-center gap-2 px-3 py-3 rounded-2xl bg-[#1f1f1f] hover:bg-[#2a2a2a] border border-[#2e2e2e] text-sm text-[#f5f5f0] font-medium transition-all active:scale-95"
           >
-            <ImageIcon size={18} className="text-[#60a5fa] shrink-0" />
-            Google Images
+            <ImageIcon size={18} className="text-[#60a5fa] shrink-0" aria-hidden />
+            Google Images<span className="sr-only"> (opens in a new tab)</span>
           </a>
           <a
             href={youtubeSearchUrl(name)}
@@ -106,8 +106,8 @@ export function MovementGuide({ name, notes, onClose }: MovementGuideProps) {
             rel="noopener noreferrer"
             className="inline-flex items-center justify-center gap-2 px-3 py-3 rounded-2xl bg-[#1f1f1f] hover:bg-[#2a2a2a] border border-[#2e2e2e] text-sm text-[#f5f5f0] font-medium transition-all active:scale-95"
           >
-            <CirclePlay size={18} className="text-[#ef4444] shrink-0" />
-            YouTube videos
+            <CirclePlay size={18} className="text-[#ef4444] shrink-0" aria-hidden />
+            YouTube videos<span className="sr-only"> (opens in a new tab)</span>
           </a>
         </div>
       </div>
@@ -117,7 +117,7 @@ export function MovementGuide({ name, notes, onClose }: MovementGuideProps) {
 
 function EmptyState({ icon, text }: { icon: React.ReactNode; text: string }) {
   return (
-    <div className="flex flex-col items-center text-center gap-2 py-8 px-4 text-[#6a6a6a]">
+    <div className="flex flex-col items-center text-center gap-2 py-8 px-4 text-[#949494]">
       {icon}
       <p className="text-sm leading-relaxed">{text}</p>
     </div>
@@ -155,7 +155,7 @@ function GuideBody({ entry }: { entry: ExerciseDbEntry }) {
       {tags.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
           {tags.map((t) => (
-            <span key={t} className="text-[11px] capitalize text-[#a8a29e] bg-[#1a1a1a] border border-[#2a2a2a] rounded-full px-2.5 py-1">
+            <span key={t} className="text-2xs capitalize text-[#a8a29e] bg-[#1a1a1a] border border-[#2a2a2a] rounded-full px-2.5 py-1">
               {t}
             </span>
           ))}
@@ -166,7 +166,7 @@ function GuideBody({ entry }: { entry: ExerciseDbEntry }) {
         <ol className="flex flex-col gap-2.5">
           {entry.instructions.map((step, i) => (
             <li key={i} className="flex items-start gap-2.5">
-              <span className="w-5 h-5 rounded-full bg-[#d97756]/15 text-[#d97756] text-2xs font-bold flex items-center justify-center shrink-0 mt-0.5">
+              <span aria-hidden className="w-5 h-5 rounded-full bg-[#d97756]/15 text-[#d97756] text-2xs font-bold flex items-center justify-center shrink-0 mt-0.5">
                 {i + 1}
               </span>
               <span className="text-sm text-[#a8a29e] leading-relaxed">{step}</span>

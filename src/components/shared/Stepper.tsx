@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { Minus, Plus } from 'lucide-react'
 
 /**
@@ -22,29 +23,42 @@ export function Stepper({
   const btn = size === 'sm' ? 'w-8 h-8' : 'w-10 h-10'
   const clamp = (v: number) => Math.min(max, Math.max(min, Math.round(v * 100) / 100))
   return (
-    <div className={`flex items-center gap-1 ${disabled ? 'opacity-40 pointer-events-none' : ''}`} role="group" aria-label={label}>
-      <button
-        type="button"
-        onClick={() => onChange(clamp(value - step))}
-        disabled={disabled || value <= min}
-        aria-label={`${label}: less`}
-        className={`${btn} shrink-0 rounded-nested bg-[#2a2a2a] text-[#a8a29e] flex items-center justify-center active:scale-90 transition-transform disabled:opacity-30`}
-      >
-        <Minus size={14} />
-      </button>
+    <div className={`flex items-center gap-1.5 ${disabled ? 'opacity-40 pointer-events-none' : ''}`} role="group" aria-label={label}>
+      <StepButton label={`${label}: less`} size={btn} off={disabled || value <= min} onPress={() => onChange(clamp(value - step))}>
+        <Minus size={14} aria-hidden />
+      </StepButton>
       <span className="min-w-[2.75rem] text-center text-base font-semibold text-[#f5f5f0] tabular-nums" aria-live="polite">
         {format(value)}
       </span>
-      <button
-        type="button"
-        onClick={() => onChange(clamp(value + step))}
-        disabled={disabled || value >= max}
-        aria-label={`${label}: more`}
-        className={`${btn} shrink-0 rounded-nested bg-[#2a2a2a] text-[#a8a29e] flex items-center justify-center active:scale-90 transition-transform disabled:opacity-30`}
-      >
-        <Plus size={14} />
-      </button>
+      <StepButton label={`${label}: more`} size={btn} off={disabled || value >= max} onPress={() => onChange(clamp(value + step))}>
+        <Plus size={14} aria-hidden />
+      </StepButton>
     </div>
+  )
+}
+
+/**
+ * At the end of its range a step button is `aria-disabled`, not `disabled`:
+ * a held-down "less" that reaches the minimum keeps keyboard focus instead of
+ * dropping it. Its hit area is at least the touch-target size.
+ */
+function StepButton({ label, size, off, onPress, children }: {
+  label: string
+  size: string
+  off: boolean | undefined
+  onPress: () => void
+  children: ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => { if (!off) onPress() }}
+      aria-disabled={off || undefined}
+      aria-label={label}
+      className={`${size} relative hit-target shrink-0 rounded-nested bg-[#2a2a2a] text-[#a8a29e] flex items-center justify-center transition-transform ${off ? 'opacity-30' : 'active:scale-90'}`}
+    >
+      {children}
+    </button>
   )
 }
 

@@ -28,9 +28,9 @@ export function BestEfforts() {
           <Card>
             <CardSection className="flex items-center gap-3 py-5">
               <div className="w-10 h-10 rounded-2xl bg-[#d97756]/15 flex items-center justify-center shrink-0">
-                <Trophy size={18} className="text-[#d97756]" />
+                <Trophy size={18} className="text-[#d97756]" aria-hidden />
               </div>
-              <p className="text-sm text-[#6a6a6a]">
+              <p className="text-sm text-[#949494]">
                 Log some sessions and your personal bests for each lift and cardio piece will show up here.
               </p>
             </CardSection>

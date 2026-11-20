@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { scrollBehavior } from '../lib/viewTransition'
 
 /**
  * Publishes the on-screen keyboard's height as the `--kb` CSS variable on
@@ -40,7 +41,7 @@ export function useKeyboardInset() {
         if (open && !wasOpen) {
           const el = document.activeElement
           if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) {
-            el.scrollIntoView({ block: 'center', behavior: 'smooth' })
+            el.scrollIntoView({ block: 'center', behavior: scrollBehavior() })
           }
         }
         wasOpen = open

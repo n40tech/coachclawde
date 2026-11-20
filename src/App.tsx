@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { isAcceptedAlertUrl } from './lib/alertLink'
-import { useEffect } from 'react'
+import { useEffect, useLayoutEffect, useRef } from 'react'
 import { applyPendingUpdate } from './lib/appUpdate'
 import type { ReactNode } from 'react'
 import { AuthProvider } from './auth/AuthProvider'
@@ -15,6 +15,8 @@ import { Session } from './pages/Session'
 import { ReleaseNotesGate } from './components/shared/WhatsNew'
 import { useKeyboardInset } from './hooks/useKeyboardInset'
 import { lazyPage } from './lib/lazyPage'
+import { focusNewScreen } from './lib/viewTransition'
+import { resetDocumentTitle } from './hooks/useDocumentTitle'
 
 // Home and Session (with the movement guides) are in the entry
 // chunk: the workout path never waits on a chunk, and an update can't pull a
@@ -39,6 +41,7 @@ function App() {
       <BrowserRouter>
         <UpdateOnNavigate />
         <ServiceWorkerLinks />
+        <RouteChange />
         {/* The `app` container drives the phone ↔ iPad layout switch: container
             queries (`@3xl/app:`) rather than media queries, so the shell
             responds to the space it actually has. */}
@@ -101,6 +104,36 @@ function UpdateOnNavigate() {
 }
 
 /**
+ * On each route change: the title goes back to the app's name before the new
+ * screen sets its own (hooks/useDocumentTitle), and if focus was left on the
+ * old screen (the card that was tapped is gone), it moves to the new screen's
+ * heading. A lazily loaded screen may take a moment to have one.
+ */
+function RouteChange() {
+  const { pathname } = useLocation()
+  const first = useRef(true)
+  useLayoutEffect(() => {
+    resetDocumentTitle()
+  }, [pathname])
+  useEffect(() => {
+    if (first.current) {
+      first.current = false
+      return
+    }
+    let tries = 0
+    let timer = 0
+    const frame = requestAnimationFrame(function attempt() {
+      if (!focusNewScreen() && ++tries < 10) timer = window.setTimeout(attempt, 50)
+    })
+    return () => {
+      cancelAnimationFrame(frame)
+      clearTimeout(timer)
+    }
+  }, [pathname])
+  return null
+}
+
+/**
  * A tapped rest alert, with the app already open: the service worker
  * (public/push-sw.js) focuses the app and posts the alert's path, opened here
  * in-app (the workout at the exercise up next).
@@ -125,9 +158,9 @@ function ServiceWorkerLinks() {
 /** Single centred phone-width column, for the screens without navigation. */
 function PhoneColumn({ children }: { children: ReactNode }) {
   return (
-    <div className="w-full max-w-md mx-auto min-h-svh relative">
+    <main className="block w-full max-w-md mx-auto min-h-svh relative">
       <PageSuspense>{children}</PageSuspense>
-    </div>
+    </main>
   )
 }
 

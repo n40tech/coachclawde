@@ -6,6 +6,7 @@ import { Button } from '../components/shared/Button'
 import { ConfirmDialog } from '../components/shared/ConfirmDialog'
 import { BottomSheet, SheetCloseButton } from '../components/shared/BottomSheet'
 import { Card, CardSection } from '../components/shared/Card'
+import { ChoiceChip, ChoiceGroup } from '../components/shared/Choice'
 import { buildConvertPlanPrompt, buildModifyPlanPrompt, buildWeekPlanPrompt } from '../lib/promptBuilder'
 import { plannerPrefill } from '../lib/checkIn'
 import { plannerInvitation } from '../lib/checkInTriggers'
@@ -335,7 +336,7 @@ export function WeekPlanner() {
                 {repeatPlan(previous, repeatMonday!).sessions.map((s) => (
                   <li key={s.id} className="flex items-center justify-between gap-3 rounded-2xl bg-[#1a1a1a] border border-[#2a2a2a] px-3.5 py-2.5">
                     <span className="text-sm text-[#f5f5f0] truncate">{s.title}</span>
-                    <span className="text-xs text-[#6a6a6a] shrink-0">{formatSessionDate(s.date)}</span>
+                    <span className="text-xs text-[#949494] shrink-0">{formatSessionDate(s.date)}</span>
                   </li>
                 ))}
               </ul>
@@ -357,46 +358,50 @@ export function WeekPlanner() {
         {/* Day selector */}
         <Card>
           <CardSection>
-            <p className="text-sm font-medium text-[#a8a29e] mb-4">Which days can you train?</p>
-            <div className="flex justify-between gap-1.5">
+            <ChoiceGroup legend="Which days can you train?" legendClassName="block text-sm font-medium text-[#a8a29e] mb-4" className="flex justify-between gap-1.5">
               {WEEK_DAYS_MON.map((day) => {
                 const selected = selectedDays.includes(day)
                 // Days earlier than today can't be trained this week, so dim
-                // them — tapping one prompts to move the plan to next week.
+                // them — ticking one prompts to move the plan to next week.
                 const past = !planNextWeek && isDayPastThisWeek(day, today)
                 return (
-                  <button
+                  <ChoiceChip
                     key={day}
-                    onClick={() => toggleDay(day)}
-                    aria-pressed={selected}
-                    title={past ? `${day} has already passed this week` : undefined}
+                    type="checkbox"
+                    name="plan-days"
+                    value={day}
+                    checked={selected}
+                    onChange={() => toggleDay(day)}
                     className={`
                       aspect-square flex-1 flex items-center justify-center rounded-full text-sm font-semibold transition-all duration-150
                       ${selected
                         ? 'bg-[#d97756] text-white shadow-lg shadow-[#d97756]/25 scale-105'
                         : past
-                          ? 'bg-[#141414] text-[#3a3a3a] border border-[#222] hover:text-[#5a5a5a]'
-                          : 'bg-[#1a1a1a] text-[#6a6a6a] border border-[#2a2a2a] hover:bg-[#222] hover:text-[#a8a29e]'
+                          ? 'bg-[#141414] text-[#858585] border border-[#222] hover:text-[#a8a29e]'
+                          : 'bg-[#1a1a1a] text-[#949494] border border-[#2a2a2a] hover:bg-[#222] hover:text-[#a8a29e]'
                       }
                     `}
                   >
-                    {day[0]}
-                  </button>
+                    {/* One letter on screen; the full day (and whether it's gone) for screen readers. */}
+                    <span aria-hidden>{day[0]}</span>
+                    <span className="sr-only">{DAY_NAME[day]}{past ? ', already passed this week' : ''}</span>
+                  </ChoiceChip>
                 )
               })}
-            </div>
+            </ChoiceGroup>
             {orderedDays.length > 0 && (
-              <p className="text-xs text-[#6a6a6a] mt-3 text-center">
+              <p className="text-xs text-[#949494] mt-3 text-center">
                 {orderedDays.length} day{orderedDays.length !== 1 ? 's' : ''} selected: {orderedDays.join(', ')}
               </p>
             )}
             {planNextWeek && (
               <div className="mt-3 flex items-center justify-between gap-3 rounded-2xl bg-[#161616] border border-[#2a2a2a] px-3 py-2.5">
                 <span className="flex items-center gap-2 text-xs text-[#a8a29e]">
-                  <CalendarClock size={14} className="text-[#d97756]" />
+                  <CalendarClock size={14} className="text-[#d97756]" aria-hidden />
                   Planning for next week
                 </span>
                 <button
+                  type="button"
                   onClick={switchToThisWeek}
                   className="text-xs font-medium text-[#d97756] hover:underline"
                 >
@@ -410,26 +415,27 @@ export function WeekPlanner() {
         {/* Session length */}
         {method === 'generate' && <Card>
           <CardSection>
-            <p className="text-sm font-medium text-[#a8a29e] mb-3">How long per session?</p>
             {/* Equal-width chips that wrap to a second row at large text sizes. */}
-            <div className="grid grid-cols-[repeat(auto-fit,minmax(3.5rem,1fr))] gap-1.5">
+            <ChoiceGroup legend="How long per session?" legendClassName="block text-sm font-medium text-[#a8a29e] mb-3" className="grid grid-cols-[repeat(auto-fit,minmax(3.5rem,1fr))] gap-1.5">
               {SESSION_LENGTH_OPTIONS.map((mins) => (
-                <button
+                <ChoiceChip
                   key={mins}
-                  onClick={() => setSessionMinutes(mins)}
-                  aria-pressed={sessionMinutes === mins}
+                  name="session-length"
+                  value={String(mins)}
+                  checked={sessionMinutes === mins}
+                  onChange={() => setSessionMinutes(mins)}
                   className={`
-                    rounded-xl py-2 text-sm font-semibold transition-all duration-150
+                    rounded-xl py-2 text-sm font-semibold text-center transition-all duration-150
                     ${sessionMinutes === mins
                       ? 'bg-[#d97756] text-white shadow-lg shadow-[#d97756]/25'
-                      : 'bg-[#1a1a1a] text-[#6a6a6a] border border-[#2a2a2a] hover:bg-[#222] hover:text-[#a8a29e]'
+                      : 'bg-[#1a1a1a] text-[#949494] border border-[#2a2a2a] hover:bg-[#222] hover:text-[#a8a29e]'
                     }
                   `}
                 >
-                  {mins}m
-                </button>
+                  {mins}<span aria-hidden>m</span><span className="sr-only"> minutes</span>
+                </ChoiceChip>
               ))}
-            </div>
+            </ChoiceGroup>
           </CardSection>
         </Card>}
 
@@ -449,7 +455,7 @@ export function WeekPlanner() {
                   ? 'e.g. Add 2.5kg to the main lifts, swap leg press for hack squat, make Friday 45 minutes.'
                   : 'e.g. Going out Wednesday night, make Thursday light. Left shoulder feeling tight this week.'}
               rows={method === 'generate' ? 3 : 6}
-              className="w-full bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl px-4 py-3 text-base text-[#f5f5f0] placeholder-[#3a3a3a] resize-none focus:outline-none focus:border-[#d97756]/50 transition-colors"
+              className="w-full bg-[#1a1a1a] border border-[#666666] rounded-2xl px-4 py-3 text-base text-[#f5f5f0] placeholder-[#858585] resize-y field-sizing-content min-h-24 max-h-[50svh] focus:outline-none focus:border-[#d97756] focus:ring-1 focus:ring-[#d97756] transition-colors"
             />
           </CardSection>
         </Card>
@@ -470,7 +476,7 @@ export function WeekPlanner() {
             <button
               onClick={handleShowPrompt}
               disabled={selectedDays.length === 0}
-              className="self-center text-xs text-[#6a6a6a] hover:text-[#a8a29e] py-1.5 px-3 disabled:opacity-40"
+              className="self-center text-xs text-[#949494] hover:text-[#a8a29e] py-1.5 px-3 disabled:opacity-40"
             >
               or just copy the prompt
             </button>
@@ -496,8 +502,8 @@ export function WeekPlanner() {
         {/* How it works */}
         {method === 'generate' && (
         <div className="rounded-2xl bg-[#161616] border border-[#2a2a2a] p-4">
-          <p className="text-xs font-semibold text-[#6a6a6a] uppercase tracking-widest mb-3">How it works</p>
-          <div className="flex flex-col gap-2.5">
+          <h2 className="text-xs font-semibold text-[#949494] uppercase tracking-widest mb-3">How it works</h2>
+          <ol className="flex flex-col gap-2.5">
             {[
               ['1', 'Select your training days above'],
               ['2', 'Pick a session length and add any notes (injuries, events, energy)'],
@@ -505,12 +511,12 @@ export function WeekPlanner() {
               ['4', 'Send it (if the chat is empty, just paste — the prompt is on your clipboard too)'],
               ['5', 'Copy the JSON Claude replies with, come back, and paste it into the import sheet'],
             ].map(([n, text]) => (
-              <div key={n} className="flex items-start gap-3">
-                <span className="w-5 h-5 rounded-full bg-[#d97756]/15 text-[#d97756] text-2xs font-bold flex items-center justify-center shrink-0 mt-0.5">{n}</span>
-                <p className="text-sm text-[#6a6a6a]">{text}</p>
-              </div>
+              <li key={n} className="flex items-start gap-3">
+                <span aria-hidden className="w-5 h-5 rounded-full bg-[#d97756]/15 text-[#d97756] text-2xs font-bold flex items-center justify-center shrink-0 mt-0.5">{n}</span>
+                <p className="text-sm text-[#949494]">{text}</p>
+              </li>
             ))}
-          </div>
+          </ol>
         </div>
         )}
       </div>
@@ -520,18 +526,17 @@ export function WeekPlanner() {
         <BottomSheet label="Claude prompt" onClose={() => setShowPrompt(false)}>
           <div className="flex items-center justify-between px-5 pt-5 pb-3">
             <div className="flex items-center gap-2">
-              <h3 className="text-base font-semibold text-[#f5f5f0]">
+              <h2 className="text-base font-semibold text-[#f5f5f0]">
                 {appMissing ? "Claude app didn't open" : 'Claude Prompt Ready'}
-              </h3>
-              {copied && (
-                <span className="flex items-center gap-1 text-xs font-medium text-emerald-400">
-                  <Check size={13} /> Copied
-                </span>
-              )}
+              </h2>
+              {/* Always in the page, so "Copied" is announced. */}
+              <span role="status" className="flex items-center gap-1 text-xs font-medium text-emerald-400">
+                {copied && <><Check size={13} aria-hidden /> Copied</>}
+              </span>
             </div>
             <SheetCloseButton onClose={() => setShowPrompt(false)} />
           </div>
-          <p className="text-xs text-[#6a6a6a] px-5 pb-3">
+          <p className="text-xs text-[#949494] px-5 pb-3">
             {appMissing
               ? 'Your prompt is copied. Open Claude in your browser (or try the app again) — it should be filled in; if not, paste it.'
               : copied
@@ -562,10 +567,10 @@ export function WeekPlanner() {
       {showImport && (
         <BottomSheet label="Import plan" onClose={() => setShowImport(false)} dismissOnBackdrop={!importJson.trim()}>
           <div className="flex items-center justify-between px-5 pt-5 pb-3">
-            <h3 className="text-base font-semibold text-[#f5f5f0]">Import Plan</h3>
+            <h2 className="text-base font-semibold text-[#f5f5f0]">Import Plan</h2>
             <SheetCloseButton onClose={() => setShowImport(false)} />
           </div>
-          <label htmlFor="import-json" className="block text-xs text-[#6a6a6a] px-5 pb-3">
+          <label htmlFor="import-json" className="block text-xs text-[#949494] px-5 pb-3">
             Paste the JSON block from Claude's response below.
           </label>
           <div className="flex-1 px-4 overflow-y-auto">
@@ -577,7 +582,7 @@ export function WeekPlanner() {
               onChange={(e) => { setImportJson(e.target.value); setImportError('') }}
               placeholder='Paste the JSON block here... (the content between ```json and ```)'
               rows={10}
-              className="w-full min-h-24 bg-[#0a0a0a] border border-[#2a2a2a] rounded-2xl px-4 py-3 text-base text-[#f5f5f0] placeholder-[#2a2a2a] resize-none focus:outline-none focus:border-[#d97756]/50 font-mono"
+              className="w-full bg-[#0a0a0a] border border-[#666666] rounded-2xl px-4 py-3 text-base text-[#f5f5f0] placeholder-[#858585] resize-y field-sizing-content min-h-24 max-h-[50svh] focus:outline-none focus:border-[#d97756] focus:ring-1 focus:ring-[#d97756] font-mono"
             />
             {/* Always in the page so a failed import is announced. */}
             <div role="alert">
@@ -622,6 +627,10 @@ function latestWeeklyCheckIn(checkIns: CheckIn[]): CheckIn | undefined {
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0]
 }
 
+const DAY_NAME: Record<DayOfWeek, string> = {
+  Mon: 'Monday', Tue: 'Tuesday', Wed: 'Wednesday', Thu: 'Thursday', Fri: 'Friday', Sat: 'Saturday', Sun: 'Sunday',
+}
+
 const METHOD_INFO: Record<PlanMethod, { icon: LucideIcon; title: string; text: string }> = {
   generate: { icon: Wand2, title: 'New plan from Clawde', text: 'Claude writes a fresh week from your profile and history' },
   repeat: { icon: Repeat, title: 'Repeat last week', text: 'Same sessions and weights, next week. Instant' },
@@ -638,35 +647,37 @@ function MethodPicker({ methods, last, selected, hasPrevious, onSelect }: {
   onSelect: (m: PlanMethod) => void
 }) {
   return (
-    <div role="radiogroup" aria-label="How to plan this week" className="grid grid-cols-2 gap-2">
+    <ChoiceGroup legend="How to plan this week" legendClassName="sr-only" className="grid grid-cols-2 gap-2">
       {methods.map((m) => {
         const { icon: Icon, title, text } = METHOD_INFO[m]
         const needsPrevious = (m === 'repeat' || m === 'modify') && !hasPrevious
         const on = selected === m
+        // A choice card: a native radio, named by its title and explanation.
         return (
-          <button
+          <ChoiceChip
             key={m}
-            role="radio"
-            aria-checked={on}
+            name="plan-method"
+            value={m}
+            checked={on}
             disabled={needsPrevious}
-            onClick={() => onSelect(m)}
-            className={`relative text-left rounded-3xl p-3.5 border transition-all disabled:opacity-40 ${
+            onChange={() => onSelect(m)}
+            className={`block text-left rounded-3xl p-3.5 border transition-all has-[:disabled]:opacity-40 ${
               on
                 ? 'bg-[#d97756]/12 border-[#d97756]/60 shadow-lg shadow-[#d97756]/10'
                 : 'bg-[#161616] border-[#2a2a2a] hover:border-[#3a3a3a]'
             }`}
           >
-            <div className="flex items-start justify-between gap-2">
-              <Icon size={18} className={on ? 'text-[#d97756]' : 'text-[#a8a29e]'} />
+            <span className="flex items-start justify-between gap-2">
+              <Icon size={18} aria-hidden className={on ? 'text-[#d97756]' : 'text-[#a8a29e]'} />
               {m === last && (
                 <span className="text-2xs font-semibold uppercase tracking-wide text-[#d97756] bg-[#d97756]/15 rounded-full px-2 py-0.5">Last used</span>
               )}
-            </div>
-            <p className="text-sm font-semibold text-[#f5f5f0] mt-2 leading-tight">{title}</p>
-            <p className="text-xs text-[#6a6a6a] mt-1 leading-snug">{needsPrevious ? 'Needs a previous plan' : text}</p>
-          </button>
+            </span>
+            <span className="block text-sm font-semibold text-[#f5f5f0] mt-2 leading-tight">{title}</span>
+            <span className="block text-xs text-[#949494] mt-1 leading-snug">{needsPrevious ? 'Needs a previous plan' : text}</span>
+          </ChoiceChip>
         )
       })}
-    </div>
+    </ChoiceGroup>
   )
 }

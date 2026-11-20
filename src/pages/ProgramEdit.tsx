@@ -4,6 +4,8 @@ import { useAutoSync } from '../hooks/useAutoSync'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Card, CardSection } from '../components/shared/Card'
 import { SyncIndicator } from '../components/shared/SyncIndicator'
+import { ChoiceChip, ChoiceGroup } from '../components/shared/Choice'
+import { chipLook } from '../components/shared/chipLook'
 import { DEFAULT_PROFILE } from '../lib/profileData'
 import {
   GOAL_OPTIONS, EXERCISE_OPTIONS, FACILITY_OPTIONS, COACHING_OPTIONS,
@@ -88,6 +90,7 @@ export function ProgramEdit() {
             />
             <ChipGroup
               label="Coaching style"
+              type="radio"
               options={COACHING_OPTIONS}
               selected={[program.coachingStyle]}
               onToggle={(v) => update({ coachingStyle: v })}
@@ -108,90 +111,53 @@ export function ProgramEdit() {
   )
 }
 
+const LOOK = 'px-2 py-2.5 rounded-2xl text-sm font-medium text-center'
+
 function DaysPerWeekGroup({ value, onChange }: { value: number | undefined; onChange: (v: number) => void }) {
   return (
-    <div>
-      <p className="text-xs font-medium text-[#a8a29e] mb-2.5">Days per week</p>
-      <div className="grid grid-cols-5 gap-2">
-        {DAYS_PER_WEEK_OPTIONS.map((days) => {
-          const active = value === days
-          return (
-            <button
-              key={days}
-              onClick={() => onChange(days)}
-              aria-pressed={active}
-              className={`px-2 py-2.5 rounded-2xl text-sm font-medium text-center transition-all duration-150 ${
-                active
-                  ? 'bg-[#d97756] text-white shadow-lg shadow-[#d97756]/20'
-                  : 'bg-[#1a1a1a] text-[#6a6a6a] border border-[#2a2a2a] hover:text-[#a8a29e]'
-              }`}
-            >
-              {daysPerWeekLabel(days)}
-            </button>
-          )
-        })}
-      </div>
-    </div>
+    <ChoiceGroup legend="Days per week" legendClassName="block text-xs font-medium text-[#a8a29e] mb-2.5" className="grid grid-cols-5 gap-2">
+      {DAYS_PER_WEEK_OPTIONS.map((days) => (
+        <ChoiceChip key={days} name="days-per-week" value={String(days)} checked={value === days} onChange={() => onChange(days)} className={chipLook(value === days, LOOK)}>
+          {daysPerWeekLabel(days)}
+        </ChoiceChip>
+      ))}
+    </ChoiceGroup>
   )
 }
 
 function LengthGroup({ value, onChange }: { value: number; onChange: (v: number) => void }) {
   return (
-    <div>
-      <p className="text-xs font-medium text-[#a8a29e] mb-2.5">Program length</p>
-      <div className="grid grid-cols-4 gap-2">
-        {LENGTH_OPTIONS.map((weeks) => {
-          const active = value === weeks
-          return (
-            <button
-              key={weeks}
-              onClick={() => onChange(weeks)}
-              aria-pressed={active}
-              className={`px-2 py-2.5 rounded-2xl text-sm font-medium text-center transition-all duration-150 ${
-                active
-                  ? 'bg-[#d97756] text-white shadow-lg shadow-[#d97756]/20'
-                  : 'bg-[#1a1a1a] text-[#6a6a6a] border border-[#2a2a2a] hover:text-[#a8a29e]'
-              }`}
-            >
-              {weeks}w
-            </button>
-          )
-        })}
-      </div>
-    </div>
+    <ChoiceGroup legend="Program length" legendClassName="block text-xs font-medium text-[#a8a29e] mb-2.5" className="grid grid-cols-4 gap-2">
+      {LENGTH_OPTIONS.map((weeks) => (
+        <ChoiceChip key={weeks} name="program-length" value={String(weeks)} checked={value === weeks} onChange={() => onChange(weeks)} className={chipLook(value === weeks, LOOK)}>
+          {weeks}<span aria-hidden>w</span><span className="sr-only"> weeks</span>
+        </ChoiceChip>
+      ))}
+    </ChoiceGroup>
   )
 }
 
+/** Checkboxes (any number), or radios (`type="radio"`, exactly one). */
 function ChipGroup<T extends string>({
-  label, options, selected, onToggle,
+  label, options, selected, onToggle, type = 'checkbox',
 }: {
   label: string
   options: { value: T; label: string }[]
   selected: T[]
   onToggle: (value: T) => void
+  type?: 'checkbox' | 'radio'
 }) {
+  const name = label.toLowerCase().replace(/\W+/g, '-')
   return (
-    <div>
-      <p className="text-xs font-medium text-[#a8a29e] mb-2.5">{label}</p>
-      <div className="grid grid-cols-3 gap-2">
-        {options.map((opt) => {
-          const active = selected.includes(opt.value)
-          return (
-            <button
-              key={opt.value}
-              onClick={() => onToggle(opt.value)}
-              aria-pressed={active}
-              className={`px-2 py-2.5 rounded-2xl text-sm font-medium text-center transition-all duration-150 ${
-                active
-                  ? 'bg-[#d97756] text-white shadow-lg shadow-[#d97756]/20'
-                  : 'bg-[#1a1a1a] text-[#6a6a6a] border border-[#2a2a2a] hover:text-[#a8a29e]'
-              }`}
-            >
-              {opt.label}
-            </button>
-          )
-        })}
-      </div>
-    </div>
+    <ChoiceGroup legend={label} legendClassName="block text-xs font-medium text-[#a8a29e] mb-2.5" className="grid grid-cols-3 gap-2">
+      {options.map((opt) => {
+        const active = selected.includes(opt.value)
+        return (
+          <ChoiceChip key={opt.value} type={type} name={name} value={opt.value} checked={active} onChange={() => onToggle(opt.value)} className={chipLook(active, LOOK)}>
+            {opt.label}
+          </ChoiceChip>
+        )
+      })}
+    </ChoiceGroup>
   )
 }

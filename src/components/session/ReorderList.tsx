@@ -20,6 +20,8 @@ interface ReorderListProps {
 export function ReorderList({ items, onChange }: ReorderListProps) {
   const [dragId, setDragId] = useState<string | null>(null)
   const [offset, setOffset] = useState(0)
+  // One announcement per move, in a status region that's always present.
+  const [announcement, setAnnouncement] = useState('')
   const rows = useRef(new Map<string, HTMLLIElement>())
   const drag = useRef<{ id: string; startY: number; base: number } | null>(null)
   const ids = () => items.map((i) => i.id)
@@ -28,6 +30,8 @@ export function ReorderList({ items, onChange }: ReorderListProps) {
     const next = [...ids]
     const [x] = next.splice(from, 1)
     next.splice(to, 0, x)
+    const item = items.find((i) => i.id === x)
+    if (item) setAnnouncement(`${item.label}, moved to position ${to + 1} of ${ids.length}`)
     return next
   }
 
@@ -73,6 +77,8 @@ export function ReorderList({ items, onChange }: ReorderListProps) {
   }
 
   return (
+    <>
+    <p role="status" className="sr-only">{announcement}</p>
     <ul className="flex flex-col gap-2" aria-label="Exercise order">
       {items.map((item, i) => {
         const dragging = dragId === item.id
@@ -92,35 +98,40 @@ export function ReorderList({ items, onChange }: ReorderListProps) {
               onPointerMove={onPointerMove}
               onPointerUp={onPointerUp}
               onPointerCancel={onPointerUp}
-              className="w-10 h-10 flex items-center justify-center text-[#6a6a6a] cursor-grab active:cursor-grabbing touch-none"
+              // Vertical drags are the reorder, so only horizontal panning is
+              // left to the browser.
+              className="w-10 h-10 flex items-center justify-center text-[#949494] cursor-grab active:cursor-grabbing touch-pan-x"
             >
-              <GripVertical size={18} />
+              <GripVertical size={18} aria-hidden />
             </button>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-[#f5f5f0] truncate">{item.label}</p>
-              {item.sub && <p className="text-xs text-[#6a6a6a]">{item.sub}</p>}
+              {item.sub && <p className="text-xs text-[#949494]">{item.sub}</p>}
             </div>
+            {/* aria-disabled, not disabled, at the ends: moving a row to the
+                top keeps focus on its (now inactive) up button. */}
             <button
               type="button"
               aria-label={`Move ${item.label} up`}
-              disabled={i === 0}
-              onClick={() => onChange(move(ids(), i, i - 1))}
-              className="w-9 h-9 rounded-xl flex items-center justify-center text-[#a8a29e] hover:bg-[#1f1f1f] disabled:opacity-25"
+              aria-disabled={i === 0 || undefined}
+              onClick={() => { if (i > 0) onChange(move(ids(), i, i - 1)) }}
+              className={`w-9 h-9 rounded-xl flex items-center justify-center text-[#a8a29e] hover:bg-[#1f1f1f] ${i === 0 ? 'opacity-25' : ''}`}
             >
-              <ChevronUp size={18} />
+              <ChevronUp size={18} aria-hidden />
             </button>
             <button
               type="button"
               aria-label={`Move ${item.label} down`}
-              disabled={i === items.length - 1}
-              onClick={() => onChange(move(ids(), i, i + 1))}
-              className="w-9 h-9 rounded-xl flex items-center justify-center text-[#a8a29e] hover:bg-[#1f1f1f] disabled:opacity-25"
+              aria-disabled={i === items.length - 1 || undefined}
+              onClick={() => { if (i < items.length - 1) onChange(move(ids(), i, i + 1)) }}
+              className={`w-9 h-9 rounded-xl flex items-center justify-center text-[#a8a29e] hover:bg-[#1f1f1f] ${i === items.length - 1 ? 'opacity-25' : ''}`}
             >
-              <ChevronDown size={18} />
+              <ChevronDown size={18} aria-hidden />
             </button>
           </li>
         )
       })}
     </ul>
+    </>
   )
 }

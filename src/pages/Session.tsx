@@ -8,7 +8,7 @@ import { Button } from '../components/shared/Button'
 import { ExerciseTile } from '../components/session/ExerciseTile'
 import { ReorderList } from '../components/session/ReorderList'
 import { RestTimerOverlay } from '../components/session/RestTimer'
-import { CompleteFlow, type SessionCompleteData } from '../components/session/CompleteFlow'
+import { WorkoutComplete, type SessionCompleteData } from '../components/session/WorkoutComplete'
 import { QuickLogSheet } from '../components/session/QuickLogSheet'
 import { useWakeLock } from '../hooks/useWakeLock'
 import { buildQuickLog, type QuickLogInput } from '../lib/quickLog'
@@ -49,10 +49,10 @@ export function Session() {
     weekPlans, loggedSessions, addLoggedSession, updateLoggedSession, setActiveSession, profile, dismissCheckIn,
     activeSet, setActiveSet, armSetTimer,
   } = useAppStore()
-  const { startTimer, isActive: resting } = useRestTimer()
+  const { startTimer, skipTimer, isActive: resting } = useRestTimer()
   const restBarShowing = useSettingsStore((s) => s.restTimerMinimised) && resting
   const units = useUnits()
-  const { syncSession } = useAutoSync()
+  const { syncSession, removeSession } = useAutoSync()
   const [activeExerciseId, setActiveExerciseId] = useState<string | null>(null)
   const [reordering, setReordering] = useState(false)
   const [summary, setSummary] = useState<WorkoutSummary | null>(null)
@@ -222,6 +222,8 @@ export function Session() {
   function maybeStartSetTimer(e: ReactPointerEvent) {
     const st = useAppStore.getState()
     const list = loggedSession?.loggedExercises
+    // Beta feature, on by default; Settings → Beta features turns it off.
+    if (!useSettingsStore.getState().autoSetTimer) return
     if (st.setTimerArmed !== planned!.id || st.timer.isActive || !list || isAlreadyComplete || reordering) return
     const el = e.target as HTMLElement
     const exEl = el.closest<HTMLElement>('[data-exercise]')
@@ -262,6 +264,18 @@ export function Session() {
     // Push just the finished session in the background — don't await so
     // navigation is instant.
     syncSession(loggedSession.id)
+  }
+
+  /** "Delete workout": every logged set goes, and the session is back to not started. */
+  function deleteWorkout() {
+    if (!loggedSession) return
+    stopSetTimer()
+    if (useAppStore.getState().timer.sessionId === planned!.id) skipTimer()
+    armSetTimer(null)
+    void removeSession(loggedSession.id)
+    setLoggedSession(null)
+    setSummary(null)
+    setReordering(false)
   }
 
   function stopSetTimer() {
@@ -477,17 +491,17 @@ export function Session() {
       {/* Rest timer overlay */}
       <RestTimerOverlay />
 
-      {/* Workout complete: the breakdown, then how it felt */}
+      {/* Workout complete: full screen, the breakdown, sharing and how it felt */}
       {summary && (
-        <CompleteFlow
-          sessionTitle={planned.title}
+        <WorkoutComplete
           summary={summary}
           isLastSessionOfWeek={isLastSession}
           onSave={handleSessionSave}
           onCheckIn={openCheckIn}
           onNotNow={declineCheckIn}
           onFinish={finishAndLeave}
-          onDismiss={() => setSummary(null)}
+          onCancel={() => setSummary(null)}
+          onDelete={deleteWorkout}
         />
       )}
 

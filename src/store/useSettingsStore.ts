@@ -19,6 +19,8 @@ interface SettingsStore {
   restTimerMinimised: boolean
   /** How the athlete last made a week's plan; the planner offers it first. */
   lastPlanMethod: PlanMethod | null
+  /** Beta: after a rest, the next tap starts timing the next set. */
+  autoSetTimer: boolean
 
   setSyncStatus: (status: SyncStatus, error?: string) => void
   markSynced: () => void
@@ -27,6 +29,7 @@ interface SettingsStore {
   dismissRestAlertsOffer: () => void
   setRestTimerMinimised: (minimised: boolean) => void
   setLastPlanMethod: (method: PlanMethod) => void
+  setAutoSetTimer: (on: boolean) => void
 }
 
 export const useSettingsStore = create<SettingsStore>()(
@@ -40,6 +43,7 @@ export const useSettingsStore = create<SettingsStore>()(
       restAlertsOfferDismissed: false,
       restTimerMinimised: false,
       lastPlanMethod: null,
+      autoSetTimer: true,
 
       setSyncStatus: (status, error) =>
         set({ syncStatus: status, syncError: error ?? null }),
@@ -52,6 +56,7 @@ export const useSettingsStore = create<SettingsStore>()(
       dismissRestAlertsOffer: () => set({ restAlertsOfferDismissed: true }),
       setRestTimerMinimised: (minimised) => set({ restTimerMinimised: minimised }),
       setLastPlanMethod: (method) => set({ lastPlanMethod: method }),
+      setAutoSetTimer: (on) => set({ autoSetTimer: on }),
     }),
     {
       name: STORAGE_KEYS.settings,
@@ -62,6 +67,7 @@ export const useSettingsStore = create<SettingsStore>()(
         restAlertsOfferDismissed: s.restAlertsOfferDismissed,
         restTimerMinimised: s.restTimerMinimised,
         lastPlanMethod: s.lastPlanMethod,
+        autoSetTimer: s.autoSetTimer,
       }),
     }
   )

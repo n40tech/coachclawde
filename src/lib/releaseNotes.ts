@@ -45,9 +45,9 @@ export const RELEASES: Release[] = [
     date: '2026-11-20',
     headline: 'Weights-first: a set timer, a workout summary to share, and faster planning.',
     fromFeedback: [
-      'After a rest, your next tap starts timing the set: its tick turns orange with a count-up, and you can still type reps and weight before you tick it.',
+      'After a rest, your next tap starts timing the set: its tick turns orange with a count-up, and you can still type reps and weight before you tick it. Don’t want it? Settings → Beta features.',
       'Leave the workout mid-rest and the timer comes with you: a little circle bottom-left (the tab bar shifts over). Tap it to jump back.',
-      'Finishing a workout shows a breakdown with Clawde: time, total lifted, exercises, sets and any new PBs, plus a Share button that makes a square image.',
+      'Finishing a workout opens a full “Workout complete” page: reps, sets, time and total lifted beside Clawde, any new PBs, how it felt and notes. Share it as one of three square cards (Summary, Headline or Logbook), or delete the workout if it was a mistake.',
       'Reorder your exercises by dragging them. Start one early and the list reshuffles itself to match.',
       'Four ways to plan a week: repeat last week, change last week by describing it, paste your own plan, or a fresh plan from Clawde. The one you used last comes first.',
       'Onboarding is down to the basics: name, gender, age, how active you are, where you train, injuries and anything else.',

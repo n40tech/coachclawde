@@ -8,7 +8,7 @@ import { PageHeader } from '../components/layout/PageHeader'
 import { Button } from '../components/shared/Button'
 import { Card, CardSection } from '../components/shared/Card'
 import { SyncIndicator } from '../components/shared/SyncIndicator'
-import { UserCircle, CheckCircle, AlertCircle, RefreshCw, LogOut, Sparkles, ChevronRight, Gift, MessageCircle, ShieldCheck, Bell } from 'lucide-react'
+import { UserCircle, CheckCircle, AlertCircle, RefreshCw, LogOut, Sparkles, ChevronRight, Gift, MessageCircle, ShieldCheck, Bell, Timer } from 'lucide-react'
 import { ConfirmDialog } from '../components/shared/ConfirmDialog'
 import { goalOrLegacy } from '../lib/goalProfile'
 import { WhatsNewSheet } from '../components/shared/WhatsNew'
@@ -242,6 +242,8 @@ export function Settings() {
         </div>
 
         <RestAlertsSetting />
+
+        <BetaFeatures />
 
         {/* Check-ins & health */}
         <div>
@@ -506,6 +508,37 @@ function UnitToggle<T extends string>({ options, value, onChange }: { options: T
           {o}
         </button>
       ))}
+    </div>
+  )
+}
+
+/** Newer workout features that can be switched off while they settle in. */
+function BetaFeatures() {
+  const autoSetTimer = useSettingsStore((s) => s.autoSetTimer)
+  const setAutoSetTimer = useSettingsStore((s) => s.setAutoSetTimer)
+  return (
+    <div>
+      <p className="text-xs text-[#4a4a4a] uppercase tracking-widest font-medium px-1 mb-3">Beta features</p>
+      <Card>
+        <CardSection className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-[#d97756]/15 flex items-center justify-center shrink-0">
+            <Timer size={18} className="text-[#d97756]" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-[#f5f5f0]">Auto-start set timer</p>
+            <p className="text-xs text-[#6a6a6a] mt-0.5">After a rest, your next tap starts timing the next set (its tick turns orange).</p>
+          </div>
+          <button
+            role="switch"
+            aria-checked={autoSetTimer}
+            aria-label="Auto-start set timer"
+            onClick={() => setAutoSetTimer(!autoSetTimer)}
+            className={`w-12 h-7 rounded-full p-0.5 transition-colors shrink-0 ${autoSetTimer ? 'bg-[#d97756]' : 'bg-[#2a2a2a]'}`}
+          >
+            <span className={`block w-6 h-6 rounded-full bg-white transition-transform ${autoSetTimer ? 'translate-x-5' : ''}`} />
+          </button>
+        </CardSection>
+      </Card>
     </div>
   )
 }

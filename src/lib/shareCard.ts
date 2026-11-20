@@ -3,15 +3,40 @@ import { formatWorkoutTime, type WorkoutSummary } from './workoutSummary'
 import { toWeight, type WeightUnit } from './units'
 import { formatSessionDate } from './dateUtils'
 
+/**
+ * Square (1080 × 1080) workout images to share, in three designs. All are a
+ * premium monotone grey: charcoal with the website's dot grid, Clawde large in
+ * greys, the website's pixel lettering for numbers and the wordmark at the
+ * foot.
+ */
+export type ShareStyle = 'summary' | 'headline' | 'log'
+
+export const SHARE_STYLES: { id: ShareStyle; label: string }[] = [
+  { id: 'summary', label: 'Summary' },
+  { id: 'headline', label: 'Headline' },
+  { id: 'log', label: 'Logbook' },
+]
+
 const SIZE = 1080
-const BG = '#0a0a0a'
-const CARD = '#161616'
-const LINE = '#2a2a2a'
-const TEXT = '#f5f5f0'
-const MUTED = '#a8a29e'
-const DIM = '#6a6a6a'
-const ACCENT = '#d97756'
-const FONT = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif"
+const PAD = 84
+const BG_TOP = '#1b1a19'
+const BG_BOTTOM = '#080808'
+const PANEL = 'rgba(255,255,255,0.045)'
+const LINE = 'rgba(255,255,255,0.09)'
+const INK = '#f2f1ee'
+const INK_2 = '#9b9792'
+const INK_3 = '#64605c'
+const PIXEL = '"Tiny5", "Space Mono", monospace'
+const MONO = '"Space Mono", ui-monospace, monospace'
+const SANS = "-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif"
+
+/** Clawde in greys: same pixels, monotone. */
+const GREY: Record<string, string> = {
+  '#d97756': '#8d8984', // body
+  '#bd5f38': '#5c5955', // legs
+  '#2a1712': '#141312', // eyes
+  '#fbf7f0': '#e9e7e3', // sweatband
+}
 
 /** "12.4 t", "8,450 kg" or the lb equivalent. */
 export function formatVolume(kg: number, unit: WeightUnit): string {
@@ -20,122 +45,234 @@ export function formatVolume(kg: number, unit: WeightUnit): string {
   return `${Math.round(v).toLocaleString('en-GB')} ${unit}`
 }
 
-function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
-  ctx.beginPath()
-  ctx.roundRect(x, y, w, h, r)
+/** Short form for tight spaces: "850kg", "1.5t", "3.3k lb". */
+export function formatVolumeCompact(kg: number, unit: WeightUnit): string {
+  const v = Math.round(toWeight(kg, unit))
+  if (v < 1000) return `${v}${unit}`
+  return unit === 'kg' ? `${+(v / 1000).toFixed(1)}t` : `${+(v / 1000).toFixed(1)}k${unit}`
 }
 
-function fitText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string {
-  if (ctx.measureText(text).width <= maxWidth) return text
+/** The site's fonts must be loaded before a canvas can draw with them. */
+export async function loadShareFonts(): Promise<void> {
+  if (typeof document === 'undefined' || !document.fonts) return
+  await Promise.all([
+    document.fonts.load(`80px ${PIXEL}`),
+    document.fonts.load(`700 30px ${MONO}`),
+    document.fonts.load(`400 30px ${MONO}`),
+  ]).catch(() => undefined)
+}
+
+function fit(ctx: CanvasRenderingContext2D, text: string, max: number): string {
+  if (ctx.measureText(text).width <= max) return text
   let t = text
-  while (t.length > 1 && ctx.measureText(`${t}…`).width > maxWidth) t = t.slice(0, -1)
+  while (t.length > 1 && ctx.measureText(`${t}…`).width > max) t = t.slice(0, -1)
   return `${t}…`
 }
 
-/**
- * Draws the square (1080 × 1080) workout summary people share: Clawde, the
- * session, four headline stats and any new PBs.
- */
-export function drawShareCard(summary: WorkoutSummary, unit: WeightUnit): HTMLCanvasElement {
-  const canvas = document.createElement('canvas')
-  canvas.width = SIZE
-  canvas.height = SIZE
-  const ctx = canvas.getContext('2d')!
-  const pad = 72
+/** The largest font size (≤ start) at which `text` fits `max` wide. */
+function fitSize(ctx: CanvasRenderingContext2D, text: string, font: (px: number) => string, start: number, max: number): number {
+  let px = start
+  ctx.font = font(px)
+  while (px > 12 && ctx.measureText(text).width > max) {
+    px -= 4
+    ctx.font = font(px)
+  }
+  return px
+}
 
-  ctx.fillStyle = BG
+function crab(ctx: CanvasRenderingContext2D, x: number, y: number, cell: number) {
+  for (const c of crabCells()) {
+    ctx.fillStyle = GREY[c.fill] ?? '#8d8984'
+    ctx.fillRect(x + c.x * cell, y + c.y * cell, cell + 0.6, cell + 0.6)
+  }
+}
+
+function backdrop(ctx: CanvasRenderingContext2D, glowX: number, glowY: number) {
+  const bg = ctx.createLinearGradient(0, 0, 0, SIZE)
+  bg.addColorStop(0, BG_TOP)
+  bg.addColorStop(1, BG_BOTTOM)
+  ctx.fillStyle = bg
   ctx.fillRect(0, 0, SIZE, SIZE)
-  // A warm glow behind Clawde.
-  const glow = ctx.createRadialGradient(SIZE - 190, 200, 10, SIZE - 190, 200, 360)
-  glow.addColorStop(0, 'rgba(217,119,86,0.28)')
-  glow.addColorStop(1, 'rgba(217,119,86,0)')
+  // A soft grey light behind Clawde.
+  const glow = ctx.createRadialGradient(glowX, glowY, 10, glowX, glowY, 460)
+  glow.addColorStop(0, 'rgba(255,255,255,0.10)')
+  glow.addColorStop(1, 'rgba(255,255,255,0)')
   ctx.fillStyle = glow
   ctx.fillRect(0, 0, SIZE, SIZE)
+  // The website's dot grid.
+  ctx.fillStyle = 'rgba(255,255,255,0.05)'
+  for (let y = 12; y < SIZE; y += 24) for (let x = 12; x < SIZE; x += 24) ctx.fillRect(x, y, 2, 2)
+}
 
-  // Clawde, from the same pixel grid as the app icon.
-  const cell = 17
-  const crabX = SIZE - pad - 13 * cell
-  const crabY = 110
-  for (const c of crabCells()) {
-    ctx.fillStyle = c.fill
-    ctx.fillRect(crabX + c.x * cell, crabY + c.y * cell, cell + 0.5, cell + 0.5)
-  }
-
+/** Small crab mark + COACH CLAWDE wordmark, bottom-left; the date bottom-right. */
+function footer(ctx: CanvasRenderingContext2D, date: string) {
+  const y = SIZE - PAD
+  crab(ctx, PAD, y - 34, 3.2)
+  ctx.fillStyle = INK
+  ctx.font = `700 26px ${MONO}`
   ctx.textBaseline = 'alphabetic'
-  ctx.fillStyle = ACCENT
-  ctx.font = `700 30px ${FONT}`
-  ctx.fillText('WORKOUT COMPLETE', pad, 130)
-  ctx.fillStyle = TEXT
-  ctx.font = `800 68px ${FONT}`
-  ctx.fillText(fitText(ctx, summary.title, SIZE - pad * 2 - 13 * cell - 24), pad, 214)
-  ctx.fillStyle = DIM
-  ctx.font = `500 32px ${FONT}`
-  ctx.fillText(formatSessionDate(summary.date), pad, 268)
+  ctx.fillText('COACH CLAWDE', PAD + 58, y - 6)
+  ctx.fillStyle = INK_3
+  ctx.font = `400 24px ${MONO}`
+  const d = formatSessionDate(date).toUpperCase()
+  ctx.fillText(d, SIZE - PAD - ctx.measureText(d).width, y - 6)
+  ctx.strokeStyle = LINE
+  ctx.lineWidth = 2
+  ctx.beginPath()
+  ctx.moveTo(PAD, y - 66)
+  ctx.lineTo(SIZE - PAD, y - 66)
+  ctx.stroke()
+}
 
-  // Stats, 2 × 2.
-  const stats: [string, string][] = [
-    [formatWorkoutTime(summary.durationSeconds), 'Workout time'],
-    [formatVolume(summary.totalVolumeKg, unit), 'Total lifted'],
-    [String(summary.exercises), summary.exercises === 1 ? 'Exercise' : 'Exercises'],
-    [String(summary.sets), summary.sets === 1 ? 'Set' : 'Sets'],
+function label(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, colour = INK_2) {
+  ctx.fillStyle = colour
+  ctx.font = `700 24px ${MONO}`
+  ctx.fillText(text.toUpperCase(), x, y)
+}
+
+function stats(s: WorkoutSummary, unit: WeightUnit): [string, string][] {
+  return [
+    [formatWorkoutTime(s.durationSeconds).replace(' ', ''), 'Time'],
+    [formatVolume(s.totalVolumeKg, unit).replace(' ', ''), 'Lifted'],
+    [String(s.sets), s.sets === 1 ? 'Set' : 'Sets'],
+    [String(s.reps), s.reps === 1 ? 'Rep' : 'Reps'],
   ]
-  const gap = 24
-  const top = 340
-  const w = (SIZE - pad * 2 - gap) / 2
-  const h = 170
-  stats.forEach(([value, label], i) => {
-    const x = pad + (i % 2) * (w + gap)
+}
+
+/** Design 1: title, a big Clawde and four stats. */
+function drawSummary(ctx: CanvasRenderingContext2D, s: WorkoutSummary, unit: WeightUnit) {
+  backdrop(ctx, SIZE - 260, 250)
+  crab(ctx, SIZE - PAD - 13 * 30, 92, 30)
+  ctx.textBaseline = 'alphabetic'
+  label(ctx, 'Workout complete', PAD, 150)
+  ctx.fillStyle = INK
+  const titleMax = SIZE - PAD * 2 - 13 * 30 - 24
+  ctx.font = `800 64px ${SANS}`
+  const words = s.title.split(' ')
+  // Up to two lines of title beside Clawde.
+  let line = ''
+  const out: string[] = []
+  for (const w of words) {
+    const next = line ? `${line} ${w}` : w
+    if (ctx.measureText(next).width > titleMax && line) { out.push(line); line = w } else line = next
+  }
+  out.push(line)
+  out.slice(0, 2).forEach((l, i) => ctx.fillText(fit(ctx, l, titleMax), PAD, 232 + i * 72))
+  if (s.pbs.length) label(ctx, `★ ${s.pbs.length} new PB${s.pbs.length > 1 ? 's' : ''}`, PAD, 232 + Math.min(out.length, 2) * 72 + 20, INK)
+
+  const gap = 20
+  const w = (SIZE - PAD * 2 - gap) / 2
+  const h = 196
+  const top = 520
+  stats(s, unit).forEach(([value, name], i) => {
+    const x = PAD + (i % 2) * (w + gap)
     const y = top + Math.floor(i / 2) * (h + gap)
-    ctx.fillStyle = CARD
-    roundRect(ctx, x, y, w, h, 36)
+    ctx.fillStyle = PANEL
+    ctx.beginPath()
+    ctx.roundRect(x, y, w, h, 28)
     ctx.fill()
     ctx.strokeStyle = LINE
     ctx.lineWidth = 2
     ctx.stroke()
-    ctx.fillStyle = TEXT
-    ctx.font = `800 64px ${FONT}`
-    ctx.fillText(fitText(ctx, value, w - 64), x + 32, y + 92)
-    ctx.fillStyle = DIM
-    ctx.font = `500 28px ${FONT}`
-    ctx.fillText(label, x + 32, y + 136)
+    const px = fitSize(ctx, value, (n) => `${n}px ${PIXEL}`, 96, w - 64)
+    ctx.font = `${px}px ${PIXEL}`
+    ctx.fillStyle = INK
+    ctx.fillText(value, x + 32, y + 118)
+    label(ctx, name, x + 32, y + 162, INK_3)
   })
+  footer(ctx, s.date)
+}
 
-  // New PBs (up to three), else a sign-off.
-  let y = top + 2 * h + gap + 80
-  if (summary.pbs.length) {
-    ctx.fillStyle = ACCENT
-    ctx.font = `700 30px ${FONT}`
-    ctx.fillText(`🏆  ${summary.pbs.length} NEW PB${summary.pbs.length > 1 ? 'S' : ''}`, pad, y)
-    y += 54
-    for (const pb of summary.pbs.slice(0, 3)) {
-      ctx.fillStyle = TEXT
-      ctx.font = `600 34px ${FONT}`
-      const right = `${toWeight(pb.weightKg, unit)} ${unit} × ${pb.reps}`
-      const rw = ctx.measureText(right).width
-      ctx.fillText(fitText(ctx, pb.name, SIZE - pad * 2 - rw - 32), pad, y)
-      ctx.fillStyle = MUTED
-      ctx.fillText(right, SIZE - pad - rw, y)
-      y += 50
-    }
-  } else {
-    ctx.fillStyle = MUTED
-    ctx.font = `500 34px ${FONT}`
-    ctx.fillText(`${summary.reps} reps in the bank. Clawde approves.`, pad, y)
+/** Design 2: Clawde huge, one giant number (the top PB, else total lifted). */
+function drawHeadline(ctx: CanvasRenderingContext2D, s: WorkoutSummary, unit: WeightUnit) {
+  backdrop(ctx, SIZE / 2, 300)
+  const cell = 34
+  crab(ctx, (SIZE - 13 * cell) / 2, 96, cell)
+  const pb = s.pbs[0]
+  const big = pb ? `${toWeight(pb.weightKg, unit)}${unit} × ${pb.reps}` : formatVolume(s.totalVolumeKg, unit).replace(' ', '')
+  const kicker = pb ? `New PB · ${pb.name}` : 'Total lifted'
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'alphabetic'
+  ctx.fillStyle = INK_2
+  ctx.font = `700 26px ${MONO}`
+  ctx.fillText(fit(ctx, kicker.toUpperCase(), SIZE - PAD * 2), SIZE / 2, 618)
+  const px = fitSize(ctx, big.toUpperCase(), (n) => `${n}px ${PIXEL}`, 168, SIZE - PAD * 2)
+  ctx.font = `${px}px ${PIXEL}`
+  ctx.fillStyle = INK
+  ctx.fillText(big.toUpperCase(), SIZE / 2, 618 + 26 + px * 0.86)
+  ctx.fillStyle = INK_3
+  ctx.font = `400 26px ${MONO}`
+  const sub = [s.title, formatWorkoutTime(s.durationSeconds), `${s.sets} sets`].join('  ·  ').toUpperCase()
+  ctx.fillText(fit(ctx, sub, SIZE - PAD * 2), SIZE / 2, 618 + 26 + px * 0.86 + 64)
+  ctx.textAlign = 'left'
+  footer(ctx, s.date)
+}
+
+/** Design 3: a logbook of every exercise, best set on the right. */
+function drawLog(ctx: CanvasRenderingContext2D, s: WorkoutSummary, unit: WeightUnit) {
+  backdrop(ctx, SIZE - 220, 200)
+  crab(ctx, SIZE - PAD - 13 * 22, 86, 22)
+  ctx.textBaseline = 'alphabetic'
+  label(ctx, 'Logbook', PAD, 130)
+  ctx.fillStyle = INK
+  ctx.font = `800 58px ${SANS}`
+  ctx.fillText(fit(ctx, s.title, SIZE - PAD * 2 - 13 * 22 - 30), PAD, 204)
+  ctx.fillStyle = INK_2
+  ctx.font = `400 26px ${MONO}`
+  ctx.fillText(`${formatWorkoutTime(s.durationSeconds).toUpperCase()} · ${formatVolume(s.totalVolumeKg, unit).toUpperCase()}`, PAD, 252)
+
+  const shown = s.lines.slice(0, 7)
+  // Below Clawde (his feet end at y ≈ 350).
+  const top = 430
+  const row = Math.min(80, (SIZE - PAD - 110 - top) / Math.max(1, shown.length))
+  const pbNames = new Set(s.pbs.map((p) => p.name.toLowerCase()))
+  shown.forEach((l, i) => {
+    const y = top + i * row
+    const best = l.seconds != null && !l.bestReps
+      ? `${l.sets} × ${l.seconds}s`
+      : `${l.sets} × ${l.bestKg ? `${toWeight(l.bestKg, unit)}${unit} × ` : ''}${l.bestReps}`
+    ctx.font = `700 30px ${MONO}`
+    const bw = ctx.measureText(best).width
+    ctx.fillStyle = INK
+    ctx.fillText(best, SIZE - PAD - bw, y)
+    ctx.font = `500 32px ${SANS}`
+    ctx.fillStyle = pbNames.has(l.name.toLowerCase()) ? INK : '#cfccc8'
+    const name = `${pbNames.has(l.name.toLowerCase()) ? '★ ' : ''}${l.name}`
+    ctx.fillText(fit(ctx, name, SIZE - PAD * 2 - bw - 40), PAD, y)
+    ctx.strokeStyle = LINE
+    ctx.lineWidth = 2
+    ctx.beginPath()
+    ctx.moveTo(PAD, y + row / 2 - 8)
+    ctx.lineTo(SIZE - PAD, y + row / 2 - 8)
+    ctx.stroke()
+  })
+  if (s.lines.length > shown.length) {
+    ctx.fillStyle = INK_3
+    ctx.font = `400 24px ${MONO}`
+    ctx.fillText(`+ ${s.lines.length - shown.length} MORE`, PAD, top + shown.length * row)
   }
+  footer(ctx, s.date)
+}
 
-  ctx.fillStyle = DIM
-  ctx.font = `600 26px ${FONT}`
-  ctx.fillText('Coach Clawde', pad, SIZE - 60)
-
+/** Draws one design onto a new 1080 × 1080 canvas. Load the fonts first (loadShareFonts). */
+export function drawShareCard(summary: WorkoutSummary, unit: WeightUnit, style: ShareStyle = 'summary'): HTMLCanvasElement {
+  const canvas = document.createElement('canvas')
+  canvas.width = SIZE
+  canvas.height = SIZE
+  const ctx = canvas.getContext('2d')!
+  if (style === 'headline') drawHeadline(ctx, summary, unit)
+  else if (style === 'log') drawLog(ctx, summary, unit)
+  else drawSummary(ctx, summary, unit)
   return canvas
 }
 
-/** The card as a PNG file. Built ahead of the tap: iOS only opens the share sheet straight from one. */
-export async function buildShareFile(summary: WorkoutSummary, unit: WeightUnit): Promise<File> {
-  const canvas = drawShareCard(summary, unit)
+/** One design as a PNG file. Built ahead of the tap: iOS only opens the share sheet straight from one. */
+export async function buildShareFile(summary: WorkoutSummary, unit: WeightUnit, style: ShareStyle = 'summary'): Promise<File> {
+  await loadShareFonts()
+  const canvas = drawShareCard(summary, unit, style)
   const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'))
   if (!blob) throw new Error('Could not create the image')
-  return new File([blob], `workout-${summary.date}.png`, { type: 'image/png' })
+  return new File([blob], `workout-${summary.date}-${style}.png`, { type: 'image/png' })
 }
 
 /**

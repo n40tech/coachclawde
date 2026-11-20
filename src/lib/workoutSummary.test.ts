@@ -34,6 +34,10 @@ describe('summarizeWorkout', () => {
     expect(r.reps).toBe(14)
     expect(r.exercises).toBe(2)
     expect(r.durationSeconds).toBe(65 * 60)
+    expect(r.lines).toEqual([
+      { name: 'Bench Press', sets: 2, bestKg: 60, bestReps: 8 },
+      { name: 'Plank', sets: 1, bestReps: 0, seconds: 45 },
+    ])
   })
 
   it('counts a PB only when it beats an earlier session, matched case-insensitively', () => {
@@ -56,7 +60,18 @@ describe('summarizeWorkout', () => {
 
 describe('formatWorkoutTime', () => {
   it('formats minutes and hours', () => {
+    expect(formatWorkoutTime(20)).toBe('<1 m')
     expect(formatWorkoutTime(42 * 60)).toBe('42 m')
     expect(formatWorkoutTime(65 * 60)).toBe('1 h 05 m')
+  })
+})
+
+describe('formatVolumeCompact', () => {
+  it('stays short enough for the stats column', async () => {
+    const { formatVolumeCompact } = await import('./shareCard')
+    expect(formatVolumeCompact(850, 'kg')).toBe('850kg')
+    expect(formatVolumeCompact(1500, 'kg')).toBe('1.5t')
+    expect(formatVolumeCompact(12000, 'kg')).toBe('12t')
+    expect(formatVolumeCompact(1500, 'lb')).toBe('3.3klb')
   })
 })

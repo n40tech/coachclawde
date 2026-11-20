@@ -127,8 +127,9 @@ are marked as seen when they finish onboarding.
   worker), fuzzy-matched by name with a YouTube-search fallback. `RoutineCard`
   is the expandable warm-up/cool-down.
 - `src/components/session/` — the live-workout UI (exercise tiles, set rows, rest
-  timer, `ReorderList`, the complete flow with its stats breakdown and share
-  card).
+  timer, `ReorderList`, and `WorkoutComplete`: the full-screen finish page in
+  the website's style, using its fonts from `public/fonts` (`font-pixel`,
+  `font-mono`, `dot-grid`).
 - **Weights-first (v1.1):** plans never schedule cardio (`promptScope` in
   `lib/promptBuilder`); Run Mode, interval rows and the run engine were removed
   (preserved on the `cardio-archive` branch). `lib/workout` and `lib/zones`
@@ -142,9 +143,12 @@ are marked as seen when they finish onboarding.
   `layout/WorkoutDock`: a timer circle left of the tab bar (or in the iPad
   sidebar) linking back. Exercise order is the order of `loggedExercises`
   (`lib/exerciseOrder`: reorder, and promote an exercise started early).
-- **Completion & sharing:** `lib/workoutSummary` (time, volume, sets, PBs vs.
-  earlier sessions) and `lib/shareCard` (a 1080² canvas image, built before the
-  tap so iOS opens the share sheet).
+- **Completion & sharing:** `lib/workoutSummary` (time, volume, sets, reps, PBs
+  vs. earlier sessions, per-exercise best sets) and `lib/shareCard`: three
+  monotone-grey 1080² card designs (summary, headline, logbook), all built
+  when the page opens so iOS opens the share sheet straight from the tap.
+- **Beta features** (Settings): `autoSetTimer` in the settings store turns the
+  set timer off.
 - **Planning methods:** `lib/planMethods` (generate / repeat / modify /
   convert; the last used is remembered in the settings store and offered
   first). Repeat copies the newest plan in the app; modify uses

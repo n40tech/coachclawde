@@ -1,7 +1,9 @@
 import { useNavigate } from 'react-router-dom'
 import type { DockState } from '../../hooks/useWorkoutDock'
 
-const MODE_COLOUR = { rest: '#d97756', set: '#f59e0b', workout: '#34d399' } as const
+// All in the app's orange family: the rest and workout clocks in the accent,
+// a set being timed in the brighter amber of its tick.
+const MODE_COLOUR = { rest: '#d97756', set: '#f59e0b', workout: '#d97756' } as const
 
 /**
  * The little timer circle that sits left of the tab bar during a workout.

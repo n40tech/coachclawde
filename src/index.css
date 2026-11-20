@@ -5,6 +5,20 @@
 @theme {
   --text-2xs: 0.6875rem;
   --text-2xs--line-height: 1rem;
+  /* The website's type (site/): pixel lettering for big numbers and
+     headings, Space Mono for small uppercase labels. */
+  --font-pixel: "Tiny5", "Space Mono", ui-monospace, monospace;
+  --font-mono: "Space Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+
+@font-face { font-family: "Tiny5"; src: url("/fonts/tiny5.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Space Mono"; src: url("/fonts/space-mono-400.woff2") format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Space Mono"; src: url("/fonts/space-mono-700.woff2") format("woff2"); font-weight: 700; font-display: swap; }
+
+/* Dot grid, as on the website's panels. */
+@utility dot-grid {
+  background-image: radial-gradient(rgba(245, 245, 240, 0.08) 1.1px, transparent 1.4px);
+  background-size: 16px 16px;
 }
 
 /* Short viewports — phone landscape, split-screen. */

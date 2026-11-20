@@ -23,6 +23,8 @@ export interface WorkoutSummary {
   /** Total reps over completed rep sets. */
   reps: number
   pbs: NewPB[]
+  /** Each exercise with a completed set, in the order done: sets and best set. */
+  lines: { name: string; sets: number; bestKg?: number; bestReps: number; seconds?: number }[]
 }
 
 const key = (name: string) => name.trim().toLowerCase()
@@ -45,10 +47,28 @@ export function summarizeWorkout(session: LoggedSession, history: LoggedSession[
   let reps = 0
   let exercises = 0
   const bestHere = new Map<string, { name: string; weightKg: number; reps: number }>()
+  const lines: WorkoutSummary['lines'] = []
 
   for (const ex of session.loggedExercises ?? []) {
     const done = ex.sets.filter((s) => s.completed)
-    if (done.length) exercises++
+    if (done.length) {
+      exercises++
+      // Best set: heaviest, then most reps; a hold's longest time.
+      const line: WorkoutSummary['lines'][number] = { name: ex.name, sets: done.length, bestReps: 0 }
+      for (const set of done) {
+        if (set.actualSeconds != null && set.actualReps == null) {
+          line.seconds = Math.max(line.seconds ?? 0, set.actualSeconds)
+          continue
+        }
+        const r = repsOf(set)
+        const kg = set.weightKg ?? 0
+        if (kg > (line.bestKg ?? 0) || (kg === (line.bestKg ?? 0) && r > line.bestReps)) {
+          line.bestKg = kg || undefined
+          line.bestReps = r
+        }
+      }
+      lines.push(line)
+    }
     for (const set of done) {
       sets++
       if (set.actualSeconds != null && set.actualReps == null) continue // timed hold
@@ -96,6 +116,7 @@ export function summarizeWorkout(session: LoggedSession, history: LoggedSession[
     sets,
     reps,
     pbs,
+    lines,
   }
 }
 

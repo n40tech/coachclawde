@@ -397,12 +397,30 @@ h1[tabindex="-1"]:focus {
   height: 100%;
   object-fit: cover;
 }
+/* A backdrop blur is drawn square in the transition's snapshots: the dock
+   circle and bar go without it for the moment they're captured. */
+:root[data-vt] .vt-workout-timer {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
 ::view-transition-old(root),
 ::view-transition-new(root) {
   animation-duration: 220ms;
 }
+/* The workout sheet slides up as the dock opens it (the timer morphs at
+   the same time), and down if a transition takes it away. */
+.vt-workout-sheet {
+  view-transition-name: workout-sheet;
+}
+::view-transition-new(workout-sheet) {
+  animation: sheet-in 380ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+::view-transition-old(workout-sheet) {
+  animation: sheet-out 300ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
 /* Entrance animations would freeze in the transition's snapshots. */
-:root[data-vt] .slide-up {
+:root[data-vt] .slide-up,
+:root[data-vt] .sheet-enter {
   animation: none;
 }
 @media (prefers-reduced-motion: reduce) {
@@ -425,6 +443,21 @@ h1[tabindex="-1"]:focus {
 }
 .slide-up {
   animation: slide-up 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+  @media (prefers-reduced-motion: reduce) {
+    animation-name: fade-only;
+  }
+}
+
+/* The workout sheet (components/session/WorkoutSheet) rises from the
+   bottom edge over the screen it was opened from. */
+@keyframes sheet-in {
+  from { transform: translateY(100%); }
+}
+@keyframes sheet-out {
+  to { transform: translateY(100%); }
+}
+.sheet-enter {
+  animation: sheet-in 0.38s cubic-bezier(0.32, 0.72, 0, 1);
   @media (prefers-reduced-motion: reduce) {
     animation-name: fade-only;
   }

@@ -1,7 +1,7 @@
 import { NavLink, useLocation } from 'react-router-dom'
 import { Settings } from 'lucide-react'
 import { ClawdeMark } from '../shared/ClawdeMark'
-import { NAV_ITEMS, isFullscreenRoute, type NavItem } from './navItems'
+import { NAV_ITEMS, hidesSideNav, type NavItem } from './navItems'
 import { WorkoutDockButton } from './WorkoutDock'
 import { useWorkoutDock } from '../../hooks/useWorkoutDock'
 
@@ -11,13 +11,13 @@ const SETTINGS_ITEM: NavItem = { path: '/settings', icon: Settings, label: 'Sett
  * Sidebar navigation for iPad and other wide layouts. Shown only when the app
  * container is at least 48rem wide — the same point where BottomNav hides — so
  * tablets get a sidebar instead of a stretched tab bar. Hidden on full-screen
- * routes, like the tab bar.
+ * routes, like the tab bar (but not under the workout sheet).
  */
 export function SideNav() {
   const location = useLocation()
   const dock = useWorkoutDock()
 
-  if (isFullscreenRoute(location.pathname)) return null
+  if (hidesSideNav(location.pathname)) return null
 
   const item = ({ path, icon: Icon, label }: NavItem) => (
     <li key={path}>

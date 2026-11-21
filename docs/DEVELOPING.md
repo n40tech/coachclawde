@@ -48,7 +48,7 @@ work out of the box.
 
 ## Shipping a beta update (versions & release notes)
 
-The app version lives in `package.json` (currently **1.1.3**) and is injected
+The app version lives in `package.json` (currently **1.1.4**) and is injected
 into the bundle as `__APP_VERSION__` (read it via `APP_VERSION` in
 `src/lib/appVersion.ts`). The first time a tester opens a new version, a
 "What's new" sheet lists the changes; it's also reachable from Settings →
@@ -143,9 +143,21 @@ are marked as seen when they finish onboarding.
   `unconfirmed` (orange tick, inputs still editable; tapping the tick
   confirms) and starts the next rest. Taps on a tick (`data-tick`) are left to
   the tick. Ticking records `workSeconds`; saving the workout confirms any
-  orange sets. `setClock` is persisted. On the workout screen, a flick left
-  on the minimised rest bar (`RestTimerOverlay`; `hooks/useFlick`,
-  `lib/swipe`) goes Home. Off the workout screen,
+  orange sets. `setClock` is persisted.
+- **Workout sheet (v1.1.4):** `/session/*` renders as a bottom sheet
+  (`session/WorkoutSheet`) over the screen it was opened from: `MainApp`
+  keeps rendering the last non-workout location underneath
+  (`<Routes location={background}>`, Home for a deep link) and makes
+  `#root` inert while the sheet is up. The sheet is portalled into the fixed
+  layer, scrolls internally and has a grab handle: drag the header down,
+  tap the chevron or press Escape and it slides away, then goes back
+  (`history.state.idx`, else Home). Dragging the minimised rest bar left
+  (`RestTimerOverlay`; `hooks/useFlick`, `lib/swipe`) squeezes it towards
+  the dock circle while the sheet slides down in step; the two share one
+  progress through `session/sheetMotion`. The iPad sidebar stays beside the
+  sheet (`hidesSideNav`). Before starting, **Peek** lists the planned
+  exercises read-only; while in progress, **Reset session** (under "Did
+  something else?") clears the log after a confirm. Off the workout screen,
   `hooks/useWorkoutDock` drives `layout/WorkoutDock`: a timer circle left of
   the tab bar (or in the iPad sidebar): the rest countdown, or between rests
   the session type's icon (`shared/SessionIcon`); tap it or drag it right to
@@ -162,7 +174,8 @@ are marked as seen when they finish onboarding.
   exercise started early).
 - **Edge swipe back:** `layout/EdgeSwipeBack` + `lib/backGesture`. A swipe
   from the left edge slides the page column away and runs the page's Back
-  (registered by `PageHeader`, so only screens with a Back button have it);
+  (registered by `PageHeader`, so only screens with a Back button have it;
+  the workout sheet is pulled down instead);
   the screen underneath eases in from the left. It `preventDefault`s the
   touchstart so iOS Safari doesn't start its own history swipe, except on
   controls, so taps on the Back button still work. `data-swipe-back` tells

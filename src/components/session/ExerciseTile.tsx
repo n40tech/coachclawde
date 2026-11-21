@@ -51,8 +51,8 @@ export function ExerciseTile({ planned, logged, onUpdateSet, onSetComplete, onSe
   return (
     <div
       data-exercise={planned.id}
-      // Scrolled to from a rest alert: clear of the sticky page header.
-      className={`scroll-mt-[calc(max(0.5rem,var(--safe-top))+4.5rem)] rounded-[2rem] border overflow-hidden transition-all duration-200 ${
+      // Scrolled to from a rest alert: a little clear of the sheet's header.
+      className={`scroll-mt-3 rounded-[2rem] border overflow-hidden transition-all duration-200 ${
         isActive
           ? 'border-[#d97756]/40 bg-gradient-to-br from-[#d97756]/5 to-[#161616]'
           : allDone

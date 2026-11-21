@@ -9,6 +9,8 @@ interface ConfirmDialogProps {
   children: ReactNode
   confirmLabel: string
   cancelLabel?: string
+  /** The confirm button is red: the action can't be undone. */
+  danger?: boolean
   onConfirm: () => void
   onCancel: () => void
 }
@@ -21,7 +23,7 @@ interface ConfirmDialogProps {
  * to the opener afterwards.
  */
 export function ConfirmDialog({
-  icon, title, children, confirmLabel, cancelLabel = 'Cancel', onConfirm, onCancel,
+  icon, title, children, confirmLabel, cancelLabel = 'Cancel', danger, onConfirm, onCancel,
 }: ConfirmDialogProps) {
   const panel = useRef<HTMLDivElement>(null)
   const id = useId()
@@ -40,7 +42,7 @@ export function ConfirmDialog({
           onClick={(e) => e.stopPropagation()}
         >
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-[#d97756]/15 flex items-center justify-center shrink-0 text-[#d97756]">
+            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${danger ? 'bg-red-500/15 text-red-400' : 'bg-[#d97756]/15 text-[#d97756]'}`}>
               {icon}
             </div>
             <h2 id={`${id}-title`} className="text-base font-semibold text-[#f5f5f0]">{title}</h2>
@@ -48,7 +50,7 @@ export function ConfirmDialog({
           <div id={`${id}-body`} className="text-sm text-[#a8a29e] leading-relaxed">{children}</div>
           <div className="flex gap-3 pt-1">
             <Button variant="secondary" onClick={onCancel} fullWidth>{cancelLabel}</Button>
-            <Button onClick={onConfirm} fullWidth>{confirmLabel}</Button>
+            <Button variant={danger ? 'danger' : 'primary'} onClick={onConfirm} fullWidth>{confirmLabel}</Button>
           </div>
         </div>
       </div>

@@ -48,6 +48,9 @@ export const RELEASES: Release[] = [
       'Home and Progress no longer fade their cards in as you open them, so nothing looks like it’s still loading.',
       'The little workout button by the tab bar no longer slides in. Between rests it shows a dumbbell (or your session’s icon) instead of a clock, so it’s obvious what it’s for.',
       'With a workout under way, Home shows it at the top as “In progress”, with how long you’ve been going. Tap it to pick up where you left off.',
+      'Flick the rest timer up to make it full screen, and down to tuck it away.',
+      'Flick the little workout button up to jump straight back to the exercise you’re on, with the rest timer full screen.',
+      'Swiping in from the left edge goes back, with the page sliding away under your finger.',
     ],
   },
   {

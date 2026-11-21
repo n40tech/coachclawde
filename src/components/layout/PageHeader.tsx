@@ -1,7 +1,8 @@
 import { ArrowLeft } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
-import type { ReactNode } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 import { useDocumentTitle } from '../../hooks/useDocumentTitle'
+import { setBackAction } from '../../lib/backGesture'
 
 interface PageHeaderProps {
   title: string
@@ -16,13 +17,18 @@ export function PageHeader({ title, subtitle, backTo, onBack, right }: PageHeade
   const navigate = useNavigate()
   const showBack = onBack || backTo
   useDocumentTitle(title)
+  // The edge swipe (layout/EdgeSwipeBack) does what this Back button does.
+  const back = () => (onBack ? onBack() : navigate(backTo!))
+  const backRef = useRef(back)
+  useEffect(() => { backRef.current = back })
+  useEffect(() => (showBack ? setBackAction(() => backRef.current()) : undefined), [showBack])
 
   return (
     <div className="flex items-center gap-3 px-4 pt-safe pb-2 sticky top-0 bg-[#0a0a0a]/95 backdrop-blur-xl z-40 border-b border-[#1a1a1a]">
       {showBack && (
         <button
           type="button"
-          onClick={() => (onBack ? onBack() : navigate(backTo!))}
+          onClick={back}
           aria-label="Back"
           className="relative hit-target w-9 h-9 flex items-center justify-center rounded-2xl bg-[#1a1a1a] text-[#a8a29e] hover:text-[#f5f5f0] transition-colors shrink-0"
         >

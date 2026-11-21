@@ -45,6 +45,8 @@ export interface DockState {
   sessionId: string
   /** The kind of workout, for the icon shown when no rest is running. */
   type: SessionType
+  /** The exercise to open the workout at: up next after the rest, else the first with a set left. */
+  exerciseId?: string
   /** What the clock is showing. */
   mode: 'rest' | 'set' | 'workout'
   time: string
@@ -65,20 +67,24 @@ export function useWorkoutDock(): DockState | null {
   const live = useCurrentWorkout(now)
   const setClock = useAppStore((s) => s.setClock)
   const { remaining, progress, isActive: resting, sessionId: restSession } = useRestTimer()
+  const restNext = useAppStore((s) => s.timer.nextExerciseId)
   const sessionId = (resting && restSession) || live?.plannedSessionId
   const show = !!sessionId && offSession
   if (!show || !sessionId) return null
-  const type: SessionType = live?.plannedSessionId === sessionId ? live.type : 'weights'
+  const mine = live?.plannedSessionId === sessionId ? live : undefined
+  const type: SessionType = mine?.type ?? 'weights'
+  const exerciseId = (resting && restNext)
+    || mine?.loggedExercises?.find((e) => e.sets.some((s) => !s.completed && !s.skipped))?.plannedExerciseId
 
   if (resting && restSession) {
-    return { sessionId, type, mode: 'rest', time: secondsToDisplay(remaining), fill: 1 - Math.min(1, Math.max(0, progress)), label: `Rest, ${secondsToDisplay(remaining)} left` }
+    return { sessionId, type, exerciseId, mode: 'rest', time: secondsToDisplay(remaining), fill: 1 - Math.min(1, Math.max(0, progress)), label: `Rest, ${secondsToDisplay(remaining)} left` }
   }
   if (setClock && setClock.sessionId === sessionId) {
     const s = Math.max(0, Math.floor((now - setClock.startedAt) / 1000))
-    return { sessionId, type, mode: 'set', time: secondsToDisplay(s), fill: (s % 60) / 60, label: `Set in progress, ${secondsToDisplay(s)}` }
+    return { sessionId, type, exerciseId, mode: 'set', time: secondsToDisplay(s), fill: (s % 60) / 60, label: `Set in progress, ${secondsToDisplay(s)}` }
   }
   const s = live ? Math.max(0, Math.floor((now - Date.parse(live.startedAt)) / 1000)) : 0
   const time = s >= 3600 ? `${Math.floor(s / 3600)}:${String(Math.floor((s % 3600) / 60)).padStart(2, '0')}` : secondsToDisplay(s)
-  return { sessionId, type, mode: 'workout', time, fill: 1, label: `Workout in progress, ${time}` }
+  return { sessionId, type, exerciseId, mode: 'workout', time, fill: 1, label: `Workout in progress, ${time}` }
 }
 

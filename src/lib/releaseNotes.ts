@@ -41,6 +41,17 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
+    version: '1.1.4',
+    date: '2026-11-21',
+    headline: 'Your workout slides up as a sheet',
+    fromFeedback: [
+      'Your workout now opens as a sheet that slides up over the screen you were on, with a handle at the top. Pull it down (or tap the chevron) to tuck it away.',
+      'Squeeze the rest timer bar to the left and it shrinks into the little workout button while the workout slides down with it.',
+      'New “Peek” button: look over the exercises, sets and weights before you start, without starting the session.',
+      'New “Reset session” option (in red, under “Did something else?”) clears what you’ve logged so you can start the session again.',
+    ],
+  },
+  {
     version: '1.1.3',
     date: '2026-11-21',
     headline: 'A steadier Home and a clearer way back to your workout',

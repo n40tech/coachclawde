@@ -1,6 +1,6 @@
-import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate, type Location } from 'react-router-dom'
 import { isAcceptedAlertUrl } from './lib/alertLink'
-import { useEffect, useLayoutEffect, useRef } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { applyPendingUpdate } from './lib/appUpdate'
 import type { ReactNode } from 'react'
 import { AuthProvider } from './auth/AuthProvider'
@@ -165,23 +165,35 @@ function PhoneColumn({ children }: { children: ReactNode }) {
   )
 }
 
+/** What's under a workout opened first thing (a deep link, a rest alert). */
+const HOME_UNDER: Location = { pathname: '/', search: '', hash: '', state: null, key: 'home-under' }
+
+const isWorkout = (pathname: string) => pathname.startsWith('/session/')
+
 /**
  * Signed-in shell. Phones: one column with the floating tab bar. At 48rem+
  * (iPad, wide windows): sidebar on the left and a wider content column.
+ *
+ * The workout (`/session/…`) is a sheet over the screen it was opened from
+ * (components/session/WorkoutSheet): that screen stays rendered underneath,
+ * as it was, and the sheet slides down to reveal it.
  */
 function MainApp() {
   const page = useRef<HTMLDivElement>(null)
+  const location = useLocation()
+  const workout = isWorkout(location.pathname)
+  const [under, setUnder] = useState<Location | null>(workout ? null : location)
+  if (!workout && under !== location) setUnder(location)
+  const background = workout ? under ?? HOME_UNDER : location
   return (
     <div className="flex min-h-svh">
       <SideNav />
       <main className="app-main flex-1 min-w-0 @3xl/app:pr-(--safe-right)">
         <div ref={page} className="w-full max-w-md @3xl/app:max-w-xl @5xl/app:max-w-2xl mx-auto min-h-svh relative">
           <PageSuspense>
-            <Routes>
+            <Routes location={background}>
               <Route path="/" element={<Home />} />
               <Route path="/plan" element={<WeekPlanner />} />
-              <Route path="/session/:id" element={<Session />} />
-              <Route path="/session/:id/next/:exerciseId" element={<Session />} />
               <Route path="/history" element={<History />} />
               <Route path="/progress" element={<Progress />} />
               <Route path="/progress/best-efforts" element={<BestEfforts />} />
@@ -192,6 +204,12 @@ function MainApp() {
           </PageSuspense>
         </div>
       </main>
+      {workout && (
+        <Routes>
+          <Route path="/session/:id" element={<Session />} />
+          <Route path="/session/:id/next/:exerciseId" element={<Session />} />
+        </Routes>
+      )}
       <BottomNav />
       <EdgeSwipeBack target={page} />
       <ReleaseNotesGate />

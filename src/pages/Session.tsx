@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { wantsCheckIns } from '../lib/checkInTriggers'
-import { useLocation, useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { useAppStore } from '../store/useAppStore'
-import { PageHeader } from '../components/layout/PageHeader'
+import { WorkoutSheet } from '../components/session/WorkoutSheet'
+import { ConfirmDialog } from '../components/shared/ConfirmDialog'
 import { Badge } from '../components/shared/Badge'
 import { Button } from '../components/shared/Button'
 import { ExerciseTile } from '../components/session/ExerciseTile'
@@ -18,16 +19,17 @@ import { formatSessionDate } from '../lib/dateUtils'
 import { RoutineCard } from '../components/session/RoutineCard'
 import { useRestTimer } from '../hooks/useRestTimer'
 import { useAutoSync } from '../hooks/useAutoSync'
-import { formatDuration } from '../lib/dateUtils'
+import { formatDuration, formatRestTime } from '../lib/dateUtils'
 import { warmExerciseDb } from '../lib/exerciseGuide'
 import { nextOpenSet, promoteStarted, reorderByIds } from '../lib/exerciseOrder'
 import { autoFinishTarget, graceOver } from '../lib/autoFinish'
 import { summarizeWorkout, type WorkoutSummary } from '../lib/workoutSummary'
 import type { Intensity, LoggedExercise, LoggedSession, PlannedExercise, PlannedSession } from '../types'
-import { Dumbbell, Waves, Clock, CheckCircle2, AlertTriangle, Shuffle, ArrowUpDown, Check } from 'lucide-react'
+import { Dumbbell, Waves, Clock, CheckCircle2, AlertTriangle, Shuffle, ArrowUpDown, Check, Eye, EyeOff, RotateCcw, Info, CircleQuestionMark } from 'lucide-react'
 import { nanoid } from '../lib/nanoid'
 import { useSettingsStore, useUnits } from '../store/useSettingsStore'
-import { localize } from '../lib/units'
+import { localize, toWeight, type Units } from '../lib/units'
+import { MovementGuide } from '../components/session/MovementGuide'
 
 function usePlannedSession(sessionId: string | undefined): PlannedSession | undefined {
   const { weekPlans } = useAppStore()
@@ -41,16 +43,18 @@ export function Session() {
   // `/session/:id/next/:exerciseId` (a rest alert): open at the exercise up next.
   const { id, exerciseId: revealId } = useParams<{ id: string; exerciseId?: string }>()
   const navigate = useNavigate()
-  const location = useLocation()
   const planned = usePlannedSession(id)
 
-  // Return to wherever we came from (History, Home, Program history, …) instead
-  // of a fixed route. `location.key === 'default'` means this is the first entry
-  // in the history stack (e.g. a deep link), so fall back to Home.
-  // Both morph the workout's timer bar into the Home dock (lib/viewTransition).
+  // The sheet slides down to whatever it was opened over (History, Home,
+  // Program history, …): that's the screen underneath. Opened first thing
+  // (a deep link, a rest alert) there's nothing in the app to go back to, so
+  // it's Home. React Router numbers its history entries in `idx`.
+  // Runs once the sheet has slid away (WorkoutSheet); the view transition
+  // fades the tab bar and the dock circle in.
   const goBack = () => withViewTransition(() =>
-    location.key !== 'default' ? afterPopstate(() => navigate(-1)) : navigate('/'))
-  const leaveToHome = () => withViewTransition(() => navigate('/'))
+    ((window.history.state as { idx?: number } | null)?.idx ?? 0) > 0
+      ? afterPopstate(() => navigate(-1))
+      : navigate('/', { replace: true }))
   const {
     weekPlans, loggedSessions, addLoggedSession, updateLoggedSession, setActiveSession, profile, dismissCheckIn,
     setClock, startSetClock,
@@ -64,6 +68,8 @@ export function Session() {
   const [reordering, setReordering] = useState(false)
   const [summary, setSummary] = useState<WorkoutSummary | null>(null)
   const [showQuickLog, setShowQuickLog] = useState(false)
+  const [peeking, setPeeking] = useState(false)
+  const [confirmReset, setConfirmReset] = useState(false)
 
   const existingLog = loggedSessions.find((ls) => ls.plannedSessionId === id)
   const [loggedSession, setLoggedSession] = useState<LoggedSession | null>(existingLog ?? null)
@@ -136,12 +142,13 @@ export function Session() {
 
   if (!planned) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-svh gap-4 px-4">
-        <AlertTriangle size={40} className="text-[#858585]" aria-hidden />
-        <h1 className="text-lg font-bold text-[#f5f5f0]">Session not found</h1>
-        <p className="text-[#949494] text-center">It may belong to a different week's plan.</p>
-        <Button variant="secondary" onClick={() => navigate('/')}>Back to home</Button>
-      </div>
+      <WorkoutSheet title="Session not found" onClose={goBack}>
+        <div className="flex-1 flex flex-col items-center justify-center gap-4 px-4 pb-edge">
+          <AlertTriangle size={40} className="text-[#858585]" aria-hidden />
+          <p className="text-[#949494] text-center">It may belong to a different week's plan.</p>
+          <Button variant="secondary" onClick={() => navigate('/', { replace: true })}>Back to home</Button>
+        </div>
+      </WorkoutSheet>
     )
   }
 
@@ -384,22 +391,22 @@ export function Session() {
   const activeId = activeExerciseId ?? logged.find((e) => e.sets.some((s) => !s.completed && !s.skipped))?.plannedExerciseId
 
   return (
-    <div className="flex flex-col min-h-svh bg-[#0a0a0a]">
-      <PageHeader
-        title={localize(planned.title, units)}
-        subtitle={localize(planned.focus, units)}
-        onBack={goBack}
-        right={<Badge label={planned.intensity} variant={planned.intensity as Intensity} />}
-      />
-
-      {/* Progress bar */}
-      {loggedSession && !legacyCardio && (
-        <div className="h-1">
+    <WorkoutSheet
+      title={localize(planned.title, units)}
+      subtitle={localize(planned.focus, units)}
+      onClose={goBack}
+      right={<Badge label={planned.intensity} variant={planned.intensity as Intensity} />}
+      below={loggedSession && !legacyCardio && (
+        <div className="h-1 shrink-0">
           <progress className="meter" value={progressPercent} max={100} aria-label="Workout progress" />
         </div>
       )}
-
-      <div className="flex-1 overflow-y-auto pb-edge" onPointerDownCapture={maybeAutoFinish}>
+    >
+      <div
+        className="flex-1 overflow-y-auto overscroll-contain pb-edge"
+        style={{ scrollPaddingTop: '0.75rem', scrollPaddingBottom: 'calc(var(--tabbar-clearance) + var(--kb))' }}
+        onPointerDownCapture={maybeAutoFinish}
+      >
         {/* Session meta */}
         <div className="px-4 py-4 flex items-center gap-4">
           <div className="flex items-center gap-1.5 text-xs text-[#949494]">
@@ -455,8 +462,19 @@ export function Session() {
             <Button onClick={startSession} size="lg">
               Start Session
             </Button>
+            {!!planned.exercises?.length && (
+              <Button variant="secondary" onClick={() => setPeeking((p) => !p)} aria-expanded={peeking} aria-controls="session-peek">
+                {peeking ? <EyeOff size={16} aria-hidden /> : <Eye size={16} aria-hidden />}
+                {peeking ? 'Hide exercises' : 'Peek'}
+              </Button>
+            )}
             <DidSomethingElse onClick={() => setShowQuickLog(true)} />
           </div>
+        )}
+
+        {/* Peek: the plan's exercises, read only, without starting the session. */}
+        {!legacyCardio && !loggedSession && !isAlreadyComplete && peeking && (
+          <PeekList id="session-peek" planned={planned} units={units} />
         )}
 
         {isAlreadyComplete && (
@@ -523,7 +541,7 @@ export function Session() {
         )}
 
         {/* Cooldown */}
-        {!legacyCardio && (!!planned.cooldown || !!planned.cooldownExercises?.length) && loggedSession && (
+        {!legacyCardio && (!!planned.cooldown || !!planned.cooldownExercises?.length) && (loggedSession || peeking) && (
           <div className="mx-4 mt-4">
             <RoutineCard title="Cooldown" summary={planned.cooldown} items={planned.cooldownExercises} />
           </div>
@@ -538,16 +556,26 @@ export function Session() {
               Complete Session
             </Button>
             <DidSomethingElse onClick={() => setShowQuickLog(true)} />
+            <button
+              type="button"
+              onClick={() => setConfirmReset(true)}
+              className="-mt-2 flex items-center gap-1.5 text-sm text-red-400 hover:text-red-300 py-2 px-3 rounded-xl"
+            >
+              <RotateCcw size={14} aria-hidden />
+              Reset session
+            </button>
           </div>
         )}
 
         {/* Room to scroll the end of the session clear of the minimised rest
             timer, which docks where the tab bar sits on other screens. */}
         {restBarShowing && <div aria-hidden className="h-[calc(var(--tabbar-h)+var(--tabbar-gap))]" />}
+        {/* The keyboard covers the sheet's end: room to scroll a field above it. */}
+        <div aria-hidden className="h-(--kb)" />
       </div>
 
-      {/* Rest timer overlay */}
-      <RestTimerOverlay onFlickAway={leaveToHome} />
+      {/* Rest timer overlay: squeeze the bar left to close the sheet. */}
+      <RestTimerOverlay />
       <p role="status" className="sr-only">{restOver}</p>
 
       {/* Workout complete: full screen, the breakdown, sharing and how it felt */}
@@ -572,7 +600,72 @@ export function Session() {
           onClose={() => setShowQuickLog(false)}
         />
       )}
-    </div>
+
+      {confirmReset && (
+        <ConfirmDialog
+          icon={<RotateCcw size={18} aria-hidden />}
+          title="Reset this session?"
+          confirmLabel="Reset"
+          danger
+          onConfirm={() => { setConfirmReset(false); deleteWorkout() }}
+          onCancel={() => setConfirmReset(false)}
+        >
+          Every set you’ve logged in {localize(planned.title, units)} is cleared, and the session goes back to not started.
+        </ConfirmDialog>
+      )}
+    </WorkoutSheet>
+  )
+}
+
+/** Peek: the planned exercises and their sets, to look over before starting. */
+function PeekList({ id, planned, units }: { id: string; planned: PlannedSession; units: Units }) {
+  const [guide, setGuide] = useState<PlannedExercise | null>(null)
+  const heading = useRef<HTMLHeadingElement>(null)
+  // Bring the list's start into view: it opens below the fold.
+  useEffect(() => {
+    heading.current?.scrollIntoView({ block: 'nearest', behavior: scrollBehavior() })
+  }, [])
+  return (
+    <section id={id} aria-labelledby={`${id}-title`} className="px-4 flex flex-col gap-3 fade-in">
+      <h2 ref={heading} id={`${id}-title`} className="px-1 text-xs text-[#858585] uppercase tracking-widest font-medium">Exercises</h2>
+      {(planned.exercises ?? []).map((ex) => (
+        <div key={ex.id} className="rounded-[2rem] border border-[#2a2a2a] bg-[#161616] px-4 py-3 [--nest-radius:2rem] [--nest-inset:1rem]">
+          <div className="flex items-center gap-2">
+            <h3 className="flex-1 min-w-0 font-semibold text-sm text-[#f5f5f0] leading-tight">{ex.name}</h3>
+            <button
+              type="button"
+              onClick={() => setGuide(ex)}
+              aria-label={`How to do ${ex.name}`}
+              className="relative hit-target -mr-2 w-9 h-9 rounded-xl flex items-center justify-center text-[#949494] hover:text-[#d97756] hover:bg-[#d97756]/10 transition-colors shrink-0"
+            >
+              <CircleQuestionMark size={18} aria-hidden />
+            </button>
+          </div>
+          {ex.coachNotes && (
+            <div className="flex items-start gap-2 bg-[#d97756]/8 rounded-nested px-3 py-2.5 mt-2">
+              <Info size={13} className="text-[#d97756] mt-0.5 shrink-0" aria-hidden />
+              <p className="text-xs text-[#d97756]/90">{localize(ex.coachNotes, units)}</p>
+            </div>
+          )}
+          <ol className="mt-2 flex flex-col gap-1">
+            {ex.sets.map((set, i) => (
+              <li key={i} className="flex items-baseline gap-3 text-xs">
+                <span className="w-10 shrink-0 text-[#858585]">Set {i + 1}</span>
+                <span className="flex-1 min-w-0 text-[#a8a29e] tabular-nums">
+                  {[
+                    set.durationSeconds != null ? `${set.durationSeconds}s hold` : `${set.reps} reps`,
+                    set.durationSeconds == null && set.suggestedWeightKg ? `${toWeight(set.suggestedWeightKg, units.weight)} ${units.weight}` : null,
+                    set.rpe ? `RPE ${set.rpe}` : null,
+                  ].filter(Boolean).join(' · ')}
+                </span>
+                <span className="shrink-0 text-[#858585]">rest {formatRestTime(set.restSeconds)}</span>
+              </li>
+            ))}
+          </ol>
+        </div>
+      ))}
+      {guide && <MovementGuide name={guide.name} notes={guide.coachNotes} onClose={() => setGuide(null)} />}
+    </section>
   )
 }
 
@@ -591,9 +684,8 @@ function DidSomethingElse({ onClick }: { onClick: () => void }) {
 /** A session logged with no plan behind it ("Log a session"). */
 function LoggedActivityView({ log, onBack }: { log: LoggedSession; onBack: () => void }) {
   return (
-    <div className="flex flex-col min-h-svh bg-[#0a0a0a]">
-      <PageHeader title={log.title} subtitle={formatSessionDate(log.date)} onBack={onBack} />
-      <div className="px-4 py-4 flex flex-col gap-3">
+    <WorkoutSheet title={log.title} subtitle={formatSessionDate(log.date)} onClose={onBack}>
+      <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-4 pb-edge flex flex-col gap-3">
         <div className="flex items-center gap-3 bg-emerald-500/10 rounded-2xl px-4 py-3 border border-emerald-500/20">
           <CheckCircle2 size={18} className="text-emerald-400 shrink-0" />
           <div>
@@ -605,6 +697,6 @@ function LoggedActivityView({ log, onBack }: { log: LoggedSession; onBack: () =>
         </div>
         {log.generalNotes && <p className="text-sm text-[#a8a29e] px-1">{log.generalNotes}</p>}
       </div>
-    </div>
+    </WorkoutSheet>
   )
 }

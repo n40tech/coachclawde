@@ -25,6 +25,14 @@ export function isFullscreenRoute(pathname: string): boolean {
   return FULLSCREEN_ROUTES.some((r) => pathname.startsWith(r))
 }
 
+/**
+ * The iPad sidebar stays beside the workout: the workout is a sheet over the
+ * screen it came from, which keeps its layout underneath.
+ */
+export function hidesSideNav(pathname: string): boolean {
+  return isFullscreenRoute(pathname) && !pathname.startsWith('/session/')
+}
+
 export function hidesTabBar(pathname: string): boolean {
   return isFullscreenRoute(pathname) || NO_TAB_BAR_ROUTES.some((r) => pathname.startsWith(r))
 }

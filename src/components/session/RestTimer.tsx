@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useContext, useEffect, useRef, useState } from 'react'
 import { useRestTimer } from '../../hooks/useRestTimer'
 import { useModal } from '../../hooks/useModal'
 import { secondsToDisplay } from '../../lib/dateUtils'
@@ -9,6 +9,7 @@ import { useSettingsStore } from '../../store/useSettingsStore'
 import { enableRestAlerts, prepareRestAlerts, restAlertSupport } from '../../lib/restAlerts'
 import { useFlick } from '../../hooks/useFlick'
 import { rubberBand } from '../../lib/swipe'
+import { SheetContext } from './sheetMotion'
 
 /**
  * The rest timer: a full-screen countdown, or (minimised) a pill docked where
@@ -16,19 +17,31 @@ import { rubberBand } from '../../lib/swipe'
  * movement guide or scroll while resting. The choice sticks for the next rest.
  * Flick the bar up to open the timer full screen, and the timer down to
  * tuck it away again.
+ *
+ * Inside the workout sheet, dragging the bar left squeezes it towards the
+ * dock circle on its left while the sheet slides down in step; let go far
+ * enough (or flick) and the workout closes. Pulling the sheet down squeezes
+ * the bar the same way.
  */
-export function RestTimerOverlay({ onFlickAway }: {
-  /** A flick left on the minimised bar: leave the workout (it shrinks into the Home dock). */
-  onFlickAway?: () => void
-} = {}) {
+export function RestTimerOverlay() {
   const { remaining, progress, isActive, label, skipTimer } = useRestTimer()
   const minimised = useSettingsStore((s) => s.restTimerMinimised)
   const setMinimised = useSettingsStore((s) => s.setRestTimerMinimised)
+  const sheet = useContext(SheetContext)
   const barRef = useRef<HTMLButtonElement>(null)
+  const dockRef = useRef<HTMLDivElement>(null)
   const focusBar = useRef(false)
-  const drag = useFlick({ up: () => setMinimised(false), left: onFlickAway })
-  const pull = rubberBand(drag.x, 140)
+  const drag = useFlick({ up: () => setMinimised(false), left: sheet?.dismiss })
   const lift = rubberBand(drag.y, 40)
+  // How far the bar's right end can travel before the bar is a circle.
+  const [span, setSpan] = useState(0)
+  const squeezing = drag.dragging && drag.x < 0 && span > 0
+  const squeeze = squeezing ? Math.min(1, -drag.x / span) : null
+  const follow = sheet?.follow
+  useEffect(() => {
+    follow?.(squeeze)
+  }, [follow, squeeze])
+  useEffect(() => () => follow?.(null), [follow])
 
   // Full screen it's modal (RestCard): on close, focus goes back to what had
   // it (usually the set's tick), or to the minimised bar when that's gone
@@ -48,40 +61,65 @@ export function RestTimerOverlay({ onFlickAway }: {
   const pulse = remaining <= 5 ? 'timer-pulse' : ''
 
   if (minimised) {
+    // 0 = the full bar, 1 = squeezed into a circle at its left end.
+    const p = sheet?.progress ?? 0
+    const still = drag.dragging || sheet?.dragging
+    const ease = still ? '' : 'duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]'
+    const squeezeBy = `calc((100% - var(--tabbar-h)) * ${p})`
     return (
       <FixedLayer>
         {/* Same dock, height and pill as the tab bar (index.css tabbar-dock),
             so it sits concentric with the screen's rounded corners. The ring
-            and Skip are inset so their curves follow the pill's ends. */}
+            and Skip are inset so their curves follow the pill's ends. Only
+            the full bar takes part in the morph into the Home dock: once
+            squeezed it already sits where the dock circle will be. */}
         <div
+          ref={dockRef}
           {...drag.handlers}
-          style={{ transform: pull || lift ? `translate(${pull}px, ${lift}px)` : undefined, opacity: 1 - Math.min(0.35, -pull / 400) }}
-          className={`vt-workout-timer absolute tabbar-dock z-40 flex items-center gap-1 rounded-(--tabbar-radius) p-(--tabbar-pad) bg-[#161616]/95 backdrop-blur-xl ring-1 ring-inset ring-[#2a2a2a] shadow-lg shadow-black/50 slide-up touch-none select-none ${
-            drag.dragging ? '' : 'transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]'
+          onPointerDown={(e) => {
+            const el = dockRef.current
+            if (el) setSpan(el.offsetWidth - el.offsetHeight)
+            drag.handlers.onPointerDown(e)
+          }}
+          style={{ transform: lift ? `translateY(${lift}px)` : undefined }}
+          className={`${p ? '' : 'vt-workout-timer'} absolute tabbar-dock z-40 slide-up touch-none select-none ${
+            still ? '' : 'transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]'
           }`}
         >
-          <button
-            ref={barRef}
-            onClick={() => setMinimised(false)}
-            aria-label={`Rest, ${time} left. Show the timer`}
-            className="flex-1 min-w-0 h-full flex items-center gap-3 rounded-(--tabbar-item-radius) pl-2 pr-3 text-left hover:bg-[#1f1f1f] transition-colors"
+          <div
+            aria-hidden
+            style={{ width: `calc(100% - ${squeezeBy})` }}
+            className={`absolute inset-y-0 left-0 rounded-(--tabbar-radius) bg-[#161616] ring-1 ring-inset ring-[#2a2a2a] shadow-lg shadow-black/50 ${
+              ease && `transition-[width] ${ease}`
+            }`}
+          />
+          <div
+            style={{ clipPath: `inset(0 ${squeezeBy} 0 0 round var(--tabbar-radius))` }}
+            className={`relative h-full flex items-center gap-1 p-(--tabbar-pad) ${ease && `transition-[clip-path] ${ease}`}`}
           >
-            <Ring elapsed={elapsed} className="w-9 h-9 shrink-0" strokeWidth={12} />
-            <span className="flex-1 min-w-0">
-              <span className={`block text-lg font-bold text-[#f5f5f0] tabular-nums leading-tight ${pulse}`}>{time}</span>
-              <span className="block text-xs text-[#949494] truncate">{label}</span>
-            </span>
-            <ChevronUp size={18} className="text-[#949494] shrink-0" aria-hidden />
-          </button>
-          <button
-            type="button"
-            onClick={skipTimer}
-            aria-label="Skip rest"
-            title="Skip rest"
-            className="h-full aspect-square shrink-0 rounded-(--tabbar-item-radius) flex items-center justify-center text-[#a8a29e] hover:text-[#d97756] hover:bg-[#d97756]/10 transition-colors"
-          >
-            <SkipForward size={18} aria-hidden />
-          </button>
+            <button
+              ref={barRef}
+              onClick={() => setMinimised(false)}
+              aria-label={`Rest, ${time} left. Show the timer`}
+              className="flex-1 min-w-0 h-full flex items-center gap-3 rounded-(--tabbar-item-radius) pl-2 pr-3 text-left hover:bg-[#1f1f1f] transition-colors"
+            >
+              <Ring elapsed={elapsed} className="w-9 h-9 shrink-0" strokeWidth={12} />
+              <span className="flex-1 min-w-0">
+                <span className={`block text-lg font-bold text-[#f5f5f0] tabular-nums leading-tight ${pulse}`}>{time}</span>
+                <span className="block text-xs text-[#949494] truncate">{label}</span>
+              </span>
+              <ChevronUp size={18} className="text-[#949494] shrink-0" aria-hidden />
+            </button>
+            <button
+              type="button"
+              onClick={skipTimer}
+              aria-label="Skip rest"
+              title="Skip rest"
+              className="h-full aspect-square shrink-0 rounded-(--tabbar-item-radius) flex items-center justify-center text-[#a8a29e] hover:text-[#d97756] hover:bg-[#d97756]/10 transition-colors"
+            >
+              <SkipForward size={18} aria-hidden />
+            </button>
+          </div>
         </div>
       </FixedLayer>
     )

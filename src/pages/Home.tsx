@@ -6,19 +6,20 @@ import { Card, CardSection } from '../components/shared/Card'
 import { Button } from '../components/shared/Button'
 import { Badge } from '../components/shared/Badge'
 import { ClawdeMark } from '../components/shared/ClawdeMark'
-import { Reveal } from '../components/shared/Reveal'
 import { BetaFeedbackTile } from '../components/shared/BetaFeedbackTile'
 import { BETA_FEEDBACK_URL } from '../lib/betaFeedback'
 import { useScrollDirection } from '../hooks/useScrollDirection'
 import { getProgramProgress } from '../lib/programProgress'
-import { Calendar, ChevronRight, Dumbbell, Waves, Zap, CheckCircle, CalendarPlus, Trophy, Sparkles, Plus, MessageCircle, X } from 'lucide-react'
+import { Calendar, ChevronRight, CheckCircle, CalendarPlus, Trophy, Sparkles, Plus, MessageCircle, X } from 'lucide-react'
 import { homeInvitation, type HomeInvitation } from '../lib/checkInTriggers'
 import { QuickLogSheet } from '../components/session/QuickLogSheet'
 import { buildQuickLog, type QuickLogInput } from '../lib/quickLog'
 import { useAutoSync } from '../hooks/useAutoSync'
 import { getWeekday, formatDuration } from '../lib/dateUtils'
 import { format } from 'date-fns'
-import type { Intensity, PlannedSession, SessionType } from '../types'
+import type { Intensity, LoggedSession, PlannedSession } from '../types'
+import { SessionIcon } from '../components/shared/SessionIcon'
+import { useCurrentWorkout, useNow } from '../hooks/useWorkoutDock'
 import { useUnits } from '../store/useSettingsStore'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { localize } from '../lib/units'
@@ -31,6 +32,9 @@ export function Home() {
   const plan = getCurrentWeekPlan()
   const { bump } = useScrollDirection()
   const { syncSession } = useAutoSync()
+  // Minutes are all Home shows, so a slow tick is enough.
+  const now = useNow(true, 15_000)
+  const current = useCurrentWorkout(now)
   const [showLog, setShowLog] = useState(false)
   useDocumentTitle('Home')
 
@@ -52,7 +56,8 @@ export function Home() {
 
   // Completed sessions live in History only. Home shows what's still to do:
   // the next workout, the rest of the week ahead, and anything missed.
-  const pending = (plan?.sessions ?? []).filter((s) => !isSessionLogged(s.id))
+  // The workout under way gets its own card at the top, not a second one below.
+  const pending = (plan?.sessions ?? []).filter((s) => !isSessionLogged(s.id) && s.id !== current?.plannedSessionId)
   const upcoming = pending
     .filter((s) => s.date >= today)
     .sort((a, b) => a.date.localeCompare(b.date))
@@ -63,7 +68,7 @@ export function Home() {
   const nextSession = upcoming[0]
   const futureSessions = upcoming.slice(1)
 
-  const weekDone = plan != null && pending.length === 0
+  const weekDone = plan != null && pending.length === 0 && !current
   const program = getProgramProgress(profile)
 
   return (
@@ -108,6 +113,8 @@ export function Home() {
       </div>
 
       <div className="flex flex-col gap-4 px-4">
+        {current && <CurrentWorkoutCard session={current} now={now} />}
+
         {program.isComplete && !(invite?.kind === 'milestone' && invite.key.startsWith('milestone:block-end')) && (
           <ProgramCompleteBanner length={program.length} onRestart={() => navigate('/check-in?trigger=milestone')} />
         )}
@@ -138,10 +145,8 @@ export function Home() {
                   This week
                 </h2>
                 <div className="grid grid-cols-1 gap-2 @3xl/app:grid-cols-2">
-                  {futureSessions.map((s, i) => (
-                    <Reveal key={s.id} index={i}>
-                      <UpcomingTile session={s} />
-                    </Reveal>
+                  {futureSessions.map((s) => (
+                    <UpcomingTile key={s.id} session={s} />
                   ))}
                 </div>
               </div>
@@ -153,10 +158,8 @@ export function Home() {
                   Missed
                 </h2>
                 <div className="grid grid-cols-1 gap-2 @3xl/app:grid-cols-2">
-                  {missed.map((s, i) => (
-                    <Reveal key={s.id} index={i}>
-                      <UpcomingTile session={s} missed />
-                    </Reveal>
+                  {missed.map((s) => (
+                    <UpcomingTile key={s.id} session={s} missed />
                   ))}
                 </div>
               </div>
@@ -166,20 +169,16 @@ export function Home() {
 
         {/* Week stats pill */}
         {plan && (
-          <Reveal>
-            <div className="flex items-center justify-between bg-[#161616] rounded-2xl px-4 py-3 border border-[#2a2a2a]">
-              <span className="text-sm text-[#949494]">Week {program.week} of {program.length}</span>
-              <span className="text-sm font-medium text-[#f5f5f0]">
-                {plan.sessions.filter((s) => isSessionLogged(s.id)).length}/{plan.sessions.length} sessions
-              </span>
-            </div>
-          </Reveal>
+          <div className="flex items-center justify-between bg-[#161616] rounded-2xl px-4 py-3 border border-[#2a2a2a]">
+            <span className="text-sm text-[#949494]">Week {program.week} of {program.length}</span>
+            <span className="text-sm font-medium text-[#f5f5f0]">
+              {plan.sessions.filter((s) => isSessionLogged(s.id)).length}/{plan.sessions.length} sessions
+            </span>
+          </div>
         )}
 
         {BETA_FEEDBACK_URL && (
-          <Reveal>
-            <BetaFeedbackTile />
-          </Reveal>
+          <BetaFeedbackTile />
         )}
       </div>
 
@@ -192,7 +191,7 @@ export function Home() {
 function InvitationCard({ invite, onOpen, onDismiss }: { invite: HomeInvitation; onOpen: () => void; onDismiss: () => void }) {
   const summary = invite.kind === 'summary'
   return (
-    <div className="fade-in rounded-3xl bg-[#161616] border border-[#d97756]/30 p-4 flex items-start gap-3">
+    <div className="rounded-3xl bg-[#161616] border border-[#d97756]/30 p-4 flex items-start gap-3">
       <div className="w-10 h-10 rounded-2xl bg-[#d97756]/15 flex items-center justify-center shrink-0">
         {summary ? <CheckCircle size={18} className="text-[#d97756]" /> : <MessageCircle size={18} className="text-[#d97756]" />}
       </div>
@@ -216,7 +215,7 @@ function InvitationCard({ invite, onOpen, onDismiss }: { invite: HomeInvitation;
 /** Tracker athletes who log as they go: logging is the main action. */
 function TrackerLogCTA({ onLog, onConvert }: { onLog: () => void; onConvert: () => void }) {
   return (
-    <div className="fade-in rounded-3xl bg-gradient-to-br from-[#d97756]/10 to-[#1a1a1a] border border-[#d97756]/20 p-6 flex flex-col items-center text-center gap-4">
+    <div className="rounded-3xl bg-gradient-to-br from-[#d97756]/10 to-[#1a1a1a] border border-[#d97756]/20 p-6 flex flex-col items-center text-center gap-4">
       <div>
         <h2 className="text-xl font-bold text-[#f5f5f0]">Your plan, your way</h2>
         <p className="text-sm text-[#949494] mt-1 leading-relaxed">Log each session as you do it. I'll keep score and send a short weekly summary.</p>
@@ -229,7 +228,7 @@ function TrackerLogCTA({ onLog, onConvert }: { onLog: () => void; onConvert: () 
 
 function NoPlanCTA({ onPlan, tracker }: { onPlan: () => void; tracker?: boolean }) {
   return (
-    <div className="fade-in">
+    <div>
       <div className="rounded-3xl bg-gradient-to-br from-[#d97756]/10 to-[#1a1a1a] border border-[#d97756]/20 p-6 flex flex-col items-center text-center gap-4">
         <div className="w-14 h-14 rounded-3xl bg-[#d97756]/15 flex items-center justify-center">
           <Calendar size={28} className="text-[#d97756]" />
@@ -271,7 +270,7 @@ function WeekCompleteBanner({ onPlan }: { onPlan: () => void }) {
 
 function ProgramCompleteBanner({ length, onRestart }: { length: number; onRestart: () => void }) {
   return (
-    <div className="rounded-3xl bg-gradient-to-br from-[#d97756]/15 to-[#1a1a1a] border border-[#d97756]/30 p-6 flex flex-col items-center text-center gap-4 fade-in">
+    <div className="rounded-3xl bg-gradient-to-br from-[#d97756]/15 to-[#1a1a1a] border border-[#d97756]/30 p-6 flex flex-col items-center text-center gap-4">
       <div className="w-14 h-14 rounded-3xl bg-[#d97756]/15 flex items-center justify-center">
         <Trophy size={28} className="text-[#d97756]" />
       </div>
@@ -290,10 +289,35 @@ function ProgramCompleteBanner({ length, onRestart }: { length: number; onRestar
   )
 }
 
+/** The workout the athlete left mid-way: one tap back into it. */
+function CurrentWorkoutCard({ session, now }: { session: LoggedSession; now: number }) {
+  const units = useUnits()
+  const minutes = Math.max(0, Math.floor((now - Date.parse(session.startedAt)) / 60000))
+  return (
+    <Card accent glow to={`/session/${session.plannedSessionId}`}>
+      <div className="bg-gradient-to-br from-[#d97756]/8 to-transparent">
+        <CardSection className="flex items-center gap-3">
+          <div className="w-11 h-11 rounded-2xl bg-accent-fill flex items-center justify-center shrink-0">
+            <SessionIcon type={session.type} size={20} className="text-white" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-medium text-[#d97756] uppercase tracking-widest">
+              In progress · {minutes < 1 ? 'just started' : `${formatDuration(minutes)} in`}
+            </p>
+            <h2 className="text-lg font-bold text-[#f5f5f0] leading-tight mt-0.5 truncate">{localize(session.title, units)}</h2>
+            <p className="text-sm text-[#949494] mt-0.5">Pick up where you left off</p>
+          </div>
+          <ChevronRight size={18} className="text-[#d97756] shrink-0" aria-hidden />
+        </CardSection>
+      </div>
+    </Card>
+  )
+}
+
 function NextSessionCard({ session }: { session: PlannedSession }) {
   const units = useUnits()
   return (
-    <Card accent glow to={`/session/${session.id}`} className="fade-in">
+    <Card accent glow to={`/session/${session.id}`}>
       <div className="bg-gradient-to-br from-[#d97756]/8 to-transparent">
         <CardSection>
           <div className="flex items-center justify-between mb-3">
@@ -357,14 +381,6 @@ function StatPill({ label, icon }: { label: string; icon: string }) {
       <span className="text-xs text-[#949494]">{label}</span>
     </div>
   )
-}
-
-function SessionIcon({ type, size, className }: { type: SessionType; size: number; className?: string }) {
-  switch (type) {
-    case 'weights': return <Dumbbell size={size} className={className} />
-    case 'cardio': return <Waves size={size} className={className} />
-    default: return <Zap size={size} className={className} />
-  }
 }
 
 function getGreeting(): string {

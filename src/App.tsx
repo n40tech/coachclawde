@@ -7,6 +7,7 @@ import { AuthProvider } from './auth/AuthProvider'
 import { RequireAuth } from './auth/RequireAuth'
 import { BottomNav } from './components/layout/BottomNav'
 import { SideNav } from './components/layout/SideNav'
+import { EdgeSwipeBack } from './components/layout/EdgeSwipeBack'
 import { FixedLayer } from './components/layout/FixedLayer'
 import { PageSuspense } from './components/layout/PageSuspense'
 import { useAppStore } from './store/useAppStore'
@@ -169,11 +170,12 @@ function PhoneColumn({ children }: { children: ReactNode }) {
  * (iPad, wide windows): sidebar on the left and a wider content column.
  */
 function MainApp() {
+  const page = useRef<HTMLDivElement>(null)
   return (
     <div className="flex min-h-svh">
       <SideNav />
       <main className="app-main flex-1 min-w-0 @3xl/app:pr-(--safe-right)">
-        <div className="w-full max-w-md @3xl/app:max-w-xl @5xl/app:max-w-2xl mx-auto min-h-svh relative">
+        <div ref={page} className="w-full max-w-md @3xl/app:max-w-xl @5xl/app:max-w-2xl mx-auto min-h-svh relative">
           <PageSuspense>
             <Routes>
               <Route path="/" element={<Home />} />
@@ -191,6 +193,7 @@ function MainApp() {
         </div>
       </main>
       <BottomNav />
+      <EdgeSwipeBack target={page} />
       <ReleaseNotesGate />
     </div>
   )

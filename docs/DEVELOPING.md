@@ -48,7 +48,7 @@ work out of the box.
 
 ## Shipping a beta update (versions & release notes)
 
-The app version lives in `package.json` (currently **1.1.1**) and is injected
+The app version lives in `package.json` (currently **1.1.3**) and is injected
 into the bundle as `__APP_VERSION__` (read it via `APP_VERSION` in
 `src/lib/appVersion.ts`). The first time a tester opens a new version, a
 "What's new" sheet lists the changes; it's also reachable from Settings →
@@ -144,16 +144,29 @@ are marked as seen when they finish onboarding.
   confirms) and starts the next rest. Taps on a tick (`data-tick`) are left to
   the tick. Ticking records `workSeconds`; saving the workout confirms any
   orange sets. `setClock` is persisted. On the workout screen, a flick left
-  on the minimised rest bar (`RestTimerOverlay`; `hooks/useHorizontalDrag`,
+  on the minimised rest bar (`RestTimerOverlay`; `hooks/useFlick`,
   `lib/swipe`) goes Home. Off the workout screen,
   `hooks/useWorkoutDock` drives `layout/WorkoutDock`: a timer circle left of
-  the tab bar (or in the iPad sidebar): tap it or drag it right to open the
-  workout. The rest bar and the circle share `view-transition-name:
+  the tab bar (or in the iPad sidebar): the rest countdown, or between rests
+  the session type's icon (`shared/SessionIcon`); tap it or drag it right to
+  open the workout, or flick it up to open it at the exercise in progress
+  (`timer.nextExerciseId` during a rest) with the rest timer full screen.
+  The rest bar flicks up to maximise; the full-screen timer flicks down to
+  minimise. Home shows the same workout (`useCurrentWorkout`) as an
+  "In progress" card at the top. Home and Progress have no entrance
+  animations (the old `Reveal` was removed: it looked like loading jank). The rest bar and the circle share `view-transition-name:
   workout-timer` (`.vt-workout-timer` in index.css), and those navigations
   run through `lib/viewTransition`, so one morphs into the other. Only one
   of them may be on screen at a time. Exercise order is the
   order of `loggedExercises` (`lib/exerciseOrder`: reorder, and promote an
   exercise started early).
+- **Edge swipe back:** `layout/EdgeSwipeBack` + `lib/backGesture`. A swipe
+  from the left edge slides the page column away and runs the page's Back
+  (registered by `PageHeader`, so only screens with a Back button have it);
+  the screen underneath eases in from the left. It `preventDefault`s the
+  touchstart so iOS Safari doesn't start its own history swipe, except on
+  controls, so taps on the Back button still work. `data-swipe-back` tells
+  `withViewTransition` to skip its transition, as the page already left.
 - **Completion & sharing:** `lib/workoutSummary` (time, volume, sets, reps, PBs
   vs. earlier sessions, per-exercise best sets) and `lib/shareCard`: three
   1080² card designs in the app's colours (summary, headline, logbook), all built

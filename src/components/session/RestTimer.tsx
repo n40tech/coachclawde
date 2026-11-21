@@ -7,13 +7,15 @@ import { FixedLayer } from '../layout/FixedLayer'
 import { Button } from '../shared/Button'
 import { useSettingsStore } from '../../store/useSettingsStore'
 import { enableRestAlerts, prepareRestAlerts, restAlertSupport } from '../../lib/restAlerts'
-import { useHorizontalDrag } from '../../hooks/useHorizontalDrag'
+import { useFlick } from '../../hooks/useFlick'
 import { rubberBand } from '../../lib/swipe'
 
 /**
  * The rest timer: a full-screen countdown, or (minimised) a pill docked where
  * the tab bar sits on other screens, so the athlete can keep logging, read a
  * movement guide or scroll while resting. The choice sticks for the next rest.
+ * Flick the bar up to open the timer full screen, and the timer down to
+ * tuck it away again.
  */
 export function RestTimerOverlay({ onFlickAway }: {
   /** A flick left on the minimised bar: leave the workout (it shrinks into the Home dock). */
@@ -24,8 +26,9 @@ export function RestTimerOverlay({ onFlickAway }: {
   const setMinimised = useSettingsStore((s) => s.setRestTimerMinimised)
   const barRef = useRef<HTMLButtonElement>(null)
   const focusBar = useRef(false)
-  const drag = useHorizontalDrag(-1, () => onFlickAway?.())
-  const pull = rubberBand(drag.dx, 140)
+  const drag = useFlick({ up: () => setMinimised(false), left: onFlickAway })
+  const pull = rubberBand(drag.x, 140)
+  const lift = rubberBand(drag.y, 40)
 
   // Full screen it's modal (RestCard): on close, focus goes back to what had
   // it (usually the set's tick), or to the minimised bar when that's gone
@@ -51,9 +54,9 @@ export function RestTimerOverlay({ onFlickAway }: {
             so it sits concentric with the screen's rounded corners. The ring
             and Skip are inset so their curves follow the pill's ends. */}
         <div
-          {...(onFlickAway ? drag.handlers : {})}
-          style={{ transform: pull ? `translateX(${pull}px)` : undefined, opacity: 1 - Math.min(0.35, -pull / 400) }}
-          className={`vt-workout-timer absolute tabbar-dock z-40 flex items-center gap-1 rounded-(--tabbar-radius) p-(--tabbar-pad) bg-[#161616]/95 backdrop-blur-xl ring-1 ring-inset ring-[#2a2a2a] shadow-lg shadow-black/50 slide-up touch-pan-y select-none ${
+          {...drag.handlers}
+          style={{ transform: pull || lift ? `translate(${pull}px, ${lift}px)` : undefined, opacity: 1 - Math.min(0.35, -pull / 400) }}
+          className={`vt-workout-timer absolute tabbar-dock z-40 flex items-center gap-1 rounded-(--tabbar-radius) p-(--tabbar-pad) bg-[#161616]/95 backdrop-blur-xl ring-1 ring-inset ring-[#2a2a2a] shadow-lg shadow-black/50 slide-up touch-none select-none ${
             drag.dragging ? '' : 'transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]'
           }`}
         >
@@ -99,7 +102,8 @@ export function RestTimerOverlay({ onFlickAway }: {
 
 /**
  * The full-screen timer. Modal for keyboard and screen readers (see
- * `useModal`); Escape, the chevron and a tap outside all minimise it.
+ * `useModal`); Escape, the chevron, a tap outside and a flick down all
+ * minimise it.
  */
 function RestCard({
   label, time, elapsed, pulse, onMinimise, onSkip, onOpenerGone,
@@ -114,6 +118,8 @@ function RestCard({
 }) {
   const dialogRef = useRef<HTMLDivElement>(null)
   useModal(dialogRef, { onEscape: onMinimise, onOpenerGone })
+  const drag = useFlick({ down: onMinimise })
+  const drop = Math.max(0, drag.y)
   return (
     <FixedLayer>
       <div className="absolute inset-0 z-50 flex items-end short:items-center justify-center pb-edge short:pt-safe">
@@ -125,7 +131,11 @@ function RestCard({
           aria-modal="true"
           aria-label="Rest timer"
           tabIndex={-1}
-          className="relative bg-[#111] rounded-3xl border border-[#2a2a2a] p-8 short:p-5 w-72 flex flex-col items-center gap-5 short:gap-3 slide-up outline-none"
+          {...drag.handlers}
+          style={{ transform: drop ? `translateY(${drop}px)` : undefined }}
+          className={`vt-workout-timer relative bg-[#111] rounded-3xl border border-[#2a2a2a] p-8 short:p-5 w-72 flex flex-col items-center gap-5 short:gap-3 slide-up outline-none touch-none select-none ${
+            drag.dragging ? '' : 'transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]'
+          }`}
         >
           <button
             type="button"

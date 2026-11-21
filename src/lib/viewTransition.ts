@@ -12,7 +12,9 @@ import { flushSync } from 'react-dom'
  */
 export function withViewTransition(update: () => void | Promise<void>): void {
   const reduce = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches
-  if (typeof document === 'undefined' || !document.startViewTransition || reduce) {
+  // After an edge swipe back the page has already slid away (EdgeSwipeBack).
+  const swiped = typeof document !== 'undefined' && document.documentElement.hasAttribute('data-swipe-back')
+  if (typeof document === 'undefined' || !document.startViewTransition || reduce || swiped) {
     void update()
     return
   }

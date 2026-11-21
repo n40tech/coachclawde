@@ -87,6 +87,7 @@ export function useRestTimer() {
       durationSeconds: seconds,
       label,
       sessionId,
+      nextExerciseId,
     })
   }
 

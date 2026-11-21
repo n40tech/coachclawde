@@ -1,7 +1,6 @@
 import { useAppStore } from '../store/useAppStore'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Card, CardSection } from '../components/shared/Card'
-import { Reveal } from '../components/shared/Reveal'
 import { WeightPRCard, CardioPRCard } from '../components/progress/PRCards'
 import { Trophy } from 'lucide-react'
 import { computeWeightPRs, computeCardioPRs } from '../lib/prComputations'
@@ -38,14 +37,10 @@ export function BestEfforts() {
         ) : (
           <>
             {weightPRs.length > 0 && (
-              <Reveal>
-                <WeightPRCard prs={weightPRs} />
-              </Reveal>
+              <WeightPRCard prs={weightPRs} />
             )}
             {cardioPRs.length > 0 && (
-              <Reveal index={1}>
-                <CardioPRCard prs={cardioPRs} />
-              </Reveal>
+              <CardioPRCard prs={cardioPRs} />
             )}
           </>
         )}

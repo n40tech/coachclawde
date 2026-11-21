@@ -423,6 +423,8 @@ export interface TimerState {
   label: string;
   /** The planned session this rest belongs to, so the app-wide dock can link back. */
   sessionId?: string;
+  /** The planned exercise up next, so the dock can open the workout there. */
+  nextExerciseId?: string;
 }
 
 /**

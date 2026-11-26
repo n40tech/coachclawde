@@ -249,6 +249,7 @@ workout data should ever be added here.
 
 Everything above is about *generating workout plans* — the common request, which
 needs no code changes. When (and only when) a task actually changes the app's
-**code**, read **[`docs/DEVELOPING.md`](docs/DEVELOPING.md)** for the stack,
-build/lint commands, file map, and conventions. It's kept out of this file so
-plan-generation sessions don't pay for it on every load.
+**code**, read **[`docs/DEVELOPING.md`](docs/DEVELOPING.md)** first: the
+workflow every change follows, then the stack, commands, file map and
+conventions. It's kept out of this file so plan-generation sessions don't pay
+for it on every load.

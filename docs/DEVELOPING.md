@@ -5,6 +5,38 @@ out of `CLAUDE.md` on purpose: most requests to this repo are workout-plan
 generation, which needs none of this. Read this file only when a task actually
 touches the app code.
 
+## Workflow
+
+Every code change follows this cycle. The maintainer reads, phone-tests and
+merges every PR by hand on GitHub; Claude opens PRs and never merges them.
+
+1. **Issue.** A change starts as a GitHub issue whose acceptance criteria say
+   what the athlete will see or what the app will do. `/backlog` turns a
+   brain-dump of ideas into issues. Copy and typo fixes can skip the issue.
+2. **One issue, one PR.** Branch from an up-to-date `main` and open the PR as a
+   **draft**. Keep it reviewable: under ~300 lines of non-test code, or split
+   the issue. When two issues touch the same code, finish one before starting
+   the other. `/build-issue <number>` runs steps 2–5.
+3. **Thin components.** Behaviour (calculations, what gets saved, prompt text,
+   timer and set rules) lives in `src/lib` as plain functions; components call
+   them and handle only layout and events. This is what keeps behaviour
+   testable without a browser.
+4. **Tests first.** Each behavioural acceptance criterion gets a test written
+   before the code. It must go **red on an assertion** (not a missing import:
+   stub the function first), then green once the code is written. Name tests
+   as sentences about behaviour ("skips the rest timer after the last set").
+   Look and feel has no automated test; the maintainer checks it on their
+   phone.
+5. **Labels and PR body.** Exactly one of `feature` (a tester would notice
+   something new or a changed way of doing things), `fix` (something that
+   should have worked now does) or `internal` (nothing visible changed). Add
+   `manual-test` when the PR adds no tests because it only changes the UI.
+   Fill in every section of `.github/pull_request_template.md`.
+
+Issues use the conventions in `docs/agents/` (`issue-tracker.md`,
+`triage-labels.md`); `domain.md` covers `GLOSSARY.md` and `docs/adr/` once
+they exist.
+
 ## Stack
 
 React 19 + TypeScript + Vite 8, Tailwind CSS v4 (config is CSS-first in
@@ -39,10 +71,11 @@ of the bundle.
   (there is no separate `typecheck` script).
 - `npm test` — Vitest, for the pure logic in `src/lib` and the Edge Function in
   `supabase/functions` (`*.test.ts` next to the module). Tests run in Node;
-  there are no component tests.
+  there are no component tests. Run one file with `npx vitest run <path>`.
 
-**Before committing any code change, run `npm run lint`, `npm run build` and
-`npm test` and make sure all three are green.** On Claude Code on the web,
+**Before pushing any code change, run `npm run lint`, `npm run build` and
+`npm test` and make sure all three are green.** CI (`.github/workflows/ci.yml`)
+runs the same three on every PR. On Claude Code on the web,
 `.claude/hooks/session-start.sh` installs dependencies at session start, so these
 work out of the box.
 

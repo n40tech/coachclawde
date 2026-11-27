@@ -8,8 +8,7 @@ import { BottomSheet, SheetCloseButton } from '../components/shared/BottomSheet'
 import { Card, CardSection } from '../components/shared/Card'
 import { ChoiceChip, ChoiceGroup } from '../components/shared/Choice'
 import { buildConvertPlanPrompt, buildModifyPlanPrompt, buildWeekPlanPrompt } from '../lib/promptBuilder'
-import type { WeekPlan } from '../types'
-import { importPlanFromJson } from '../lib/export'
+import { importPlan, placePlan, type PlacedPlan } from '../lib/planImport'
 import { useAutoSync } from '../hooks/useAutoSync'
 import {
   WEEK_DAYS_MON,
@@ -75,6 +74,8 @@ export function WeekPlanner() {
   const [importJson, setImportJson] = useState('')
   const [importError, setImportError] = useState('')
   const [importing, setImporting] = useState(false)
+  // Warnings from the last import try (dates moved into the week): shown, then a second tap imports.
+  const [importWarnings, setImportWarnings] = useState<string[]>([])
   // Generate hands off to the Claude app; these track that round trip.
   const [launching, setLaunching] = useState(false)
   const [appMissing, setAppMissing] = useState(false)
@@ -205,29 +206,10 @@ export function WeekPlanner() {
     setTimeout(() => setCopied(false), 2000)
   }
 
-  /**
-   * Adds a plan for its week. Replanning a week shouldn't erase work already
-   * done: planned sessions with a completed log stay on the week (matched by
-   * plannedSessionId) next to the new plan's sessions, and the existing plan id
-   * is kept so those logs stay attached to it.
-   */
-  function savePlan(plan: WeekPlan, days: DayOfWeek[], userNotes: string) {
-    const existing = weekPlans.find((p) => p.weekStartDate === plan.weekStartDate)
-    if (existing) {
-      const completedPlannedIds = new Set(
-        loggedSessions
-          .filter((ls) => ls.status === 'complete')
-          .map((ls) => ls.plannedSessionId)
-      )
-      const preserved = existing.sessions.filter((s) => completedPlannedIds.has(s.id))
-      updateWeekPlan(existing.id, {
-        ...plan,
-        id: existing.id,
-        sessions: [...preserved, ...plan.sessions],
-      })
-    } else {
-      addWeekPlan({ ...plan, availableDays: days, userNotes })
-    }
+  /** Saves a plan placed on its week (lib/planImport): it replaces the week's plan or adds one. */
+  function savePlaced({ plan, replaces }: PlacedPlan) {
+    if (replaces) updateWeekPlan(replaces, plan)
+    else addWeekPlan(plan)
     // Sync plans in background after saving
     sync('plans')
     navigate('/')
@@ -237,10 +219,22 @@ export function WeekPlanner() {
     setImportError('')
     setImporting(true)
     try {
-      const plan = importPlanFromJson(importJson)
+      const placed = importPlan(importJson, {
+        weekStart: weekStartISO,
+        days: selectedDays,
+        notes: method === 'generate' ? notes : '',
+        plans: weekPlans,
+        logs: loggedSessions,
+      })
+      // Show what was changed once; the next tap imports it.
+      const seen = placed.warnings.join('\n') === importWarnings.join('\n')
+      if (placed.warnings.length && !seen) {
+        setImportWarnings(placed.warnings)
+        return
+      }
       setShowImport(false)
       setLastMethod(method)
-      savePlan(plan, selectedDays, method === 'generate' ? notes : '')
+      savePlaced(placed)
     } catch (e: unknown) {
       setImportError(e instanceof Error ? e.message : 'Invalid JSON')
     } finally {
@@ -256,7 +250,9 @@ export function WeekPlanner() {
     if (!previous || !repeatMonday) return
     setLastMethod('repeat')
     const copy = repeatPlan(previous, repeatMonday)
-    savePlan(copy, copy.availableDays, copy.userNotes)
+    savePlaced(placePlan(copy, {
+      weekStart: repeatWeekISO, days: copy.availableDays, notes: copy.userNotes, plans: weekPlans, logs: loggedSessions,
+    }))
   }
 
   const dayIndex = (day: DayOfWeek) => WEEK_DAYS_MON.indexOf(day)
@@ -533,7 +529,7 @@ export function WeekPlanner() {
               aria-invalid={importError ? true : undefined}
               aria-describedby={importError ? 'import-error' : undefined}
               value={importJson}
-              onChange={(e) => { setImportJson(e.target.value); setImportError('') }}
+              onChange={(e) => { setImportJson(e.target.value); setImportError(''); setImportWarnings([]) }}
               placeholder='Paste the JSON block here... (the content between ```json and ```)'
               rows={10}
               className="w-full bg-[#0a0a0a] border border-[#666666] rounded-2xl px-4 py-3 text-base text-[#f5f5f0] placeholder-[#858585] resize-y field-sizing-content min-h-24 max-h-[50svh] focus:outline-none focus:border-[#d97756] focus:ring-1 focus:ring-[#d97756] font-mono"
@@ -544,6 +540,17 @@ export function WeekPlanner() {
                 <div className="mt-2 flex items-start gap-2 text-red-400 bg-red-500/10 rounded-xl p-3">
                   <AlertCircle size={14} className="shrink-0 mt-0.5" aria-hidden />
                   <p id="import-error" className="text-xs">{importError}</p>
+                </div>
+              )}
+            </div>
+            <div role="status">
+              {importWarnings.length > 0 && (
+                <div className="mt-2 flex items-start gap-2 text-amber-300 bg-amber-500/10 rounded-xl p-3">
+                  <AlertCircle size={14} className="shrink-0 mt-0.5" aria-hidden />
+                  <div className="text-xs flex flex-col gap-1">
+                    {importWarnings.map((w) => <p key={w}>{w}</p>)}
+                    <p>Tap Import Week again to import it like this.</p>
+                  </div>
                 </div>
               )}
             </div>

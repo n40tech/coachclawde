@@ -89,6 +89,12 @@ of the bundle.
 - `npm test` — Vitest, for the pure logic in `src/lib` and the Edge Function in
   `supabase/functions` (`*.test.ts` next to the module). Tests run in Node;
   there are no component tests. Run one file with `npx vitest run <path>`.
+- `npm run smoke` — the one Playwright test (`e2e/smoke.e2e.ts`): a
+  demo-mode build on a phone-sized Chromium loads, shows Home and opens a
+  workout with no console errors. It runs in CI only (`smoke.yml` on every
+  merge to `main`, and in Release before shipping), so leave it out of the
+  pre-push checks below. Add to it only for a failure that would blank the
+  whole app; everything else is a unit test or a phone check.
 
 **Before pushing any code change, run `npm run lint`, `npm run build` and
 `npm test` and make sure all three are green.** CI (`.github/workflows/ci.yml`)
@@ -115,7 +121,8 @@ only the **Release** workflow moves (Actions → Release → Run workflow, on
    (`apply_migration` with the file's SQL; `deploy_edge_function` for
    `rest-alarm`, JWT verification off), then the maintainer re-runs Release
    with "Database and Edge Function changes applied" ticked.
-3. Commits "Release vX.Y.Z" (the version stamp) on top of `main`, tags it
+3. Runs the smoke test on what's about to ship; a failure stops the release.
+4. Commits "Release vX.Y.Z" (the version stamp) on top of `main`, tags it
    `vX.Y.Z`, and force-moves `production` there; Vercel deploys it.
 
 So `package.json` on `main` says `0.0.0-dev` (Settings shows that on

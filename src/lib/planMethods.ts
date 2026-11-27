@@ -1,5 +1,6 @@
 import type { WeekPlan } from '../types'
 import { addDays, getMonday, toLocalISODate, WEEK_DAYS_MON } from './weekUtils'
+import { unscopeSessionId } from './planIds'
 
 /**
  * The ways to make a week's plan:
@@ -40,9 +41,6 @@ export function repeatTargetMonday(source: WeekPlan, now: Date): Date {
   return anyPast ? addDays(thisMonday, 7) : thisMonday
 }
 
-/** Drops the week suffix the store adds (lib/planIds), so the copy is re-scoped to its own week. */
-const unscope = (id: string, week: string) => id.replace(new RegExp(`--${week}(-\\d+)?$`), '')
-
 /** The source plan moved to another week: same sessions, exercises and weights, new dates and ids. */
 export function repeatPlan(source: WeekPlan, targetMonday: Date, now: Date = new Date()): WeekPlan {
   const target = toLocalISODate(targetMonday)
@@ -57,7 +55,8 @@ export function repeatPlan(source: WeekPlan, targetMonday: Date, now: Date = new
       const date = toLocalISODate(addDays(parseISO(s.date), shift))
       return {
         ...s,
-        id: unscope(s.id, source.weekStartDate),
+        // Drop the week suffix the store adds, so the copy is re-scoped to its own week.
+        id: unscopeSessionId(s.id, source.weekStartDate),
         date,
         dayOfWeek: WEEK_DAYS_MON[(parseISO(date).getDay() + 6) % 7],
       }

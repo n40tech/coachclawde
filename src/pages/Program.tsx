@@ -6,10 +6,11 @@ import { Card, CardSection } from '../components/shared/Card'
 import { Badge } from '../components/shared/Badge'
 import { getMonday, addDays, toLocalISODate } from '../lib/weekUtils'
 import { SlidersHorizontal, ChevronDown, Dumbbell, Waves, Star } from 'lucide-react'
-import { format, parseISO, startOfWeek, isSameWeek } from 'date-fns'
+import { format, parseISO, isSameWeek } from 'date-fns'
 import type { LoggedSession } from '../types'
 import { useUnits } from '../store/useSettingsStore'
 import { localize } from '../lib/units'
+import { logWeekStart } from '../lib/weekStatus'
 
 const WEIGHTS_COLOR = '#d97756'
 const CARDIO_COLOR = '#60a5fa'
@@ -59,7 +60,7 @@ function ProgramBarChart() {
       cardio: 0,
     }))
     for (const s of completed) {
-      const ws = toLocalISODate(getMonday(parseISO(s.completedAt ?? s.date)))
+      const ws = logWeekStart(s)
       const b = buckets.find((x) => toLocalISODate(x.weekStart) === ws)
       if (!b) continue
       if (s.type === 'cardio') b.cardio += 1
@@ -151,7 +152,7 @@ function ProgramHistory() {
 
     const groups: WeekGroup[] = []
     for (const s of completed) {
-      const weekStart = startOfWeek(parseISO(s.completedAt ?? s.date), { weekStartsOn: 1 })
+      const weekStart = parseISO(logWeekStart(s))
       let g = groups.find((x) => isSameWeek(x.weekStart, weekStart, { weekStartsOn: 1 }))
       if (!g) {
         const isThisWeek = isSameWeek(weekStart, new Date(), { weekStartsOn: 1 })

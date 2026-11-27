@@ -11,7 +11,8 @@ import { formatSessionDate, formatDuration } from '../lib/dateUtils'
 import type { Intensity } from '../types'
 import { useUnits } from '../store/useSettingsStore'
 import { localize } from '../lib/units'
-import { format, parseISO, startOfWeek, isSameWeek } from 'date-fns'
+import { format, parseISO, isSameWeek } from 'date-fns'
+import { logWeekStart } from '../lib/weekStatus'
 
 export function History() {
   const { loggedSessions, weekPlans } = useAppStore()
@@ -209,8 +210,8 @@ function groupByWeek(sessions: ReturnType<typeof useAppStore.getState>['loggedSe
   const groups: { weekLabel: string; weekStart: Date; sessions: typeof sessions }[] = []
 
   for (const session of sessions) {
-    const date = parseISO(session.date)
-    const weekStart = startOfWeek(date, { weekStartsOn: 1 })
+    // The week it was done in, as on Program and Progress (lib/weekStatus).
+    const weekStart = parseISO(logWeekStart(session))
 
     let group = groups.find((g) => isSameWeek(g.weekStart, weekStart, { weekStartsOn: 1 }))
     if (!group) {

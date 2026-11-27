@@ -29,7 +29,8 @@ merges every PR by hand on GitHub; Claude opens PRs and never merges them.
    phone.
 5. **Labels and PR body.** Exactly one of `feature` (a tester would notice
    something new or a changed way of doing things), `fix` (something that
-   should have worked now does) or `internal` (nothing visible changed). Add
+   should have worked now does) or `internal` (nothing visible changed); the
+   Release workflow picks the version from them. Add
    `manual-test` when the PR adds no tests because it only changes the UI.
    Fill in every section of `.github/pull_request_template.md`. The review
    checklist is the maintainer's sign-off: leave its boxes unticked.
@@ -95,13 +96,31 @@ runs the same three on every PR, alongside the merge checks above. On Claude Cod
 `.claude/hooks/session-start.sh` installs dependencies at session start, so these
 work out of the box.
 
-## Versions
+## Releasing
 
-The app version lives in `package.json` (currently **0.2.4**) and is injected
-into the bundle as `__APP_VERSION__` (read it via `APP_VERSION` in
-`src/lib/appVersion.ts`); Settings shows it. The app is in beta, so versions
-are `0.x.y`; `1.0.0` is kept for the public launch. There are no release
-notes: the merged PRs are the history.
+Merging to `main` ships nothing to testers: `main` deploys to its Vercel
+preview (demo data, like every PR). Testers get the `production` branch, which
+only the **Release** workflow moves (Actions → Release → Run workflow, on
+`main`; "Dry run", the default, only reports what would ship). It:
+
+1. Takes everything merged to `main` since the last release. The version
+   comes from those PRs' labels: any `feature`, or a database migration →
+   minor (0.3.0 → 0.4.0); otherwise patch (0.3.0 → 0.3.1). The app is in
+   beta, so versions are `0.x.y`; `1.0.0` is the maintainer's call at public
+   launch. Rules: `scripts/release/plan.mjs`.
+2. Applies new `supabase/migrations/` to the production database, then
+   redeploys the `rest-alarm` Edge Function if `supabase/functions/` changed.
+3. Commits "Release vX.Y.Z" (the version stamp) on top of `main`, tags it
+   `vX.Y.Z`, and force-moves `production` there; Vercel deploys it.
+
+So `package.json` on `main` says `0.0.0-dev` (Settings shows that on
+previews); only release commits carry a real version. There are no release
+notes: the merged PRs are the history. **Migrations only add** (new tables,
+columns, policies): rename or drop something only in a later release than
+the one that stops using it, since installed apps run the old code for a
+while. Setup (Vercel production branch, `SUPABASE_ACCESS_TOKEN` and
+`SUPABASE_DB_PASSWORD` secrets, `SUPABASE_PROJECT_REF` variable):
+`DEPLOYMENT.md` §8.
 
 **How updates reach installed apps.** The service worker is registered in
 code (`lib/appUpdate`, with `injectRegister: false`), not by the plugin's

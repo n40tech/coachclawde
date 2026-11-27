@@ -34,7 +34,9 @@ file before starting.
    (`gh pr view <pr> --json comments --jq '.comments[] | select(.author.login=="vercel") | .body'`)
    and take its **Preview** link, the `coach-claude-git-<branch>-…vercel.app`
    alias that follows every push to the branch. Put it in the PR body under
-   "Try it on your phone".
+   "Try it on your phone". Edit the body with
+   `gh api -X PATCH repos/{owner}/{repo}/pulls/<pr> -F body=@<file>`
+   (`gh pr edit` fails on this repo over the retired Projects classic API).
 
 Done when the draft PR is open with every check green except the review
 checklist (the user's to tick), every template section filled,

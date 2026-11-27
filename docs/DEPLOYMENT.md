@@ -269,6 +269,27 @@ nobody could deliver are dropped two minutes late.
 
 ---
 
+## 8. Releases
+
+Testers get the `production` branch; `main` and every PR deploy as previews
+with demo data. The Release workflow moves `production` (see
+`docs/DEVELOPING.md` → Releasing). One-time setup:
+
+1. Vercel → Settings → Git → **Production Branch**: `production`.
+2. GitHub → Settings → Secrets and variables → Actions:
+   - secret `SUPABASE_ACCESS_TOKEN`: a personal access token from
+     supabase.com → Account → Access Tokens;
+   - secret `SUPABASE_DB_PASSWORD`: the database password (Supabase →
+     Project Settings → Database, reset it there if unknown);
+   - variable `SUPABASE_PROJECT_REF`: the project's reference id.
+3. The production database's migration history must list every file in
+   `supabase/migrations/` that it already has (`supabase migration list`;
+   fix with `supabase migration repair --status applied <version>`), or the
+   first release re-runs them.
+4. The first release is tagged by hand: a "Release v0.2.4" commit on top of
+   the `main` commit production runs, tagged `v0.2.4`, pushed as
+   `production`. The workflow counts from the newest tag.
+
 ## How plan generation works
 
 There is no AI call on the server. The app builds a **self-contained prompt**

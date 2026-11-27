@@ -1,7 +1,7 @@
 {
   "name": "coach-clawde",
   "private": true,
-  "version": "0.0.0-dev",
+  "version": "0.2.5",
   "description": "Workout tracker PWA that plans your training week with Claude, then coaches you through every set, rep and interval.",
   "homepage": "https://n40tech.github.io/coachclawde/",
   "repository": {

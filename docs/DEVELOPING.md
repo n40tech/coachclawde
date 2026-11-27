@@ -276,27 +276,28 @@ things are the way they are.
   - a screen sets its title with `useDocumentTitle` (`PageHeader` does it);
   - small icon buttons keep their size and add `relative hit-target`
     (index.css) for a 44px touch area;
-  - **Coach Quinn look** (the ice rebrand): colours are theme tokens in the
-    `@theme` block of `src/index.css`, never raw hex in classes. `abyss`
-    (page), `floe` (an ice-block surface: translucent), `slush` / `slush-2`
-    (fields, chips, tracks), `rime` / `rime-2` (borders), `snow` (text),
-    `ice` / `ice-bright` (the blue-ice accent), `yolk` (emperor yellow: PBs,
-    today, Quinn's headband). A card is `bg-floe ice` (the `ice` utility
-    adds the sheen, rime edge and backdrop blur; `Card` does this); a page
-    root is `polar-page` (opaque deep water);
+  - **Coach Quinn look**: a plain near-black app with subtle Antarctic
+    hints. Colours are theme tokens in the `@theme` block of
+    `src/index.css`, never raw hex in classes: `abyss` (page), `floe`
+    (cards), `slush` / `slush-2` (fields, chips, tracks), `rime` / `rime-2`
+    (borders), `snow` (text), `ice` / `ice-bright` (the blue-ice accent),
+    `yolk` (emperor yellow, for PBs, "Today" and Quinn's headband). A card
+    is `bg-floe ice` (`ice` adds a faint cold light along the top; `Card`
+    does this); a page root is `polar-page`;
   - text colours: `frost` secondary, `mist` muted, `haze` faint (the lowest
     that reads at 4.5:1 on the cards); don't go darker for text;
   - white text or icons on a solid accent use `bg-accent-fill` (hover
     `bg-accent-fill-hover`, deep glacier blue), not `bg-ice`, which is too
     light for white; keep `ice` for accent text, icons, borders and tints;
-  - type is one variable font, Saira (`public/fonts/saira.woff2`, wdth
-    50–125), standing in for Antarctica: running text semi-condensed, `h2`
-    and `font-mono` labels condensed, `h1`, `font-pixel` and every size from
-    `text-2xl` up ultra-condensed;
-  - Quinn (the mascot) is drawn from `lib/penguinArt` by
-    `shared/QuinnMark`, the share cards and `scripts/gen-icons.ts` (the app
-    icon is the head close-up: run `npm run gen:icons` after changing it).
-    Home's mountains and ice shelf are `layout/Icescape`;
+  - type is Manrope (`public/fonts/manrope.woff2`, variable weight) for
+    everything; `font-pixel` and `font-mono` are kept as class names for
+    display numbers and small uppercase labels;
+  - Quinn (the mascot) is vector shapes traced from a photo of an emperor
+    penguin, rasterised to pixels in `lib/penguinArt`, and drawn by
+    `shared/QuinnMark` (full length; his face in a round avatar at 48px and
+    below), the share cards and `scripts/gen-icons.ts` (the app icon is the
+    face close-up: run `npm run gen:icons` after changing it). Home's
+    mountains, fading into the page, are `layout/Icescape`;
   - decoration animates only under `prefers-reduced-motion: no-preference`
     (or `motion-safe:`), and nothing loops for more than 5 seconds.
 - `src/lib/` — pure helpers: `promptBuilder` (builds the **self-contained** plan

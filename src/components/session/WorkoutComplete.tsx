@@ -77,7 +77,7 @@ export function WorkoutComplete({ summary, isLastSessionOfWeek, onSave, onCheckI
         aria-label="Workout complete"
         tabIndex={-1}
         className="absolute inset-0 z-50 overflow-y-auto overscroll-contain outline-none bg-abyss fade-in"
-        style={{ backgroundImage: 'radial-gradient(ellipse 120% 420px at 50% 0, rgba(111,208,255,0.28), transparent 70%)' }}
+        style={{ backgroundImage: 'radial-gradient(ellipse 120% 420px at 50% 0, rgba(124,200,240,0.28), transparent 70%)' }}
       >
         <div className="w-full max-w-md mx-auto px-5 pt-safe pb-edge flex flex-col gap-6">
           {step === 'summary' ? (

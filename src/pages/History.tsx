@@ -60,7 +60,7 @@ export function History() {
       <div className="flex flex-col min-h-svh polar-page">
         <PageHeader title="History" />
         <div className="flex-1 flex flex-col items-center justify-center gap-4 px-4 pb-tabbar">
-          <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-[#0e3a5a] to-floe ring-1 ring-ice/25 flex items-center justify-center">
+          <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-[#13222e] to-floe ring-1 ring-ice/25 flex items-center justify-center">
             <QuinnMark size={48} sweat />
           </div>
           <div className="text-center">

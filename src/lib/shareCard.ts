@@ -5,7 +5,7 @@ import { formatSessionDate } from './dateUtils'
 
 /**
  * Square (1080 × 1080) workout images to share, in three designs, in the
- * app's colours: deep Antarctic water lit from above, a fine frost grid,
+ * app's colours: near-black with a faint cold glow and a fine dot grid,
  * Quinn large in his headband, stats as a list, and the wordmark at the foot.
  */
 export type ShareStyle = 'summary' | 'headline' | 'log'
@@ -18,16 +18,15 @@ export const SHARE_STYLES: { id: ShareStyle; label: string }[] = [
 
 const SIZE = 1080
 const PAD = 84
-const BG_TOP = '#0b3350'
-const BG_BOTTOM = '#030d16'
-const LINE = 'rgba(170,225,255,0.16)'
-const INK = '#f2faff'
+const BG_TOP = '#121a22'
+const BG_BOTTOM = '#07090b'
+const LINE = 'rgba(200,230,255,0.10)'
+const INK = '#f3f7fa'
 const INK_2 = '#a9c9dd'
-const INK_3 = '#6f93ab'
+const INK_3 = '#76848f'
 const ACCENT = '#f7c948'
-// The app's one family (Saira) at two widths: condensed labels and
-// ultra-condensed display numbers and titles.
-const FAMILY = '"Saira", "Arial Narrow", system-ui, sans-serif'
+// The app's font (Manrope) throughout.
+const FAMILY = '"Manrope", system-ui, sans-serif'
 
 /** "12.4 t", "8,450 kg" or the lb equivalent. */
 export function formatVolume(kg: number, unit: WeightUnit): string {
@@ -47,9 +46,9 @@ export function formatVolumeCompact(kg: number, unit: WeightUnit): string {
 export async function loadShareFonts(): Promise<void> {
   if (typeof document === 'undefined' || !document.fonts) return
   await Promise.all([
-    document.fonts.load(`700 condensed 30px ${FAMILY}`),
-    document.fonts.load(`400 condensed 30px ${FAMILY}`),
-    document.fonts.load(`600 ultra-condensed 60px ${FAMILY}`),
+    document.fonts.load(`700 30px ${FAMILY}`),
+    document.fonts.load(`400 30px ${FAMILY}`),
+    document.fonts.load(`800 60px ${FAMILY}`),
   ]).catch(() => undefined)
 }
 
@@ -74,7 +73,7 @@ function fitSize(ctx: CanvasRenderingContext2D, text: string, font: (px: number)
 function quinn(ctx: CanvasRenderingContext2D, x: number, y: number, cell: number) {
   for (const c of quinnCells()) {
     ctx.fillStyle = c.fill
-    ctx.fillRect(x + c.x * cell, y + c.y * cell, cell + 0.6, cell + 0.6)
+    ctx.fillRect(x + c.x * cell, y + c.y * cell, cell * 1.06, cell * 1.06)
   }
 }
 
@@ -86,25 +85,25 @@ function backdrop(ctx: CanvasRenderingContext2D, glowX: number, glowY: number) {
   ctx.fillRect(0, 0, SIZE, SIZE)
   // Cold light from the surface, behind Quinn.
   const glow = ctx.createRadialGradient(glowX, glowY, 10, glowX, glowY, 480)
-  glow.addColorStop(0, 'rgba(111,208,255,0.30)')
-  glow.addColorStop(1, 'rgba(111,208,255,0)')
+  glow.addColorStop(0, 'rgba(124,200,240,0.16)')
+  glow.addColorStop(1, 'rgba(124,200,240,0)')
   ctx.fillStyle = glow
   ctx.fillRect(0, 0, SIZE, SIZE)
   // A fine frost grid.
-  ctx.fillStyle = 'rgba(190,235,255,0.05)'
+  ctx.fillStyle = 'rgba(200,230,255,0.04)'
   for (let y = 12; y < SIZE; y += 24) for (let x = 12; x < SIZE; x += 24) ctx.fillRect(x, y, 2, 2)
 }
 
 /** Small Quinn + COACH QUINN wordmark, bottom-left; the date bottom-right. */
 function footer(ctx: CanvasRenderingContext2D, date: string) {
   const y = SIZE - PAD
-  quinn(ctx, PAD, y - 40, 2)
+  quinn(ctx, PAD + 8, y - 44, 1)
   ctx.fillStyle = INK
-  ctx.font = `700 condensed 26px ${FAMILY}`
+  ctx.font = `700 26px ${FAMILY}`
   ctx.textBaseline = 'alphabetic'
   ctx.fillText('COACH QUINN', PAD + 58, y - 6)
   ctx.fillStyle = INK_3
-  ctx.font = `400 condensed 24px ${FAMILY}`
+  ctx.font = `400 24px ${FAMILY}`
   const d = formatSessionDate(date).toUpperCase()
   ctx.fillText(d, SIZE - PAD - ctx.measureText(d).width, y - 6)
   ctx.strokeStyle = LINE
@@ -117,7 +116,7 @@ function footer(ctx: CanvasRenderingContext2D, date: string) {
 
 function label(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, colour = INK_2) {
   ctx.fillStyle = colour
-  ctx.font = `700 condensed 24px ${FAMILY}`
+  ctx.font = `700 24px ${FAMILY}`
   ctx.fillText(text.toUpperCase(), x, y)
 }
 
@@ -133,12 +132,12 @@ function stats(s: WorkoutSummary, unit: WeightUnit): [string, string][] {
 /** Design 1: title, a big Quinn and four stats. */
 function drawSummary(ctx: CanvasRenderingContext2D, s: WorkoutSummary, unit: WeightUnit) {
   backdrop(ctx, SIZE - 260, 250)
-  quinn(ctx, SIZE - PAD - QUINN_COLS * 18, 92, 18)
+  quinn(ctx, SIZE - PAD - QUINN_COLS * 8, 92, 8)
   ctx.textBaseline = 'alphabetic'
   label(ctx, 'Workout complete', PAD, 150)
   ctx.fillStyle = INK
-  const titleMax = SIZE - PAD * 2 - QUINN_COLS * 18 - 24
-  ctx.font = `600 ultra-condensed 64px ${FAMILY}`
+  const titleMax = SIZE - PAD * 2 - QUINN_COLS * 8 - 24
+  ctx.font = `800 64px ${FAMILY}`
   const words = s.title.split(' ')
   // Up to two lines of title beside Quinn.
   let line = ''
@@ -159,7 +158,7 @@ function drawSummary(ctx: CanvasRenderingContext2D, s: WorkoutSummary, unit: Wei
     const y = top + i * row
     label(ctx, name, PAD, y + 54, INK_3)
     ctx.fillStyle = INK
-    ctx.font = `600 ultra-condensed 48px ${FAMILY}`
+    ctx.font = `800 48px ${FAMILY}`
     const vw = ctx.measureText(value).width
     ctx.fillText(value, SIZE - PAD - vw, y + 60)
     if (i === list.length - 1) return // the footer's rule closes the list
@@ -176,7 +175,7 @@ function drawSummary(ctx: CanvasRenderingContext2D, s: WorkoutSummary, unit: Wei
 /** Design 2: Quinn huge, one giant number (the top PB, else total lifted). */
 function drawHeadline(ctx: CanvasRenderingContext2D, s: WorkoutSummary, unit: WeightUnit) {
   backdrop(ctx, SIZE / 2, 300)
-  const cell = 22
+  const cell = 10
   quinn(ctx, (SIZE - QUINN_COLS * cell) / 2, 90, cell)
   const pb = s.pbs[0]
   const big = pb ? `${toWeight(pb.weightKg, unit)} ${unit} × ${pb.reps}` : formatVolume(s.totalVolumeKg, unit)
@@ -184,14 +183,14 @@ function drawHeadline(ctx: CanvasRenderingContext2D, s: WorkoutSummary, unit: We
   ctx.textAlign = 'center'
   ctx.textBaseline = 'alphabetic'
   ctx.fillStyle = pb ? ACCENT : INK_2
-  ctx.font = `700 condensed 26px ${FAMILY}`
+  ctx.font = `700 26px ${FAMILY}`
   ctx.fillText(fit(ctx, kicker.toUpperCase(), SIZE - PAD * 2), SIZE / 2, 618)
-  const px = fitSize(ctx, big, (n) => `600 ultra-condensed ${n}px ${FAMILY}`, 150, SIZE - PAD * 2)
-  ctx.font = `600 ultra-condensed ${px}px ${FAMILY}`
+  const px = fitSize(ctx, big, (n) => `800 ${n}px ${FAMILY}`, 150, SIZE - PAD * 2)
+  ctx.font = `800 ${px}px ${FAMILY}`
   ctx.fillStyle = INK
   ctx.fillText(big, SIZE / 2, 618 + 26 + px * 0.86)
   ctx.fillStyle = INK_3
-  ctx.font = `400 condensed 26px ${FAMILY}`
+  ctx.font = `400 26px ${FAMILY}`
   const sub = [s.title, formatElapsed(s.durationSeconds), `${s.sets} sets`].join('  ·  ').toUpperCase()
   ctx.fillText(fit(ctx, sub, SIZE - PAD * 2), SIZE / 2, 618 + 26 + px * 0.86 + 64)
   ctx.textAlign = 'left'
@@ -201,18 +200,18 @@ function drawHeadline(ctx: CanvasRenderingContext2D, s: WorkoutSummary, unit: We
 /** Design 3: a logbook of every exercise, best set on the right. */
 function drawLog(ctx: CanvasRenderingContext2D, s: WorkoutSummary, unit: WeightUnit) {
   backdrop(ctx, SIZE - 220, 200)
-  quinn(ctx, SIZE - PAD - QUINN_COLS * 13, 86, 13)
+  quinn(ctx, SIZE - PAD - QUINN_COLS * 6, 80, 6)
   ctx.textBaseline = 'alphabetic'
   label(ctx, 'Logbook', PAD, 130)
   ctx.fillStyle = INK
-  ctx.font = `600 ultra-condensed 58px ${FAMILY}`
-  ctx.fillText(fit(ctx, s.title, SIZE - PAD * 2 - QUINN_COLS * 13 - 30), PAD, 204)
+  ctx.font = `800 58px ${FAMILY}`
+  ctx.fillText(fit(ctx, s.title, SIZE - PAD * 2 - QUINN_COLS * 6 - 30), PAD, 204)
   ctx.fillStyle = INK_2
-  ctx.font = `400 condensed 26px ${FAMILY}`
+  ctx.font = `400 26px ${FAMILY}`
   ctx.fillText(`${formatElapsed(s.durationSeconds).toUpperCase()} · ${formatVolume(s.totalVolumeKg, unit).toUpperCase()}`, PAD, 252)
 
   const shown = s.lines.slice(0, 7)
-  // Below Quinn (his feet end at y ≈ 346).
+  // Below Quinn (his feet end at y ≈ 344).
   const top = 430
   const row = Math.min(80, (SIZE - PAD - 110 - top) / Math.max(1, shown.length))
   const pbNames = new Set(s.pbs.map((p) => p.name.toLowerCase()))
@@ -221,11 +220,11 @@ function drawLog(ctx: CanvasRenderingContext2D, s: WorkoutSummary, unit: WeightU
     const best = l.seconds != null && !l.bestReps
       ? `${l.sets} × ${l.seconds}s`
       : `${l.sets} × ${l.bestKg ? `${toWeight(l.bestKg, unit)}${unit} × ` : ''}${l.bestReps}`
-    ctx.font = `700 condensed 30px ${FAMILY}`
+    ctx.font = `700 30px ${FAMILY}`
     const bw = ctx.measureText(best).width
     ctx.fillStyle = INK
     ctx.fillText(best, SIZE - PAD - bw, y)
-    ctx.font = `500 semi-condensed 32px ${FAMILY}`
+    ctx.font = `500 32px ${FAMILY}`
     ctx.fillStyle = pbNames.has(l.name.toLowerCase()) ? ACCENT : '#d4e8f5'
     const name = `${pbNames.has(l.name.toLowerCase()) ? '★ ' : ''}${l.name}`
     ctx.fillText(fit(ctx, name, SIZE - PAD * 2 - bw - 40), PAD, y)
@@ -238,7 +237,7 @@ function drawLog(ctx: CanvasRenderingContext2D, s: WorkoutSummary, unit: WeightU
   })
   if (s.lines.length > shown.length) {
     ctx.fillStyle = INK_3
-    ctx.font = `400 condensed 24px ${FAMILY}`
+    ctx.font = `400 24px ${FAMILY}`
     ctx.fillText(`+ ${s.lines.length - shown.length} MORE`, PAD, top + shown.length * row)
   }
   footer(ctx, s.date)

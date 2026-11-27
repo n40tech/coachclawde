@@ -38,7 +38,7 @@ export function ConfirmDialog({
           aria-labelledby={`${id}-title`}
           aria-describedby={`${id}-body`}
           tabIndex={-1}
-          className="outline-none w-full max-w-sm bg-[#0a2438]/95 ice rounded-[2.5rem] border border-rime p-6 flex flex-col gap-4 fade-in"
+          className="outline-none w-full max-w-sm bg-[#101419]/95 ice rounded-[2.5rem] border border-rime p-6 flex flex-col gap-4 fade-in"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="flex items-center gap-3">

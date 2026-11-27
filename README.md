@@ -75,7 +75,7 @@ npm run dev
 ## Credits
 
 - Movement-guide photos and instructions: [free-exercise-db](https://github.com/yuhonas/free-exercise-db).
-- Icons: [Lucide](https://lucide.dev). Font: Saira (SIL OFL) in the app; Tiny5, Geist, Space Mono on the website.
+- Icons: [Lucide](https://lucide.dev). Font: Manrope (SIL OFL) in the app; Tiny5, Geist, Space Mono on the website.
 - Quinn is an emperor penguin in a yellow-and-white striped headband.
 
 ## Disclaimer

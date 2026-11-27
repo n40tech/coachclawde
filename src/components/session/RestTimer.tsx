@@ -171,7 +171,7 @@ function RestCard({
           tabIndex={-1}
           {...drag.handlers}
           style={{ transform: drop ? `translateY(${drop}px)` : undefined }}
-          className={`vt-workout-timer relative bg-[#0a2438]/95 ice rounded-3xl border border-rime p-8 short:p-5 w-72 flex flex-col items-center gap-5 short:gap-3 slide-up outline-none touch-none select-none ${
+          className={`vt-workout-timer relative bg-[#101419]/95 ice rounded-3xl border border-rime p-8 short:p-5 w-72 flex flex-col items-center gap-5 short:gap-3 slide-up outline-none touch-none select-none ${
             drag.dragging ? '' : 'transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]'
           }`}
         >
@@ -215,11 +215,11 @@ function Ring({ elapsed, className, strokeWidth }: { elapsed: number; className:
   const circumference = 2 * Math.PI * r
   return (
     <svg className={`${className} -rotate-90`} viewBox="0 0 100 100" aria-hidden>
-      <circle cx="50" cy="50" r={r} fill="none" stroke="#0f2b40" strokeWidth={strokeWidth} />
+      <circle cx="50" cy="50" r={r} fill="none" stroke="#161b20" strokeWidth={strokeWidth} />
       <circle
         cx="50" cy="50" r={r}
         fill="none"
-        stroke="#6fd0ff"
+        stroke="#7cc8f0"
         strokeWidth={strokeWidth}
         strokeLinecap="round"
         strokeDasharray={circumference}

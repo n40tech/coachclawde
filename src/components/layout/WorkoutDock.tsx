@@ -9,7 +9,7 @@ import { SessionIcon } from '../shared/SessionIcon'
 
 // All in the app's orange family: the rest and workout clocks in the accent,
 // a set being timed in the brighter amber of its tick.
-const MODE_COLOUR = { rest: '#6fd0ff', set: '#f59e0b', workout: '#6fd0ff' } as const
+const MODE_COLOUR = { rest: '#7cc8f0', set: '#f59e0b', workout: '#7cc8f0' } as const
 
 /** How far the circle stretches as it's dragged right, before resisting. */
 const STRETCH = 120
@@ -53,7 +53,7 @@ export function WorkoutDockButton({ dock }: { dock: DockState }) {
       {/* The ring keeps its place on the left as the pill stretches. */}
       <span className="relative h-full aspect-square shrink-0 flex items-center justify-center">
         <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 100 100" aria-hidden>
-          <circle cx="50" cy="50" r={r} fill="none" stroke="#12324a" strokeWidth="6" />
+          <circle cx="50" cy="50" r={r} fill="none" stroke="#1d242b" strokeWidth="6" />
           <circle
             cx="50" cy="50" r={r} fill="none" stroke={colour} strokeWidth="6" strokeLinecap="round"
             strokeDasharray={c} strokeDashoffset={c * (1 - dock.fill)}

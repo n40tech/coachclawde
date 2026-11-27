@@ -21,20 +21,19 @@ mkdirSync(siteAssetsDir, { recursive: true })
 interface SvgOpts {
   /** Canvas size in px */
   size: number
-  /** Fraction of the canvas kept clear above and to the left of the head (safe zone) */
+  /** Fraction of the canvas kept clear around the face (safe zone) */
   pad: number
   /** Corner radius in px (browser favicon only: the OS masks the PNG icons) */
   radius?: number
 }
 
 function buildSvg({ size, pad, radius = 0 }: SvgOpts): string {
-  // The portrait is cropped at the chest: it sits on the bottom edge, so the
-  // head fills the tile like a close-up.
-  const inner = size * (1 - 2 * pad)
-  const scale = Math.min(inner / QUINN_HEAD_COLS, (size * (1 - pad)) / QUINN_HEAD_ROWS)
-  const offX = (size - QUINN_HEAD_COLS * scale) / 2 + scale * 0.5
+  // The portrait is a close-up of the face, cropped at the chest: it sits
+  // on the bottom edge, centred, filling the tile less the padding.
+  const scale = (size * (1 - pad)) / Math.max(QUINN_HEAD_COLS, QUINN_HEAD_ROWS)
+  const offX = (size - QUINN_HEAD_COLS * scale) / 2
   const offY = size - QUINN_HEAD_ROWS * scale
-  const bleed = scale * 0.04
+  const bleed = scale * 0.1
   const u = size / 100
 
   const cells = quinnHeadCells()
@@ -69,7 +68,7 @@ function buildSvg({ size, pad, radius = 0 }: SvgOpts): string {
     <rect width="${size}" height="${size}" fill="url(#ice)"/>
     ${facets.map((d, i) => `<path d="${d}" fill="#ffffff" fill-opacity="${[0.16, 0.12, 0.07][i]}"/>`).join('')}
     <rect width="${size}" height="${size}" fill="url(#light)"/>
-    ${cells}
+    <g shape-rendering="crispEdges">${cells}</g>
   </g>
 </svg>`
 }
@@ -79,14 +78,14 @@ function png(svg: string, width: number): Buffer {
 }
 
 // Standard PWA icons (the OS applies its own rounded mask, so square + minimal pad).
-const any192 = buildSvg({ size: 192, pad: 0.12 })
-const any512 = buildSvg({ size: 512, pad: 0.12 })
+const any192 = buildSvg({ size: 192, pad: 0 })
+const any512 = buildSvg({ size: 512, pad: 0 })
 // Maskable needs a generous safe zone so nothing is clipped by the OS mask.
-const maskable = buildSvg({ size: 512, pad: 0.2 })
+const maskable = buildSvg({ size: 512, pad: 0.18 })
 // Apple touch icon: iOS rounds the corners itself.
-const apple = buildSvg({ size: 180, pad: 0.1 })
+const apple = buildSvg({ size: 180, pad: 0 })
 // Favicon: small rounded tile for the browser tab.
-const favicon = buildSvg({ size: 64, pad: 0.06, radius: 14 })
+const favicon = buildSvg({ size: 64, pad: 0, radius: 14 })
 
 writeFileSync(resolve(iconsDir, 'icon-192.png'), png(any192, 192))
 writeFileSync(resolve(iconsDir, 'icon-512.png'), png(any512, 512))
@@ -95,7 +94,7 @@ writeFileSync(resolve(iconsDir, 'apple-touch-icon.png'), png(apple, 180))
 writeFileSync(resolve(publicDir, 'favicon.svg'), favicon)
 
 // Website + README: a rounded tile like the home-screen icon.
-writeFileSync(resolve(siteAssetsDir, 'icon-512.png'), png(buildSvg({ size: 512, pad: 0.14, radius: 114 }), 512))
+writeFileSync(resolve(siteAssetsDir, 'icon-512.png'), png(buildSvg({ size: 512, pad: 0, radius: 114 }), 512))
 writeFileSync(resolve(siteAssetsDir, 'apple-touch-icon.png'), png(apple, 180))
 writeFileSync(resolve(siteAssetsDir, 'favicon.svg'), favicon)
 

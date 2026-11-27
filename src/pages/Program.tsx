@@ -11,7 +11,7 @@ import type { LoggedSession } from '../types'
 import { useUnits } from '../store/useSettingsStore'
 import { localize } from '../lib/units'
 
-const WEIGHTS_COLOR = '#6fd0ff'
+const WEIGHTS_COLOR = '#7cc8f0'
 const CARDIO_COLOR = '#60a5fa'
 
 export function Program() {

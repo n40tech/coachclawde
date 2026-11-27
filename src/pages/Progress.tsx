@@ -77,7 +77,7 @@ export function Progress() {
             </div>
             <div className="h-2 rounded-full overflow-hidden">
               <progress
-                className="meter [--meter-fill:linear-gradient(to_right,#6fd0ff,#a8e6ff)]"
+                className="meter [--meter-fill:linear-gradient(to_right,#7cc8f0,#b9e4fa)]"
                 value={program.percent}
                 max={100}
                 aria-hidden

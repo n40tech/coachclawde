@@ -82,7 +82,7 @@ export function Home() {
           <button
             type="button"
             onClick={() => setShowLog(true)}
-            className="relative hit-target h-9 px-3 flex items-center gap-1.5 rounded-2xl bg-floe ice text-frost hover:text-snow transition-colors text-xs font-medium"
+            className="relative hit-target h-9 px-3 flex items-center gap-1.5 rounded-2xl bg-floe/80 backdrop-blur-md border border-rime text-frost hover:text-snow transition-colors text-xs font-medium"
           >
             <Plus size={16} aria-hidden />
             Log a session
@@ -90,28 +90,27 @@ export function Home() {
           <Link
             to="/plan"
             aria-label="Plan your week"
-            className="relative hit-target w-9 h-9 flex items-center justify-center rounded-2xl bg-floe ice text-frost hover:text-snow transition-colors"
+            className="relative hit-target w-9 h-9 flex items-center justify-center rounded-2xl bg-floe/80 backdrop-blur-md border border-rime text-frost hover:text-snow transition-colors"
           >
             <CalendarPlus size={18} aria-hidden />
           </Link>
         </div>
 
-        {/* Centered greeting hero: Quinn on the ice shelf (Icescape), the
-            greeting below it on the open water. pt-14 puts Quinn's feet on the
-            shelf's edge: keep it in step with Icescape's --scene-h and
-            .quinn-flight's landing point. */}
-        <div className="flex flex-col items-center text-center pt-14 pb-6">
-          <div className="relative mb-6">
+        {/* Centered greeting hero: Quinn in front of the mountains
+            (Icescape), the greeting below where they fade into the page.
+            Keep pt-10 in step with .quinn-flight's landing point. */}
+        <div className="flex flex-col items-center text-center pt-10 pb-6">
+          <div className="relative mb-3">
             <div
-              className="absolute inset-0 -m-3 rounded-full bg-ice-bright/20 blur-2xl"
+              className="absolute inset-0 m-2 rounded-full bg-[#b9e4fa]/25 blur-2xl"
               aria-hidden
             />
-            <QuinnMark size={68} cheer={bump} sweat={bump} className="relative" />
+            <QuinnMark size={92} cheer={bump} sweat={bump} className="relative" />
           </div>
-          <p className="font-mono text-xs text-frost uppercase tracking-[0.2em]">
+          <p className="text-xs text-frost uppercase tracking-[0.18em] font-semibold">
             {format(new Date(), 'EEEE, dd MMM')}
           </p>
-          <h1 className="text-4xl font-semibold leading-none text-snow mt-1.5">
+          <h1 className="text-3xl font-bold tracking-tight text-snow mt-1">
             {getGreeting()}{firstName ? `, ${firstName}` : ''}
           </h1>
         </div>

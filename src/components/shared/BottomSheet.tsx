@@ -43,7 +43,7 @@ export function BottomSheet({
           aria-modal="true"
           aria-label={label}
           tabIndex={-1}
-          className="sheet-panel outline-none mt-auto w-full max-w-md md:max-w-lg mx-auto bg-[#0a2438]/95 ice rounded-t-3xl border-t border-rime flex flex-col slide-up"
+          className="sheet-panel outline-none mt-auto w-full max-w-md md:max-w-lg mx-auto bg-[#101419]/95 ice rounded-t-3xl border-t border-rime flex flex-col slide-up"
           onClick={(e) => e.stopPropagation()}
         >
           {children}

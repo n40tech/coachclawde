@@ -1,7 +1,7 @@
 Fonts bundled with the app, licensed under the SIL Open Font License 1.1.
 
-saira.woff2           Saira (variable: wdth 50–125, wght 100–900)
-                      Copyright 2020 The Saira Project Authors (https://github.com/Omnibus-Type/Saira)
+manrope.woff2         Manrope (variable: wght 200–800)
+                      Copyright 2019 The Manrope Project Authors (https://github.com/sharanda/manrope)
 
 The file is the Latin subset published by Fontsource (https://fontsource.org).
 

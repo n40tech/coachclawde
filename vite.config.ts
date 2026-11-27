@@ -93,8 +93,8 @@ export default defineConfig(({ mode }) => {
         name: 'Coach Quinn',
         short_name: 'Coach',
         description: 'AI-powered personal workout tracker',
-        theme_color: '#04131f',
-        background_color: '#04131f',
+        theme_color: '#07090b',
+        background_color: '#07090b',
         display: 'standalone',
         start_url: '/',
         icons: [

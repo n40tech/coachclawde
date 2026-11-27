@@ -5,6 +5,7 @@ import { DEFAULT_PROFILE } from '../lib/profileData'
 import { STORAGE_KEYS } from '../lib/storageKeys'
 import { getMonday, toLocalISODate } from '../lib/weekUtils'
 import { normalizePlan } from '../lib/workout'
+import { IDLE_TIMER, settleRest } from '../lib/restTimer'
 import { scopePlansAndLogs, scopeSessionIds } from '../lib/planIds'
 
 /**
@@ -48,19 +49,13 @@ interface AppStore extends AppState {
   reset: () => void
 }
 
-/** The persisted rest timer on reopen: still running, or finished meanwhile (the set clock started when it ended). */
+/** The persisted rest timer on reopen: still running, or finished meanwhile (lib/restTimer). */
 function restoreTimer(timer: TimerState | undefined, clock: SetClock | null): { timer: TimerState; setClock: SetClock | null } {
-  if (timer?.isActive && timer.endTime && timer.endTime > Date.now()) return { timer, setClock: clock }
-  if (timer?.isActive && timer.sessionId && timer.endTime) return { timer: DEFAULT_TIMER, setClock: { sessionId: timer.sessionId, startedAt: timer.endTime } }
-  return { timer: DEFAULT_TIMER, setClock: clock }
+  const { timer: t, setClock } = settleRest(timer ?? IDLE_TIMER, clock, Date.now())
+  return { timer: t, setClock }
 }
 
-const DEFAULT_TIMER: TimerState = {
-  isActive: false,
-  endTime: null,
-  durationSeconds: 0,
-  label: '',
-}
+const DEFAULT_TIMER = IDLE_TIMER
 
 export const useAppStore = create<AppStore>()(
   persist(

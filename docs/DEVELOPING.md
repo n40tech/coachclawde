@@ -315,6 +315,10 @@ things are the way they are.
     subscription), the test alert, and the wired-up controller.
     `lib/restAlarmController` decides when to arm and cancel (pure, tested):
     only while the app is hidden mid-rest, armed by beacon, cancelled on return.
+  - `lib/restTimer` — the rest timer's rules (pure, tested): start, skip, the
+    rest running out (the set clock starts from its end, once), and picking a
+    rest back up on reopen with its tone and alert. `hooks/useRestTimer`
+    wires in the clock, audio and alert and only subscribes.
   - `public/push-sw.js` — the service worker's push and notification-click
     handlers, pulled into the generated worker by `workbox.importScripts`.
     A tapped alert opens the workout at the exercise up next: the alarm's URL

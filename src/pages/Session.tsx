@@ -20,16 +20,20 @@ import { useRestTimer } from '../hooks/useRestTimer'
 import { useAutoSync } from '../hooks/useAutoSync'
 import { formatDuration, formatRestTime } from '../lib/dateUtils'
 import { warmExerciseDb } from '../lib/exerciseGuide'
-import { nextOpenSet, promoteStarted, reorderByIds } from '../lib/exerciseOrder'
+import { nextOpenSet, reorderByIds } from '../lib/exerciseOrder'
 import { autoFinishTarget, graceOver } from '../lib/autoFinish'
 import { summarizeWorkout, type WorkoutSummary } from '../lib/workoutSummary'
-import type { Intensity, LoggedExercise, LoggedSession, PlannedExercise, PlannedSession } from '../types'
+import type { Intensity, LoggedExercise, LoggedSession, LoggedSet, PlannedExercise, PlannedSession } from '../types'
 import { Dumbbell, Waves, Clock, CheckCircle2, AlertTriangle, Shuffle, ArrowUpDown, Check, Eye, EyeOff, RotateCcw, Info, CircleQuestionMark } from 'lucide-react'
 import { nanoid } from '../lib/nanoid'
 import { useSettingsStore, useUnits } from '../store/useSettingsStore'
 import { localize, toWeight, type Units } from '../lib/units'
 import { MovementGuide } from '../components/session/MovementGuide'
 import { logForSession } from '../lib/weekStatus'
+import { plannedExerciseOf, workoutStep, type WorkoutEvent, type WorkoutResult } from '../lib/activeWorkout'
+
+/** The current time, for event handlers (kept out of the component body). */
+const currentTime = () => Date.now()
 
 function usePlannedSession(sessionId: string | undefined): PlannedSession | undefined {
   const { weekPlans } = useAppStore()
@@ -145,124 +149,65 @@ export function Session() {
     )
   }
 
-  const plannedById = new Map((planned.exercises ?? []).map((e) => [e.id, e]))
-  /** The planned exercise behind a logged one (by id; older logs by name, then position). */
-  function plannedOf(le: LoggedExercise, i: number): PlannedExercise | undefined {
-    return plannedById.get(le.plannedExerciseId)
-      ?? planned!.exercises?.find((e) => e.name === le.name)
-      ?? planned!.exercises?.[i]
+  /** The planned exercise behind a logged one (lib/activeWorkout). */
+  function plannedOf(le: LoggedExercise, i: number) {
+    return plannedExerciseOf(planned!, le, i)
   }
 
-  // Initialize log if not started yet
+  /**
+   * Sends a tap to the workout's rules (lib/activeWorkout) and applies what
+   * comes back: the rest timer, the set clock and the exercise to open. The
+   * caller saves the log.
+   */
+  function run(event: WorkoutEvent): WorkoutResult {
+    const st = useAppStore.getState()
+    const r = workoutStep({ planned: planned!, log: loggedSession, setClock: st.setClock, timer: st.timer, now: currentTime() }, event)
+    if (r.clock === 'stop') startSetClock(null)
+    if (r.rest === 'skip') skipTimer()
+    else if (r.rest) startTimer(r.rest.seconds, r.rest.label, planned!.id, r.rest.nextExerciseId)
+    if (r.clock === 'start') startSetClock(planned!.id)
+    if (r.activeExerciseId) setActiveExerciseId(r.activeExerciseId)
+    return r
+  }
+
+  /** Runs a set event and saves the new log locally and to the store (pushed when it says so). */
+  function runOnLog(event: WorkoutEvent) {
+    if (!loggedSession) return
+    const r = run(event)
+    if (!r.log) return
+    setLoggedSession(r.log)
+    updateLoggedSession(r.log.id, { loggedExercises: r.log.loggedExercises })
+    // Pushed on each completed set so a closed/evicted browser doesn't lose
+    // the workout. Fire-and-forget.
+    if (r.push) syncSession(r.log.id)
+  }
+
   function startSession(): LoggedSession | null {
-    if (!planned) return null
-    const initial: LoggedSession = {
-      id: nanoid(),
-      plannedSessionId: planned.id,
-      weekPlanId: weekPlan?.id ?? '',
-      date: planned.date,
-      type: planned.type,
-      title: planned.title,
-      focus: planned.focus,
-      startedAt: new Date().toISOString(),
-      status: 'in-progress',
-      loggedExercises: planned.exercises?.map((ex) => ({
-        plannedExerciseId: ex.id,
-        name: ex.name,
-        sets: ex.sets.map((_, i) => ({
-          setIndex: i,
-          targetReps: ex.sets[i].reps,
-          completed: false,
-          skipped: false,
-        })),
-      })),
-    }
-    addLoggedSession(initial)
-    setLoggedSession(initial)
-    return initial
+    const { log } = run({ kind: 'start', id: nanoid(), weekPlanId: weekPlan?.id ?? '' })
+    if (!log) return null
+    addLoggedSession(log)
+    setLoggedSession(log)
+    return log
   }
 
-  /** Saves a new exercise list locally and to the store. */
+  function updateExerciseSet(exerciseIdx: number, setIndex: number, updates: Partial<LoggedSet>) {
+    runOnLog({ kind: 'edit', exerciseIdx, setIndex, updates })
+  }
+  function completeSet(exerciseIdx: number, setIndex: number, payload?: Partial<LoggedSet>) {
+    runOnLog({ kind: 'tick', exerciseIdx, setIndex, payload })
+  }
+  function confirmSet(exerciseIdx: number, setIndex: number) {
+    runOnLog({ kind: 'confirm', exerciseIdx, setIndex })
+  }
+  function uncompleteSet(exerciseIdx: number, setIndex: number) {
+    runOnLog({ kind: 'untick', exerciseIdx, setIndex })
+  }
+
+  /** A new exercise order (reordering): saved locally and to the store. */
   function commitExercises(exercises: LoggedExercise[]) {
     if (!loggedSession) return
     setLoggedSession({ ...loggedSession, loggedExercises: exercises })
     updateLoggedSession(loggedSession.id, { loggedExercises: exercises })
-  }
-
-  function withSet(list: LoggedExercise[], exerciseId: string, setIndex: number, updates: Partial<LoggedExercise['sets'][0]>): LoggedExercise[] {
-    return list.map((ex) =>
-      ex.plannedExerciseId !== exerciseId ? ex : { ...ex, sets: ex.sets.map((s, j) => (j === setIndex ? { ...s, ...updates } : s)) }
-    )
-  }
-
-  function updateExerciseSet(exerciseIdx: number, setIndex: number, updates: Partial<LoggedExercise['sets'][0]>) {
-    const list = loggedSession?.loggedExercises
-    if (!list?.[exerciseIdx]) return
-    commitExercises(withSet(list, list[exerciseIdx].plannedExerciseId, setIndex, updates))
-  }
-
-  function completeSet(exerciseIdx: number, setIndex: number, payload?: Partial<LoggedExercise['sets'][0]>) {
-    const list = loggedSession?.loggedExercises
-    const done = list?.[exerciseIdx]
-    if (!loggedSession || !list || !done) return
-    const exerciseId = done.plannedExerciseId
-
-    // The set clock stops on the tick: how long since the last rest ended.
-    const clock = useAppStore.getState().setClock
-    let workSeconds: number | undefined
-    if (clock?.sessionId === planned!.id) {
-      const s = Math.round((Date.now() - clock.startedAt) / 1000)
-      if (s >= 2) workSeconds = s
-      startSetClock(null)
-    }
-
-    // Starting an exercise ahead of others moves it up the list, so the order
-    // follows what's actually being done.
-    const reordered = promoteStarted(list, exerciseIdx)
-    const next = withSet(reordered, exerciseId, setIndex, { completed: true, ...(workSeconds ? { workSeconds } : {}), ...payload })
-    commitExercises(next)
-    setActiveExerciseId(exerciseId)
-    // Persist progress to the backend on each completed set so a closed/evicted
-    // browser doesn't lose the workout. We push only this one session (not the
-    // whole table) and only on completion (not per keystroke) to keep writes
-    // tiny — see useAutoSync. Fire-and-forget.
-    syncSession(loggedSession.id)
-    // Re-ticking a corrected set on an already-finished session shouldn't
-    // kick off a rest timer.
-    if (existingLog?.status === 'complete') return
-    const exercise = plannedOf(done, exerciseIdx)
-    const restSeconds = exercise?.sets[setIndex]?.restSeconds ?? 90
-    if (restSeconds > 0) {
-      // On the final set of an exercise, point the rest timer at what's coming
-      // up next (in the athlete's order) instead of the set just finished.
-      const isLastSet = setIndex === done.sets.length - 1
-      const at = next.findIndex((e) => e.plannedExerciseId === exerciseId)
-      const upNext = next.slice(at + 1).find((e) => e.sets.some((s) => !s.completed && !s.skipped))
-      const label = isLastSet
-        ? upNext
-          ? `Up next: ${upNext.name}`
-          : 'Last set — finish up'
-        : `Up next: ${done.name} · set ${setIndex + 2}`
-      // The alert opens the workout at what's next: this exercise, or the next one after its last set.
-      const nextId = isLastSet ? upNext?.plannedExerciseId : exerciseId
-      startTimer(restSeconds, label, planned!.id, nextId)
-    } else {
-      startSetClock(planned!.id)
-    }
-  }
-
-  /** Taps the orange tick of an auto-finished set: it's confirmed as logged. */
-  function confirmSet(exerciseIdx: number, setIndex: number) {
-    if (!loggedSession) return
-    updateExerciseSet(exerciseIdx, setIndex, { unconfirmed: undefined })
-    syncSession(loggedSession.id)
-  }
-
-  /** Reopens a completed set so a mistyped rep count or weight can be fixed. */
-  function uncompleteSet(exerciseIdx: number, setIndex: number) {
-    if (!loggedSession) return
-    updateExerciseSet(exerciseIdx, setIndex, { completed: false, actualSeconds: undefined })
-    syncSession(loggedSession.id)
   }
 
   /**
@@ -277,7 +222,7 @@ export function Session() {
     if (!useSettingsStore.getState().autoSetTimer) return
     const clock = st.setClock
     if (clock?.sessionId !== planned!.id || st.timer.isActive || !list || isAlreadyComplete || reordering) return
-    if (!graceOver(clock.startedAt, Date.now())) return
+    if (!graceOver(clock.startedAt, currentTime())) return
     const el = e.target as HTMLElement
     if (el.closest('[data-tick]')) return
     const exEl = el.closest<HTMLElement>('[data-exercise]')
@@ -303,40 +248,35 @@ export function Session() {
 
   function handleSessionSave(data: SessionCompleteData) {
     if (!loggedSession) return
-    // Saving confirms any auto-finished sets as logged.
-    const confirmed = loggedSession.loggedExercises?.map((ex) => ({
-      ...ex,
-      sets: ex.sets.map((set) => (set.unconfirmed ? { ...set, unconfirmed: undefined } : set)),
-    }))
-    const updates: Partial<LoggedSession> = {
-      status: 'complete',
+    const { log } = run({
+      kind: 'finish',
       // When Complete Session was tapped, so the log matches the elapsed time shown.
-      completedAt: summary?.finishedAt ?? new Date().toISOString(),
-      ...(confirmed ? { loggedExercises: confirmed } : {}),
-      feelings: data.feelings,
-      painNotes: data.painNotes || undefined,
-      generalNotes: data.generalNotes || undefined,
-      outcome: data.outcome,
-    }
-    updateLoggedSession(loggedSession.id, updates)
-    stopSetTimer()
-    // Push just the finished session in the background — don't await so
-    // navigation is instant.
-    syncSession(loggedSession.id)
+      finishedAt: summary?.finishedAt ?? new Date().toISOString(),
+      updates: {
+        status: 'complete',
+        feelings: data.feelings,
+        painNotes: data.painNotes || undefined,
+        generalNotes: data.generalNotes || undefined,
+        outcome: data.outcome,
+      },
+    })
+    if (!log) return
+    updateLoggedSession(log.id, log)
+    // Push just the finished session in the background so navigation is instant.
+    syncSession(log.id)
   }
 
   /** "Delete workout": every logged set goes, and the session is back to not started. */
   function deleteWorkout() {
     if (!loggedSession) return
-    stopSetTimer()
-    if (useAppStore.getState().timer.sessionId === planned!.id) skipTimer()
-    startSetClock(null)
+    run({ kind: 'delete' })
     void removeSession(loggedSession.id)
     setLoggedSession(null)
     setSummary(null)
     setReordering(false)
   }
 
+  /** Stops this session's set clock (never another session's). */
   function stopSetTimer() {
     if (useAppStore.getState().setClock?.sessionId === planned!.id) startSetClock(null)
   }

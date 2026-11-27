@@ -153,3 +153,24 @@ export function workoutStep(ctx: WorkoutContext, event: WorkoutEvent): WorkoutRe
       }
   }
 }
+
+/** Where the workout's log lives (the app store; an in-memory stand-in in tests). */
+export interface WorkoutLogStore {
+  /** This session's log as it is now, or null. */
+  current: () => LoggedSession | null
+  add: (log: LoggedSession) => void
+  save: (log: LoggedSession) => void
+}
+
+/**
+ * Runs an event against the store's current copy of the log and saves the
+ * result there. The workout screen keeps no copy of its own, so a change made
+ * elsewhere mid-workout (a background pull, a quick log) is never overwritten
+ * by the next tap. Deleting is the caller's (it also reaches the account).
+ */
+export function dispatchWorkout(store: WorkoutLogStore, ctx: Omit<WorkoutContext, 'log'>, event: WorkoutEvent): WorkoutResult {
+  const r = workoutStep({ ...ctx, log: store.current() }, event)
+  if (r.log && event.kind === 'start') store.add(r.log)
+  else if (r.log && event.kind !== 'delete') store.save(r.log)
+  return r
+}

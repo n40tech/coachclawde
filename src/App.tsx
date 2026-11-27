@@ -17,6 +17,7 @@ import { useKeyboardInset } from './hooks/useKeyboardInset'
 import { lazyPage } from './lib/lazyPage'
 import { focusNewScreen } from './lib/viewTransition'
 import { resetDocumentTitle } from './hooks/useDocumentTitle'
+import { needsBasicsForm } from './lib/basicOnboarding'
 
 // Home and Session (with the movement guides) are in the entry
 // chunk: the workout path never waits on a chunk, and an update can't pull a
@@ -81,13 +82,13 @@ function App() {
 }
 
 /**
- * First-run gate: until the athlete has completed onboarding, every in-app route
- * redirects to the onboarding chat. Existing accounts are treated as
- * onboarded (see the Supabase column default / `rowToProfile`).
+ * First-run gate: until the athlete has filled in the basics form, every
+ * in-app route redirects to it. That's new accounts, and once, athletes from
+ * builds before goals existed (`needsBasicsForm`).
  */
 function RequireOnboarded({ children }: { children: ReactNode }) {
-  const onboarded = useAppStore((s) => s.profile.onboarded)
-  if (!onboarded) return <Navigate to="/onboarding" replace />
+  const needsForm = useAppStore((s) => needsBasicsForm(s.profile))
+  if (needsForm) return <Navigate to="/onboarding" replace />
   return <>{children}</>
 }
 

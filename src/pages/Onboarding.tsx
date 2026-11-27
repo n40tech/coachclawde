@@ -9,7 +9,7 @@ import { ChoiceChip, ChoiceGroup } from '../components/shared/Choice'
 import { chipLook } from '../components/shared/chipLook'
 import { FixedLayer } from '../components/layout/FixedLayer'
 import {
-  ACTIVITY_LABEL, WHERE_LABEL, basicsFromProfile, profileFromBasics,
+  ACTIVITY_LABEL, WHERE_LABEL, basicsFromProfile, needsBasicsForm, profileFromBasics,
   type ActivityLevel, type BasicAnswers, type TrainWhere,
 } from '../lib/basicOnboarding'
 import {
@@ -26,8 +26,9 @@ const EMPTY: BasicAnswers = {
  * finish screen with install-to-home-screen tips. Everything else is asked
  * when it matters (the planner, check-ins).
  *
- * An onboarded athlete reaching this page (Settings, or a check-in saying the
- * goal changed) gets the same form pre-filled, and saving goes straight home.
+ * An onboarded athlete reaching this page (Settings, a check-in saying the
+ * goal changed, or sent here once from an older build) gets the same form
+ * pre-filled, and saving goes straight home.
  */
 export function Onboarding() {
   const navigate = useNavigate()
@@ -35,6 +36,8 @@ export function Onboarding() {
   const setProfile = useAppStore((s) => s.setProfile)
   const { sync } = useAutoSync()
   const returning = !!profile.onboarded
+  // An athlete from an older build is sent here once: there's nowhere to cancel back to.
+  const [required] = useState(() => needsBasicsForm(profile))
 
   const [now] = useState(() => new Date())
   const [a, setA] = useState<BasicAnswers>(() => (returning ? basicsFromProfile(profile, now) : EMPTY))
@@ -100,7 +103,7 @@ export function Onboarding() {
               <ChevronLeft size={18} />
               Back
             </Button>
-          ) : returning ? (
+          ) : returning && !required ? (
             <Button variant="ghost" onClick={() => navigate(-1)}>Cancel</Button>
           ) : null}
           <div className="flex-1" />

@@ -200,7 +200,7 @@ function InvitationCard({ invite, onOpen, onDismiss }: { invite: HomeInvitation;
         <p className="text-sm text-[#a8a29e] mt-0.5 leading-relaxed">{invite.text}</p>
         {!summary && (
           <div className="flex gap-2 mt-3">
-            <Button size="sm" onClick={onOpen}>{invite.kind === 'migration' ? 'Let’s go' : 'Check in'}</Button>
+            <Button size="sm" onClick={onOpen}>Check in</Button>
             <Button size="sm" variant="ghost" onClick={onDismiss}>Not now</Button>
           </div>
         )}

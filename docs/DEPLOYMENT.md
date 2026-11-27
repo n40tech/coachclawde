@@ -269,6 +269,17 @@ nobody could deliver are dropped two minutes late.
 
 ---
 
+## 8. Releases
+
+Testers get the `production` branch; `main` and every PR deploy as previews
+with demo data. The Release workflow moves `production` (see
+`docs/DEVELOPING.md` → Releasing). One-time setup:
+
+1. Vercel → Settings → Git → **Production Branch**: `production`.
+2. The first release is tagged by hand: a "Release v0.2.4" commit on top of
+   the `main` commit production runs, tagged `v0.2.4`, pushed as
+   `production`. The workflow counts from the newest tag.
+
 ## How plan generation works
 
 There is no AI call on the server. The app builds a **self-contained prompt**

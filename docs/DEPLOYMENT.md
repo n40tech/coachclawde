@@ -140,13 +140,16 @@ Facebook work the same way through `signInWithOAuth`.
 | --- | --- | --- |
 | `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` | Vercel, `.env.local` | The browser's Supabase client. Safe to expose: RLS gates the anon key. Without them the app runs in offline single-user "local mode". |
 | `VITE_ENABLE_MAGIC_LINK` | Vercel, `.env.local` | `true` shows the magic-link option. Anything else hides it. |
+| `VITE_DEMO_DATA` | `.env.local` | `true` runs `npm run dev` like a Vercel preview: local mode, seeded with demo data. Vercel previews set it themselves. |
 | `VITE_BETA_FEEDBACK_URL` | Vercel, `.env.local` | Your testers' WhatsApp (or any) group link, shown as a tile on Home. Unset hides the tile. Kept out of the repo because anyone with an invite link can join. |
 | `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` | `.env.local` only | For the operator scripts. The service-role key **bypasses RLS**: never commit it and never give it a `VITE_` prefix. |
 
 All `VITE_` values are read at **build time**:
 
 1. In Vercel → **Settings → Environment Variables**, tick **Production** and
-   **Preview** for each one you set.
+   **Preview** for each one you set. Preview builds ignore the Supabase pair
+   and run in local mode with demo data (see `vite.config.ts`), so a PR's
+   preview never reaches the production database.
 2. **Redeploy** after any change (Deployments → ⋯ → **Redeploy**); an existing
    build won't pick it up. The build log prints
    `[coach-clawde] Supabase credentials detected — auth enabled` when the

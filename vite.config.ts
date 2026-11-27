@@ -22,12 +22,15 @@ export default defineConfig(({ mode, command }) => {
     }
     return ''
   }
-  const SUPABASE_URL = pick('VITE_SUPABASE_URL', 'SUPABASE_URL', 'NEXT_PUBLIC_SUPABASE_URL')
-  const SUPABASE_ANON_KEY = pick(
-    'VITE_SUPABASE_ANON_KEY',
-    'SUPABASE_ANON_KEY',
-    'NEXT_PUBLIC_SUPABASE_ANON_KEY',
-  )
+  // Vercel preview builds (every PR, and anything not on the production
+  // branch) run in local mode with demo data (lib/demoData), so trying a PR
+  // can never touch the production database. VITE_DEMO_DATA=true does the
+  // same for `npm run dev`.
+  const DEMO_DATA = env.VERCEL_ENV === 'preview' || pick('VITE_DEMO_DATA') === 'true'
+  const SUPABASE_URL = DEMO_DATA ? '' : pick('VITE_SUPABASE_URL', 'SUPABASE_URL', 'NEXT_PUBLIC_SUPABASE_URL')
+  const SUPABASE_ANON_KEY = DEMO_DATA
+    ? ''
+    : pick('VITE_SUPABASE_ANON_KEY', 'SUPABASE_ANON_KEY', 'NEXT_PUBLIC_SUPABASE_ANON_KEY')
 
   // Magic-link sign-in is hidden unless this is explicitly 'true'. Magic links
   // need working SMTP, and Supabase's built-in mailer allows only a couple of
@@ -42,8 +45,12 @@ export default defineConfig(({ mode, command }) => {
   // Surfaced in the Vercel build log so it's easy to confirm whether credentials
   // were present at build time (never prints the values themselves).
   console.log(
-    `[coach-clawde] Supabase credentials ${
-      SUPABASE_URL && SUPABASE_ANON_KEY ? 'detected — auth enabled' : 'MISSING — app will run in local mode'
+    `[coach-clawde] ${
+      DEMO_DATA
+        ? 'Preview build — local mode with demo data, no database'
+        : SUPABASE_URL && SUPABASE_ANON_KEY
+          ? 'Supabase credentials detected — auth enabled'
+          : 'Supabase credentials MISSING — app will run in local mode'
     }`,
   )
 
@@ -79,6 +86,7 @@ export default defineConfig(({ mode, command }) => {
     'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(SUPABASE_ANON_KEY),
     'import.meta.env.VITE_ENABLE_MAGIC_LINK': JSON.stringify(ENABLE_MAGIC_LINK),
     'import.meta.env.VITE_BETA_FEEDBACK_URL': JSON.stringify(BETA_FEEDBACK_URL),
+    'import.meta.env.VITE_DEMO_DATA': JSON.stringify(DEMO_DATA ? 'true' : ''),
   },
   plugins: [
     react(),

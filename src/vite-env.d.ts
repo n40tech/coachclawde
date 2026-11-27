@@ -8,6 +8,8 @@ interface ImportMetaEnv {
   readonly VITE_ENABLE_MAGIC_LINK: string
   /** The beta testers' WhatsApp group invite; empty hides the Home feedback tile. */
   readonly VITE_BETA_FEEDBACK_URL: string
+  /** 'true' on preview builds: local mode, seeded with lib/demoData. */
+  readonly VITE_DEMO_DATA: string
 }
 
 interface ImportMeta {

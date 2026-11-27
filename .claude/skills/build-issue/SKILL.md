@@ -23,16 +23,18 @@ file before starting.
 6. **Check**: `npm run lint`, `npm run build` and `npm test` all green. Follow
    the current release rules in `docs/DEVELOPING.md` for the version and
    release notes.
-7. **Open the PR**: commit, push, then `gh pr create` (ready, not draft) with
-   the body from `.github/pull_request_template.md`, every section filled:
-   `Closes #<number>`, phone steps that start from the screen the app opens on
-   and say what the user should see, and each test with the assertion it
-   failed on. Straight away add exactly one of `feature`, `fix` or
-   `internal`, plus `manual-test` if there are no new tests
-   (`gh api repos/{owner}/{repo}/issues/<pr>/labels -f "labels[]=fix"`).
-8. **Auto-merge**: `gh pr merge <pr> --auto --merge`, unless the user asked to
-   hold it or it adds a database migration. If a check fails, fix it on the
-   branch.
+7. **Open the PR as a draft with its labels**: commit, push, then
+   `gh pr create --draft --label <type>` with the body from
+   `.github/pull_request_template.md`, every section filled: `Closes #<number>`,
+   phone steps that start from the screen the app opens on and say what the
+   user should see, and each test with the assertion it failed on. The type
+   is exactly one of `feature`, `fix` or `internal`; add `--label manual-test`
+   too if there are no new tests.
+8. **Ready and auto-merge**: `gh pr ready <pr>`, then
+   `gh pr merge <pr> --auto --merge`, unless the user asked to hold it or it
+   adds a database migration. If a check fails, fix it with a new commit on
+   the branch. Never cancel a check run: a cancelled required check blocks
+   the merge.
 9. **Report**: once it merges, tell the user in plain words what changed and
    how to try it on `main`'s preview,
    `https://coach-claude-git-main-natecode.vercel.app` (demo data). Say if it

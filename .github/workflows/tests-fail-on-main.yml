@@ -6,12 +6,11 @@ name: Tests fail on main
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened, labeled, unlabeled]
+    types: [opened, synchronize, reopened, labeled, unlabeled, ready_for_review]
 
-# A newer run (a push, a label) cancels the one before it.
-concurrency:
-  group: fail-on-main-${{ github.event.pull_request.number }}
-  cancel-in-progress: true
+# Skipped while the PR is a draft, like the label check (pr-body.yml): labels
+# go on before it's marked ready. Runs are never cancelled, since a cancelled
+# run blocks the merge.
 
 permissions:
   contents: read
@@ -19,6 +18,7 @@ permissions:
 jobs:
   fail-on-main:
     name: New tests fail on main
+    if: ${{ !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     steps:
       # The default pull_request checkout is the PR merged into main:

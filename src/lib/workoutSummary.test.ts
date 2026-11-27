@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatElapsed, formatWorkoutTime, summarizeWorkout } from './workoutSummary'
+import { formatElapsed, formatVolumeCompact, formatWorkoutTime, summarizeWorkout } from './workoutSummary'
 import type { LoggedSession } from '../types'
 
 function log(id: string, sets: { name: string; kg?: number; reps?: number; done?: boolean; secs?: number }[], extra: Partial<LoggedSession> = {}): LoggedSession {
@@ -68,8 +68,7 @@ describe('formatWorkoutTime', () => {
 })
 
 describe('formatVolumeCompact', () => {
-  it('stays short enough for the stats column', async () => {
-    const { formatVolumeCompact } = await import('./shareCard')
+  it('stays short enough for the stats column', () => {
     expect(formatVolumeCompact(850, 'kg')).toBe('850kg')
     expect(formatVolumeCompact(1500, 'kg')).toBe('1.5t')
     expect(formatVolumeCompact(12000, 'kg')).toBe('12t')

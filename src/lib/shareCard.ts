@@ -35,13 +35,6 @@ export function formatVolume(kg: number, unit: WeightUnit): string {
   return `${Math.round(v).toLocaleString('en-GB')} ${unit}`
 }
 
-/** Short form for tight spaces: "850kg", "1.5t", "3.3k lb". */
-export function formatVolumeCompact(kg: number, unit: WeightUnit): string {
-  const v = Math.round(toWeight(kg, unit))
-  if (v < 1000) return `${v}${unit}`
-  return unit === 'kg' ? `${+(v / 1000).toFixed(1)}t` : `${+(v / 1000).toFixed(1)}k${unit}`
-}
-
 /** The site's fonts must be loaded before a canvas can draw with them. */
 export async function loadShareFonts(): Promise<void> {
   if (typeof document === 'undefined' || !document.fonts) return

@@ -1,4 +1,5 @@
 import type { LoggedSession } from '../types'
+import { toWeight, type WeightUnit } from './units'
 
 /** A lift that beat everything logged for that exercise before this session. */
 export interface NewPB {
@@ -139,4 +140,11 @@ export function formatWorkoutTime(seconds: number): string {
   if (m < 1) return '<1 m'
   if (m < 60) return `${m} m`
   return `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')} m`
+}
+
+/** Short form for tight spaces: "850kg", "1.5t", "3.3k lb". */
+export function formatVolumeCompact(kg: number, unit: WeightUnit): string {
+  const v = Math.round(toWeight(kg, unit))
+  if (v < 1000) return `${v}${unit}`
+  return unit === 'kg' ? `${+(v / 1000).toFixed(1)}t` : `${+(v / 1000).toFixed(1)}k${unit}`
 }

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { workoutStep, type WorkoutContext, type WorkoutEvent } from './activeWorkout'
+import { dispatchWorkout, workoutStep, type WorkoutContext, type WorkoutEvent } from './activeWorkout'
 import { IDLE_TIMER } from './restTimer'
-import type { PlannedSession } from '../types'
+import type { LoggedSession, PlannedSession } from '../types'
 
 const planned = {
   id: 's1', date: '2026-11-23', dayOfWeek: 'Mon', type: 'weights', title: 'Upper', focus: 'Upper',
@@ -91,5 +91,31 @@ describe('workoutStep', () => {
     expect(r.log).toMatchObject({ status: 'complete', completedAt: '2026-11-23T11:00:00.000Z', feelings: 4 })
     expect(r.log!.loggedExercises![0].sets[0].unconfirmed).toBeUndefined()
     expect(r.clock).toBe('stop')
+  })
+})
+
+describe('dispatchWorkout', () => {
+  /** An in-memory stand-in for the store: one log, replaced by "pulls". */
+  function memoryStore() {
+    let log: LoggedSession | null = null
+    return {
+      current: () => log,
+      add: (l: LoggedSession) => { log = l },
+      save: (l: LoggedSession) => { log = l },
+      pull: (l: LoggedSession) => { log = l },
+    }
+  }
+
+  it('keeps a change from a background pull during a workout when the next set is ticked', () => {
+    const store = memoryStore()
+    dispatchWorkout(store, base, { kind: 'start', id: 'log1', weekPlanId: 'p1' })
+    // A pull lands mid-workout with the reps for set 2 typed on another device.
+    const pulled = structuredClone(store.current()!)
+    pulled.loggedExercises![0].sets[1].actualReps = 4
+    store.pull(pulled)
+    dispatchWorkout(store, base, { kind: 'tick', exerciseIdx: 0, setIndex: 0 })
+    const sets = store.current()!.loggedExercises![0].sets
+    expect(sets[0].completed).toBe(true)
+    expect(sets[1].actualReps).toBe(4)
   })
 })

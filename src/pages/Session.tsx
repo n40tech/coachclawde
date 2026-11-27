@@ -30,7 +30,7 @@ import { useSettingsStore, useUnits } from '../store/useSettingsStore'
 import { localize, toWeight, type Units } from '../lib/units'
 import { MovementGuide } from '../components/session/MovementGuide'
 import { logForSession } from '../lib/weekStatus'
-import { plannedExerciseOf, workoutStep, type WorkoutEvent, type WorkoutResult } from '../lib/activeWorkout'
+import { dispatchWorkout, plannedExerciseOf, type WorkoutEvent, type WorkoutResult } from '../lib/activeWorkout'
 
 /** The current time, for event handlers (kept out of the component body). */
 const currentTime = () => Date.now()
@@ -80,7 +80,8 @@ export function Session() {
   const existingLog = weekPlan && id
     ? logForSession(weekPlan, id, loggedSessions)
     : loggedSessions.find((ls) => ls.plannedSessionId === id)
-  const [loggedSession, setLoggedSession] = useState<LoggedSession | null>(existingLog ?? null)
+  // The screen keeps no copy of the log: it reads the store's (lib/activeWorkout).
+  const loggedSession = existingLog ?? null
 
   // When a rest runs out on screen, only a tone plays: say it too, for screen
   // reader users with the sound off. Not when it was skipped (that's a tap).
@@ -154,14 +155,22 @@ export function Session() {
     return plannedExerciseOf(planned!, le, i)
   }
 
+  /** This session's log as the store has it right now (never a copy taken at render). */
+  function currentLog(): LoggedSession | null {
+    const st = useAppStore.getState()
+    const plan = st.weekPlans.find((p) => p.sessions.some((s) => s.id === id))
+    return (plan && id ? logForSession(plan, id, st.loggedSessions) : st.loggedSessions.find((ls) => ls.plannedSessionId === id)) ?? null
+  }
+
   /**
-   * Sends a tap to the workout's rules (lib/activeWorkout) and applies what
-   * comes back: the rest timer, the set clock and the exercise to open. The
-   * caller saves the log.
+   * Sends a tap to the workout's rules (lib/activeWorkout), which read and save
+   * the store's log, and applies what comes back: the rest timer, the set
+   * clock and the exercise to open.
    */
   function run(event: WorkoutEvent): WorkoutResult {
     const st = useAppStore.getState()
-    const r = workoutStep({ planned: planned!, log: loggedSession, setClock: st.setClock, timer: st.timer, now: currentTime() }, event)
+    const store = { current: currentLog, add: addLoggedSession, save: (l: LoggedSession) => updateLoggedSession(l.id, l) }
+    const r = dispatchWorkout(store, { planned: planned!, setClock: st.setClock, timer: st.timer, now: currentTime() }, event)
     if (r.clock === 'stop') startSetClock(null)
     if (r.rest === 'skip') skipTimer()
     else if (r.rest) startTimer(r.rest.seconds, r.rest.label, planned!.id, r.rest.nextExerciseId)
@@ -170,24 +179,15 @@ export function Session() {
     return r
   }
 
-  /** Runs a set event and saves the new log locally and to the store (pushed when it says so). */
+  /** Runs a set event (pushed when it says so: each completed set, so a closed browser loses nothing). */
   function runOnLog(event: WorkoutEvent) {
-    if (!loggedSession) return
+    if (!currentLog()) return
     const r = run(event)
-    if (!r.log) return
-    setLoggedSession(r.log)
-    updateLoggedSession(r.log.id, { loggedExercises: r.log.loggedExercises })
-    // Pushed on each completed set so a closed/evicted browser doesn't lose
-    // the workout. Fire-and-forget.
-    if (r.push) syncSession(r.log.id)
+    if (r.log && r.push) syncSession(r.log.id)
   }
 
   function startSession(): LoggedSession | null {
-    const { log } = run({ kind: 'start', id: nanoid(), weekPlanId: weekPlan?.id ?? '' })
-    if (!log) return null
-    addLoggedSession(log)
-    setLoggedSession(log)
-    return log
+    return run({ kind: 'start', id: nanoid(), weekPlanId: weekPlan?.id ?? '' }).log
   }
 
   function updateExerciseSet(exerciseIdx: number, setIndex: number, updates: Partial<LoggedSet>) {
@@ -203,11 +203,10 @@ export function Session() {
     runOnLog({ kind: 'untick', exerciseIdx, setIndex })
   }
 
-  /** A new exercise order (reordering): saved locally and to the store. */
+  /** A new exercise order (reordering), saved to the store. */
   function commitExercises(exercises: LoggedExercise[]) {
-    if (!loggedSession) return
-    setLoggedSession({ ...loggedSession, loggedExercises: exercises })
-    updateLoggedSession(loggedSession.id, { loggedExercises: exercises })
+    const log = currentLog()
+    if (log) updateLoggedSession(log.id, { loggedExercises: exercises })
   }
 
   /**
@@ -240,14 +239,14 @@ export function Session() {
   }
 
   function openComplete() {
-    const log = useAppStore.getState().loggedSessions.find((ls) => ls.id === loggedSession?.id) ?? loggedSession
+    const log = currentLog()
     if (!log) return
     // Elapsed time runs from Start Session to this tap.
     setSummary(summarizeWorkout(log, useAppStore.getState().loggedSessions, new Date()))
   }
 
   function handleSessionSave(data: SessionCompleteData) {
-    if (!loggedSession) return
+    if (!currentLog()) return
     const { log } = run({
       kind: 'finish',
       // When Complete Session was tapped, so the log matches the elapsed time shown.
@@ -261,17 +260,16 @@ export function Session() {
       },
     })
     if (!log) return
-    updateLoggedSession(log.id, log)
     // Push just the finished session in the background so navigation is instant.
     syncSession(log.id)
   }
 
   /** "Delete workout": every logged set goes, and the session is back to not started. */
   function deleteWorkout() {
-    if (!loggedSession) return
+    const log = currentLog()
+    if (!log) return
     run({ kind: 'delete' })
-    void removeSession(loggedSession.id)
-    setLoggedSession(null)
+    void removeSession(log.id)
     setSummary(null)
     setReordering(false)
   }

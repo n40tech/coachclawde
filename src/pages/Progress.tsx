@@ -6,7 +6,7 @@ import { HeaderIconLink, PageHeader } from '../components/layout/PageHeader'
 import { Card, CardSection } from '../components/shared/Card'
 import { SyncIndicator } from '../components/shared/SyncIndicator'
 import { WeightPRCard } from '../components/progress/PRCards'
-import { computeWeightPRs } from '../lib/prComputations'
+import { computeWeightPRs, totalVolumeKg } from '../lib/prComputations'
 import { getProgramProgress } from '../lib/programProgress'
 import { Dumbbell, Layers, TrendingUp, Trophy, Zap, Settings, ChevronRight } from 'lucide-react'
 import { parseISO, isSameWeek } from 'date-fns'
@@ -29,13 +29,7 @@ export function Progress() {
   )
 
   // All time totals
-  const totalVolume = weightSessions.reduce((total, s) => {
-    return total + (s.loggedExercises?.reduce((exTotal, ex) => {
-      return exTotal + ex.sets.filter((set) => set.completed).reduce((setTotal, set) => {
-        return setTotal + ((set.weightKg ?? 0) * (set.actualReps ?? 0))
-      }, 0)
-    }, 0) ?? 0)
-  }, 0)
+  const totalVolume = totalVolumeKg(weightSessions)
 
   const avgFeeling = completed.length > 0
     ? (completed.reduce((sum, s) => sum + (s.feelings ?? 3), 0) / completed.length).toFixed(1)

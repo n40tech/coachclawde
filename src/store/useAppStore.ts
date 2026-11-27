@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { SetClock, AppState, CheckIn, UserProfile, WeekPlan, LoggedSession, TimerState } from '../types'
+import type { SetClock, AppState, UserProfile, WeekPlan, LoggedSession, TimerState } from '../types'
 import { DEFAULT_PROFILE } from '../lib/profileData'
 import { STORAGE_KEYS } from '../lib/storageKeys'
 import { getMonday, toLocalISODate } from '../lib/weekUtils'
@@ -26,15 +26,6 @@ interface AppStore extends AppState {
   addLoggedSession: (session: LoggedSession) => void
   updateLoggedSession: (id: string, updates: Partial<LoggedSession>) => void
   removeLoggedSession: (id: string) => void
-  /** Adds a check-in, or replaces one with the same id. */
-  saveCheckIn: (checkIn: CheckIn) => void
-  /**
-   * Check-in invitations the athlete dismissed on this device, as keys like
-   * "week:2026-09-28" or "milestone:block-end". Local only: at most one
-   * nudge per trigger, never a nag.
-   */
-  checkInDismissed: string[]
-  dismissCheckIn: (key: string) => void
   setActiveSession: (id: string | null) => void
   setTimer: (timer: TimerState) => void
   clearTimer: () => void
@@ -44,7 +35,7 @@ interface AppStore extends AppState {
   startSetClock: (sessionId: string | null, at?: number) => void
   getCurrentWeekPlan: () => WeekPlan | undefined
   getLastNSessions: (n: number) => LoggedSession[]
-  restoreFromRemote: (data: { profile: UserProfile; weekPlans: WeekPlan[]; loggedSessions: LoggedSession[]; checkIns?: CheckIn[] }) => void
+  restoreFromRemote: (data: { profile: UserProfile; weekPlans: WeekPlan[]; loggedSessions: LoggedSession[] }) => void
   /** Wipe in-memory + persisted data (used on sign-out so accounts don't leak on a shared device). */
   reset: () => void
 }
@@ -63,20 +54,12 @@ export const useAppStore = create<AppStore>()(
       profile: DEFAULT_PROFILE,
       weekPlans: [],
       loggedSessions: [],
-      checkIns: [],
-      checkInDismissed: [],
       activeSessionId: null,
       timer: DEFAULT_TIMER,
       setClock: null,
 
       startSetClock: (sessionId, at) =>
         set({ setClock: sessionId ? { sessionId, startedAt: at ?? Date.now() } : null }),
-
-      saveCheckIn: (checkIn) =>
-        set((s) => ({ checkIns: [...s.checkIns.filter((c) => c.id !== checkIn.id), checkIn] })),
-
-      dismissCheckIn: (key) =>
-        set((s) => (s.checkInDismissed.includes(key) ? s : { checkInDismissed: [...s.checkInDismissed, key] })),
 
       setProfile: (updates) =>
         set((s) => ({ profile: { ...s.profile, ...updates, updatedAt: new Date().toISOString() } })),
@@ -140,8 +123,6 @@ export const useAppStore = create<AppStore>()(
         profile: data.profile,
         weekPlans: plans,
         loggedSessions: logs,
-        // Older databases may not have the check_ins table yet; keep local ones.
-        ...(data.checkIns ? { checkIns: data.checkIns } : {}),
         }
       }),
 
@@ -149,8 +130,6 @@ export const useAppStore = create<AppStore>()(
         profile: DEFAULT_PROFILE,
         weekPlans: [],
         loggedSessions: [],
-        checkIns: [],
-        checkInDismissed: [],
         activeSessionId: null,
         timer: DEFAULT_TIMER,
         setClock: null,
@@ -167,8 +146,6 @@ export const useAppStore = create<AppStore>()(
           ...p,
           weekPlans: plans,
           loggedSessions: logs,
-          checkIns: p.checkIns ?? [],
-          checkInDismissed: (p as { checkInDismissed?: string[] }).checkInDismissed ?? [],
           // A rest still running when the app was closed carries on (its end
           // time is absolute); one that ran out meanwhile started the set clock.
           ...restoreTimer((p as { timer?: TimerState }).timer, (p as { setClock?: SetClock | null }).setClock ?? null),
@@ -178,8 +155,6 @@ export const useAppStore = create<AppStore>()(
         profile: state.profile,
         weekPlans: state.weekPlans,
         loggedSessions: state.loggedSessions,
-        checkIns: state.checkIns,
-        checkInDismissed: state.checkInDismissed,
         setClock: state.setClock,
         timer: state.timer,
       }),

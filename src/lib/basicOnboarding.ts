@@ -4,7 +4,7 @@ import { getMonday, toLocalISODate } from './weekUtils'
 
 /**
  * The slim onboarding: a handful of basics, turned into the same profile
- * (GoalProfile + the legacy fields) the plan prompt and check-ins already use.
+ * (GoalProfile + the legacy fields) the plan prompt already uses.
  * The app is weights-first, so the goal is always all-round strength and a
  * balanced physique; anything more specific goes in the athlete's notes.
  */

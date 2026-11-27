@@ -140,11 +140,6 @@ function workingWeights(completed: LoggedSession[]): string[] {
 export interface HistoryOptions {
   /** Defaults to the current time; injectable for tests. */
   now?: Date
-  /**
-   * The latest check-in, already summarised (≤ 6 lines). When given it
-   * replaces the week-reflection section.
-   */
-  latestCheckIn?: string[]
 }
 
 export function summarizeHistory(sessions: LoggedSession[], opts: HistoryOptions = {}): string {
@@ -204,12 +199,8 @@ export function summarizeHistory(sessions: LoggedSession[], opts: HistoryOptions
     )
   }
 
-  if (opts.latestCheckIn?.length) {
-    sections.push('**Latest check-in (apply these when planning):**\n' + opts.latestCheckIn.slice(0, 6).map((l) => `- ${l}`).join('\n'))
-  } else {
-    const reflection = latestReflection(completed, nowMs)
-    if (reflection) sections.push(`**Latest week reflection:**\n- ${reflection}`)
-  }
+  const reflection = latestReflection(completed, nowMs)
+  if (reflection) sections.push(`**Latest week reflection:**\n- ${reflection}`)
 
   return sections.join('\n\n')
 }

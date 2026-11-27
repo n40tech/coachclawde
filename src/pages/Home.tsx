@@ -9,9 +9,8 @@ import { ClawdeMark } from '../components/shared/ClawdeMark'
 import { BetaFeedbackTile } from '../components/shared/BetaFeedbackTile'
 import { BETA_FEEDBACK_URL } from '../lib/betaFeedback'
 import { useScrollDirection } from '../hooks/useScrollDirection'
-import { getProgramProgress } from '../lib/programProgress'
-import { Calendar, ChevronRight, CheckCircle, CalendarPlus, Trophy, Sparkles, Plus, MessageCircle, X } from 'lucide-react'
-import { homeInvitation, type HomeInvitation } from '../lib/checkInTriggers'
+import { getProgramProgress, nextBlockProgram } from '../lib/programProgress'
+import { Calendar, ChevronRight, CheckCircle, CalendarPlus, Trophy, Sparkles, Plus } from 'lucide-react'
 import { QuickLogSheet } from '../components/session/QuickLogSheet'
 import { buildQuickLog, type QuickLogInput } from '../lib/quickLog'
 import { useAutoSync } from '../hooks/useAutoSync'
@@ -26,17 +25,23 @@ import { localize } from '../lib/units'
 
 export function Home() {
   const navigate = useNavigate()
-  const { getCurrentWeekPlan, loggedSessions, profile, addLoggedSession, weekPlans, checkIns, checkInDismissed, dismissCheckIn } = useAppStore()
-  const invite = homeInvitation({ profile, weekPlans, loggedSessions, checkIns, dismissed: checkInDismissed }, new Date())
+  const { getCurrentWeekPlan, loggedSessions, profile, addLoggedSession, setProfile } = useAppStore()
   const tracker = profile.goal?.tracker
   const plan = getCurrentWeekPlan()
   const { bump } = useScrollDirection()
-  const { syncSession } = useAutoSync()
+  const { sync, syncSession } = useAutoSync()
   // Minutes are all Home shows, so a slow tick is enough.
   const now = useNow(true, 15_000)
   const current = useCurrentWorkout(now)
   const [showLog, setShowLog] = useState(false)
   useDocumentTitle('Home')
+
+  function startNextBlock() {
+    const program = nextBlockProgram(profile)
+    if (!program) return
+    setProfile({ program })
+    void sync('profile')
+  }
 
   function handleQuickLog(input: QuickLogInput) {
     const log = buildQuickLog(input)
@@ -115,16 +120,8 @@ export function Home() {
       <div className="flex flex-col gap-4 px-4">
         {current && <CurrentWorkoutCard session={current} now={now} />}
 
-        {program.isComplete && !(invite?.kind === 'milestone' && invite.key.startsWith('milestone:block-end')) && (
-          <ProgramCompleteBanner length={program.length} onRestart={() => navigate('/check-in?trigger=milestone')} />
-        )}
-
-        {invite && (
-          <InvitationCard
-            invite={invite}
-            onOpen={() => navigate(`/check-in?trigger=${invite.trigger}&week=${invite.weekStart}&key=${encodeURIComponent(invite.key)}`)}
-            onDismiss={() => dismissCheckIn(invite.key)}
-          />
+        {program.isComplete && (
+          <ProgramCompleteBanner length={program.length} onRestart={startNextBlock} />
         )}
 
         {!plan ? (
@@ -183,31 +180,6 @@ export function Home() {
       </div>
 
       {showLog && <QuickLogSheet onSave={handleQuickLog} onClose={() => setShowLog(false)} />}
-    </div>
-  )
-}
-
-/** A suggested check-in (or the tracker's weekly summary). Never blocks anything. */
-function InvitationCard({ invite, onOpen, onDismiss }: { invite: HomeInvitation; onOpen: () => void; onDismiss: () => void }) {
-  const summary = invite.kind === 'summary'
-  return (
-    <div className="rounded-3xl bg-[#161616] border border-[#d97756]/30 p-4 flex items-start gap-3">
-      <div className="w-10 h-10 rounded-2xl bg-[#d97756]/15 flex items-center justify-center shrink-0">
-        {summary ? <CheckCircle size={18} className="text-[#d97756]" /> : <MessageCircle size={18} className="text-[#d97756]" />}
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-[#f5f5f0]">{invite.title}</p>
-        <p className="text-sm text-[#a8a29e] mt-0.5 leading-relaxed">{invite.text}</p>
-        {!summary && (
-          <div className="flex gap-2 mt-3">
-            <Button size="sm" onClick={onOpen}>Check in</Button>
-            <Button size="sm" variant="ghost" onClick={onDismiss}>Not now</Button>
-          </div>
-        )}
-      </div>
-      <button type="button" onClick={onDismiss} aria-label={`Dismiss: ${invite.title}`} className="relative hit-target w-9 h-9 -mr-1 -mt-1 flex items-center justify-center rounded-full text-[#858585] hover:text-[#a8a29e] shrink-0">
-        <X size={16} aria-hidden />
-      </button>
     </div>
   )
 }
@@ -277,13 +249,13 @@ function ProgramCompleteBanner({ length, onRestart }: { length: number; onRestar
       <div>
         <h2 className="text-xl font-bold text-[#f5f5f0]">Program complete! 🎉</h2>
         <p className="text-sm text-[#949494] mt-1 leading-relaxed">
-          You've finished your {length}-week block. A quick check-in on how it went, then your
-          next block starts. No need to set everything up again.
+          You've finished your {length}-week block. Start the next one with the same goal
+          and setup: no need to set everything up again.
         </p>
       </div>
       <Button onClick={onRestart} size="lg" fullWidth>
         <Sparkles size={18} />
-        Check in & start the next block
+        Start the next block
       </Button>
     </div>
   )

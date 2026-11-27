@@ -3,7 +3,7 @@
  *
  * ⚠️ THESE ARE STARTER VALUES. A qualified coach must review them before they
  * ship to athletes: minimum weeks per event, time-goal ambition thresholds,
- * zone percentages, taper lengths, deload cadence, check-in adjustments and
+ * zone percentages, taper lengths, deload cadence and
  * the healthy fat-loss rate. They come from docs/RUNNERS-AND-ATHLETES.md
  * (§3.5, §3.7, §4.3, §5.3), which marks them as defaults, not rules.
  *
@@ -122,23 +122,5 @@ export const DELOAD_EVERY_WEEKS = 4
 /** Default block length when there's no date: 12 weeks (8 for sedentary beginners). */
 export const DEFAULT_BLOCK_WEEKS = 12
 export const BEGINNER_BLOCK_WEEKS = 8
-/** Longest block a date can set; beyond this the athlete re-plans at a check-in. */
+/** Longest block a date can set; beyond this the athlete starts a new block. */
 export const MAX_BLOCK_WEEKS = 30
-
-/** Check-in C5: pace-zone nudge when target paces felt too easy / too hard. */
-export const ZONE_OFFSET_PCT = { tooEasy: 2, tooHard: -3 } as const
-
-/** Check-in C3: what "too easy" / "too hard" does to the next plan. */
-export const INTENSITY_CALIBRATION = {
-  tooEasy: 'Push intensity up a notch: RPE +1, loads +2.5–5%',
-  tooHard: 'Ease off: RPE −1, loads −5%',
-} as const
-
-/** "Lighter week" from check-in C2b. */
-export const LIGHTER_WEEK = 'Make this a lighter week: about 30% less volume, RPE ≤ 7'
-
-/** Check-in budget (§4.3). */
-export const CHECK_IN_MAX_QUESTIONS = 6
-
-/** Weeks before an event when check-ins confirm it's still on (C6). */
-export const EVENT_CONFIRM_WEEKS_OUT = 3

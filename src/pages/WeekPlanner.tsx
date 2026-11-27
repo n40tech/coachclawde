@@ -8,22 +8,19 @@ import { BottomSheet, SheetCloseButton } from '../components/shared/BottomSheet'
 import { Card, CardSection } from '../components/shared/Card'
 import { ChoiceChip, ChoiceGroup } from '../components/shared/Choice'
 import { buildConvertPlanPrompt, buildModifyPlanPrompt, buildWeekPlanPrompt } from '../lib/promptBuilder'
-import { plannerPrefill } from '../lib/checkIn'
-import { plannerInvitation } from '../lib/checkInTriggers'
-import type { CheckIn, WeekPlan } from '../types'
+import type { WeekPlan } from '../types'
 import { importPlanFromJson } from '../lib/export'
 import { useAutoSync } from '../hooks/useAutoSync'
 import {
   WEEK_DAYS_MON,
   addDays,
-  getMonday,
   getNextMonday,
   isDayPastThisWeek,
   resolveWeekStart,
   toLocalISODate,
 } from '../lib/weekUtils'
 import type { DayOfWeek } from '../types'
-import { Copy, Check, Download, AlertCircle, CalendarClock, ExternalLink, MessageCircle, Sparkles, Repeat, PencilLine, ClipboardPaste, Wand2 } from 'lucide-react'
+import { Copy, Check, Download, AlertCircle, CalendarClock, ExternalLink, Repeat, PencilLine, ClipboardPaste, Wand2 } from 'lucide-react'
 import { OpenClaudeButton } from '../components/shared/OpenClaudeButton'
 import { openClaudeApp } from '../lib/openClaude'
 import { format } from 'date-fns'
@@ -36,7 +33,7 @@ const SESSION_LENGTH_OPTIONS = [30, 45, 60, 75, 90] as const
 
 export function WeekPlanner() {
   const navigate = useNavigate()
-  const { getCurrentWeekPlan, weekPlans, addWeekPlan, updateWeekPlan, profile, loggedSessions, checkIns, checkInDismissed, dismissCheckIn } = useAppStore()
+  const { getCurrentWeekPlan, weekPlans, addWeekPlan, updateWeekPlan, profile, loggedSessions } = useAppStore()
   const lastMethod = useSettingsStore((s) => s.lastPlanMethod)
   const setLastMethod = useSettingsStore((s) => s.setLastPlanMethod)
 
@@ -50,34 +47,15 @@ export function WeekPlanner() {
     return (m === 'repeat' || m === 'modify') && !previous ? 'generate' : m
   })
 
-  // A recent check-in pre-fills the planner for the week after the one it
-  // reviewed: days (one fewer if asked), session length and notes.
-  const [prefill] = useState(() => {
-    const ci = latestWeeklyCheckIn(checkIns)
-    const stale = ci && today.getTime() - Date.parse(ci.createdAt) > 10 * 24 * 60 * 60 * 1000
-    if (!ci || stale || (seedPlan && seedPlan.weekStartDate > ci.weekStartDate)) return null
-    const reviewed = weekPlans.find((p) => p.weekStartDate === ci.weekStartDate)
-    const p = plannerPrefill(ci)
-    const days = reviewed?.availableDays ?? []
-    return {
-      days: p.fewerDays && days.length > 1 ? days.slice(0, -1) : days,
-      minutes: p.sessionMinutes,
-      notes: p.notes.join(' '),
-      nextWeek: ci.weekStartDate === toLocalISODate(getMonday(today)),
-      hasChanges: !!(p.sessionMinutes || p.fewerDays || p.notes.length),
-    }
-  })
-
-  const [selectedDays, setSelectedDays] = useState<DayOfWeek[]>(prefill?.days.length ? prefill.days : seedPlan?.availableDays ?? [])
-  const [notes, setNotes] = useState(prefill ? prefill.notes : seedPlan?.userNotes ?? '')
+  const [selectedDays, setSelectedDays] = useState<DayOfWeek[]>(seedPlan?.availableDays ?? [])
+  const [notes, setNotes] = useState(seedPlan?.userNotes ?? '')
   // What to change (modify) and the pasted plan (convert) are kept apart from
   // the generate notes, so switching method never mixes them up.
   const [changes, setChanges] = useState('')
   const [pasted, setPasted] = useState('')
-  // Target minutes per session: from the check-in, else the current plan's
-  // average so a replan keeps the same length by default.
+  // Target minutes per session: the current plan's average, so a replan
+  // keeps the same length by default.
   const [sessionMinutes, setSessionMinutes] = useState<number>(() => {
-    if (prefill?.minutes) return prefill.minutes
     const mins = seedPlan?.sessions.map((s) => s.estimatedMinutes).filter((m) => m > 0) ?? []
     if (!mins.length) return profile.goal?.constraints.sessionMinutes ?? 60
     const avg = mins.reduce((a, b) => a + b, 0) / mins.length
@@ -86,7 +64,7 @@ export function WeekPlanner() {
   // Whether the athlete has explicitly opted to plan next week (e.g. they want
   // to train on a weekday that has already passed this week).
   const [planNextWeek, setPlanNextWeek] = useState(
-    prefill ? prefill.nextWeek : seedPlan ? seedPlan.weekStartDate === toLocalISODate(getNextMonday(today)) : false
+    seedPlan ? seedPlan.weekStartDate === toLocalISODate(getNextMonday(today)) : false
   )
   // Day pending a "this will move the plan to next week" confirmation.
   const [confirmDay, setConfirmDay] = useState<DayOfWeek | null>(null)
@@ -152,9 +130,6 @@ export function WeekPlanner() {
     setSelectedDays((prev) => prev.filter((d) => !isDayPastThisWeek(d, today)))
   }
 
-  // Step 0: suggest a check-in for the week before the one being planned.
-  const checkInWeek = plannerInvitation({ profile, weekPlans, loggedSessions, checkIns, dismissed: checkInDismissed }, weekStartISO)
-
   function chooseMethod(m: PlanMethod) {
     setMethod(m)
     // Modifying or converting a week starts from last week's days.
@@ -169,7 +144,7 @@ export function WeekPlanner() {
       ? buildConvertPlanPrompt(pasted, selectedDays, weekStart, profile)
       : method === 'modify' && previous
         ? buildModifyPlanPrompt(previous, changes, selectedDays, weekStart, profile)
-        : buildWeekPlanPrompt(selectedDays, notes, sessionMinutes, existingPlan, weekStart, profile, loggedSessions, checkIns)
+        : buildWeekPlanPrompt(selectedDays, notes, sessionMinutes, existingPlan, weekStart, profile, loggedSessions)
     setPromptText(prompt)
     return prompt
   }
@@ -296,27 +271,6 @@ export function WeekPlanner() {
       />
 
       <div className="flex flex-col gap-5 px-4 pt-4">
-        {checkInWeek && !tracker && (
-          <div className="rounded-3xl bg-[#161616] border border-[#d97756]/30 p-4 flex items-start gap-3 fade-in">
-            <MessageCircle size={18} className="text-[#d97756] mt-0.5 shrink-0" />
-            <div className="flex-1">
-              <p className="text-sm font-semibold text-[#f5f5f0]">Quick check-in first?</p>
-              <p className="text-sm text-[#a8a29e] mt-0.5">About a minute on last week. It shapes this plan.</p>
-              <div className="flex gap-2 mt-3">
-                <Button size="sm" onClick={() => navigate(`/check-in?trigger=planner&week=${checkInWeek}&key=planner:${checkInWeek}`)}>Check in</Button>
-                <Button size="sm" variant="ghost" onClick={() => dismissCheckIn(`planner:${checkInWeek}`)}>Skip to planning</Button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {prefill?.hasChanges && (
-          <div className="flex items-center gap-2 text-xs text-[#a8a29e] px-1">
-            <Sparkles size={14} className="text-[#d97756]" />
-            Pre-filled from your check-in. Change anything you like.
-          </div>
-        )}
-
         <MethodPicker
           methods={orderMethods(lastMethod)}
           last={lastMethod}
@@ -618,13 +572,6 @@ export function WeekPlanner() {
       )}
     </div>
   )
-}
-
-/** The newest weekly check-in (not reactive or migration). */
-function latestWeeklyCheckIn(checkIns: CheckIn[]): CheckIn | undefined {
-  return [...checkIns]
-    .filter((c) => c.trigger !== 'reactive' && c.trigger !== 'migration')
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0]
 }
 
 const DAY_NAME: Record<DayOfWeek, string> = {

@@ -24,10 +24,10 @@ const EMPTY: BasicAnswers = {
  * First-run onboarding: one short form with the basics (name, gender, age,
  * how active you are, where you train, injuries, anything else), then a
  * finish screen with install-to-home-screen tips. Everything else is asked
- * when it matters (the planner, check-ins).
+ * when it matters (the planner).
  *
- * An onboarded athlete reaching this page (Settings, a check-in saying the
- * goal changed, or sent here once from an older build) gets the same form
+ * An onboarded athlete reaching this page (Settings, or sent here once from
+ * an older build) gets the same form
  * pre-filled, and saving goes straight home.
  */
 export function Onboarding() {

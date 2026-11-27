@@ -37,7 +37,6 @@
 - **One-tap weekly plans.** The app builds a prompt from your goal, injuries, working weights and recent sessions and opens it in Claude. Paste the JSON back and the week is set, with warm-ups, cool-downs and progressive overload.
 - **Guided lifting.** Log reps and weight per set; the rest timer starts itself (minimise it to keep logging) and every exercise has a movement guide. Rest alerts notify you when rest is over, even with your phone locked.
 - **Run Mode.** Audio cues for every rep, a LAP button for distance work, pace zones from a recent race time, and a log that fills itself in.
-- **Weekly check-ins** feed straight into the next plan: shorter sessions, a lighter week, a sore knee.
 - **Progress and PRs** across the block, plus full history. Installable PWA, offline-ready, synced across devices.
 
 ## How it works
@@ -53,7 +52,6 @@ flowchart LR
 
 | Piece | Where |
 |---|---|
-| Onboarding goal tree (deterministic; tests cap every path at 10 questions) | `src/lib/flow.ts`, `src/lib/goalFlow.ts` |
 | Per-athlete prompt (only the rules and kit that apply) | `src/lib/promptBuilder.ts`, `src/lib/historySummary.ts` |
 | Coaching numbers: VDOT pace zones, tapers, deloads | `src/lib/coachingConfig.ts` |
 | Per-user data with owner-only RLS | `supabase/migrations/` |

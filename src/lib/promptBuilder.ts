@@ -1,5 +1,4 @@
-import type { CheckIn, DayOfWeek, InjuryStatus, LoggedSession, ProgramExerciseType, ProgramFacility, SessionType, UserProfile, WeekPlan } from '../types'
-import { checkInForPlanning } from './checkIn'
+import type { DayOfWeek, InjuryStatus, LoggedSession, ProgramExerciseType, ProgramFacility, SessionType, UserProfile, WeekPlan } from '../types'
 import { format } from 'date-fns'
 import { WEEK_DAYS_MON, addDays, toLocalISODate } from './weekUtils'
 import { summarizeHistory } from './historySummary'
@@ -372,7 +371,7 @@ ${example}
 
 // --- the prompt ----------------------------------------------------------------------
 
-/** How a niggle's latest check-in answer reads in the prompt. */
+/** How a niggle's saved status reads in the prompt. */
 const STATUS_WORDS: Record<InjuryStatus, string> = { active: 'unchanged', improving: 'improving', worse: 'worse this week' }
 
 export function buildWeekPlanPrompt(
@@ -383,7 +382,6 @@ export function buildWeekPlanPrompt(
   weekStart: Date,
   profile: UserProfile,
   loggedSessions: LoggedSession[],
-  checkIns: CheckIn[] = []
 ): string {
   const s = promptScope(profile)
   const weekEnd = addDays(weekStart, 6)
@@ -424,7 +422,7 @@ export function buildWeekPlanPrompt(
       ].filter(Boolean).join('\n')
     : '- (no standing program preferences set)'
 
-  // Each niggle is stated once, with its check-in status; nothing at all when there are none.
+  // Each niggle is stated once, with its saved status; nothing at all when there are none.
   const status = profile.goal?.health.injuryStatus ?? {}
   const niggles = profile.injuries.map((i) => (status[i] ? `${i} (${STATUS_WORDS[status[i]]})` : i))
   const everyMuscleTwice = s.strengthFocus === 'physique' || s.strengthFocus === 'lifts' || s.strengthFocus === 'general'
@@ -482,10 +480,7 @@ export function buildWeekPlanPrompt(
    \`workout\` steps (see "Cardio workouts" below). Pick an effort word for each
    step; the app turns it into my pace or feel. Only prescribe what I can
    measure (see "what I can measure" above). The app times every step and
-   cues me with tones, so there's no need to pre-calculate splits.` : '',
-    `**Apply my latest check-in:** If my history includes a "Latest check-in",
-   apply every line of it (session length, a lighter week, intensity, injury
-   status, what's coming up). I answered it for this plan.`,
+   cues me with tones, so there's no need to pre-calculate splits.` : ''
   ].filter(Boolean)
 
   const onlyTypes = s.sessionTypes.length === 1
@@ -528,7 +523,7 @@ ${s.cardio ? `
 - ${measurementLine(profile)}
 ` : ''}
 ## Training history (summary)
-${summarizeHistory(loggedSessions, { latestCheckIn: checkInForPlanning(checkIns, weekStartISO)?.summary.split('\n').filter(Boolean) })}
+${summarizeHistory(loggedSessions)}
 
 ## Programming rules
 
@@ -550,7 +545,7 @@ ${s.weights ? 'Apply progressive overload against the current working weights ab
  * Tracker mode (§4.6): the athlete brings their own plan. This prompt asks
  * Claude to convert pasted plan text into importable WeekPlan JSON *as
  * written*: no reprogramming, but anything that loads an injury marked worse
- * at a check-in is flagged, never silently rewritten.
+ * is flagged, never silently rewritten.
  */
 export function buildConvertPlanPrompt(
   planText: string,

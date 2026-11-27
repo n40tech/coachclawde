@@ -8,15 +8,13 @@ import { PageHeader } from '../components/layout/PageHeader'
 import { Button } from '../components/shared/Button'
 import { Card, CardSection } from '../components/shared/Card'
 import { SyncIndicator } from '../components/shared/SyncIndicator'
-import { UserCircle, CheckCircle, AlertCircle, RefreshCw, LogOut, Sparkles, ChevronRight, Gift, MessageCircle, ShieldCheck, Bell, Timer } from 'lucide-react'
+import { UserCircle, CheckCircle, AlertCircle, RefreshCw, LogOut, Sparkles, ChevronRight, Info, MessageCircle, ShieldCheck, Bell, Timer } from 'lucide-react'
 import { ConfirmDialog } from '../components/shared/ConfirmDialog'
 import { Switch } from '../components/shared/Switch'
 import { ChoiceChip, ChoiceGroup } from '../components/shared/Choice'
 import { goalOrLegacy } from '../lib/goalProfile'
-import { WhatsNewSheet } from '../components/shared/WhatsNew'
 import { APP_VERSION } from '../lib/appVersion'
 import { getDeviceShape } from '../lib/deviceShape'
-import { RELEASES } from '../lib/releaseNotes'
 import { ageFromBirthDate, isValidBirthDate } from '../lib/dateUtils'
 import { toLocalISODate } from '../lib/weekUtils'
 import { fromWeight, toWeight, type DistanceUnit, type WeightUnit } from '../lib/units'
@@ -35,7 +33,6 @@ export function Settings() {
   const [birthDate, setBirthDate] = useState(profile.birthDate ?? '')
   const age = ageFromBirthDate(birthDate)
   const [profileSaved, setProfileSaved] = useState(false)
-  const [showWhatsNew, setShowWhatsNew] = useState(false)
   const [confirmHealth, setConfirmHealth] = useState(false)
   const checkInsOn = !profile.goal?.checkInsOff
   const healthFlags = profile.goal?.health.flags ?? []
@@ -292,28 +289,24 @@ export function Settings() {
           </Card>
         </div>
 
-        {/* What's new */}
+        {/* About */}
         <div>
           <h2 className="text-xs text-[#858585] uppercase tracking-widest font-medium px-1 mb-3">About</h2>
           <Card>
-            <button type="button" onClick={() => setShowWhatsNew(true)} className="w-full text-left">
-              <CardSection className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-[#d97756]/15 flex items-center justify-center shrink-0">
-                  <Gift size={18} className="text-[#d97756]" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-[#f5f5f0]">What's new</p>
-                  <p className="text-xs text-[#949494] mt-0.5">Coach Clawde v{APP_VERSION} · release notes</p>
-                </div>
-                <ChevronRight size={16} className="text-[#858585] shrink-0" />
-              </CardSection>
-            </button>
+            <CardSection className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-[#d97756]/15 flex items-center justify-center shrink-0">
+                <Info size={18} className="text-[#d97756]" aria-hidden />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-[#f5f5f0]">Coach Clawde</p>
+                <p className="text-xs text-[#949494] mt-0.5">Version {APP_VERSION}</p>
+              </div>
+            </CardSection>
           </Card>
           <DisplayInfo />
         </div>
       </div>
 
-      {showWhatsNew && <WhatsNewSheet releases={RELEASES} onClose={() => setShowWhatsNew(false)} />}
       {confirmHealth && (
         <ConfirmDialog
           icon={<ShieldCheck size={20} />}

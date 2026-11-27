@@ -7,7 +7,6 @@ import { ClawdeMark } from '../components/shared/ClawdeMark'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { ChoiceChip, ChoiceGroup } from '../components/shared/Choice'
 import { chipLook } from '../components/shared/chipLook'
-import { markVersionSeen } from '../lib/appVersion'
 import { FixedLayer } from '../components/layout/FixedLayer'
 import {
   ACTIVITY_LABEL, WHERE_LABEL, basicsFromProfile, profileFromBasics,
@@ -66,9 +65,6 @@ export function Onboarding() {
 
   function handleFinish() {
     save()
-    // Release notes are for testers who've seen an earlier build — don't greet
-    // a brand-new athlete with a changelog.
-    markVersionSeen()
     // Play the flight, then drop the athlete on the home screen.
     setFinishing(true)
     setTimeout(() => navigate('/', { replace: true }), 950)

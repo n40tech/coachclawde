@@ -64,7 +64,10 @@ Security. The app talks to it directly with
 Function, `supabase/functions/rest-alarm` (rest-timer push notifications). Requires
 `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY`; when those are absent the app runs
 in offline single-user "local mode" (no login), so `npm run dev` works without a
-backend. See [`DEPLOYMENT.md`](DEPLOYMENT.md) for setup and the DB schema in
+backend. **Vercel preview builds** (every PR) always run in local mode, seeded
+with a demo lifter six weeks into a program (`lib/demoData`); `?demo=reset`
+starts the demo over, and `VITE_DEMO_DATA=true` does the same locally.
+Sign-in and sync are only exercised in production. See [`DEPLOYMENT.md`](DEPLOYMENT.md) for setup and the DB schema in
 `supabase/migrations/`.
 
 **Accounts:** Supabase is the only backend. Testers sign in with an email and

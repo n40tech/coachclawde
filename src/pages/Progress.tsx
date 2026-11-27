@@ -8,8 +8,8 @@ import { SyncIndicator } from '../components/shared/SyncIndicator'
 import { WeightPRCard } from '../components/progress/PRCards'
 import { computeWeightPRs, totalVolumeKg } from '../lib/prComputations'
 import { getProgramProgress } from '../lib/programProgress'
+import { logWeekStart } from '../lib/weekStatus'
 import { Dumbbell, Layers, TrendingUp, Trophy, Zap, Settings, ChevronRight } from 'lucide-react'
-import { parseISO, isSameWeek } from 'date-fns'
 import { getMonday, addDays, toLocalISODate, WEEK_DAYS_MON } from '../lib/weekUtils'
 import { sessionDayKey } from '../lib/dateUtils'
 import type { LoggedSession } from '../types'
@@ -24,9 +24,8 @@ export function Progress() {
   // This week — bucket by when the session was actually completed (falling back
   // to the planned date for older logs), so a session done this week counts even
   // if it was planned for a different week.
-  const thisWeekSessions = completed.filter((s) =>
-    isSameWeek(parseISO(s.completedAt ?? s.date), new Date(), { weekStartsOn: 1 })
-  )
+  const thisMonday = toLocalISODate(getMonday(new Date()))
+  const thisWeekSessions = completed.filter((s) => logWeekStart(s) === thisMonday)
 
   // All time totals
   const totalVolume = totalVolumeKg(weightSessions)

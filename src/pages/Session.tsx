@@ -29,6 +29,7 @@ import { nanoid } from '../lib/nanoid'
 import { useSettingsStore, useUnits } from '../store/useSettingsStore'
 import { localize, toWeight, type Units } from '../lib/units'
 import { MovementGuide } from '../components/session/MovementGuide'
+import { logForSession } from '../lib/weekStatus'
 
 function usePlannedSession(sessionId: string | undefined): PlannedSession | undefined {
   const { weekPlans } = useAppStore()
@@ -70,10 +71,12 @@ export function Session() {
   const [peeking, setPeeking] = useState(false)
   const [confirmReset, setConfirmReset] = useState(false)
 
-  const existingLog = loggedSessions.find((ls) => ls.plannedSessionId === id)
-  const [loggedSession, setLoggedSession] = useState<LoggedSession | null>(existingLog ?? null)
-
   const weekPlan = weekPlans.find((p) => p.sessions.some((s) => s.id === id))
+  // A session's own log (lib/weekStatus); a log with no plan (a quick log) by id.
+  const existingLog = weekPlan && id
+    ? logForSession(weekPlan, id, loggedSessions)
+    : loggedSessions.find((ls) => ls.plannedSessionId === id)
+  const [loggedSession, setLoggedSession] = useState<LoggedSession | null>(existingLog ?? null)
 
   // When a rest runs out on screen, only a tone plays: say it too, for screen
   // reader users with the sound off. Not when it was skipped (that's a tap).

@@ -10,6 +10,7 @@ import { BetaFeedbackTile } from '../components/shared/BetaFeedbackTile'
 import { BETA_FEEDBACK_URL } from '../lib/betaFeedback'
 import { useScrollDirection } from '../hooks/useScrollDirection'
 import { getProgramProgress, nextBlockProgram } from '../lib/programProgress'
+import { weekStatus } from '../lib/weekStatus'
 import { Calendar, ChevronRight, CheckCircle, CalendarPlus, Trophy, Sparkles, Plus } from 'lucide-react'
 import { QuickLogSheet } from '../components/session/QuickLogSheet'
 import { buildQuickLog, type QuickLogInput } from '../lib/quickLog'
@@ -56,13 +57,13 @@ export function Home() {
   // header never shows a dangling "Afternoon, ".
   const firstName = (profile.name ?? '').trim().split(' ')[0]
 
-  const isSessionLogged = (sessionId: string) =>
-    loggedSessions.some((ls) => ls.plannedSessionId === sessionId && ls.status === 'complete')
-
   // Completed sessions live in History only. Home shows what's still to do:
   // the next workout, the rest of the week ahead, and anything missed.
   // The workout under way gets its own card at the top, not a second one below.
-  const pending = (plan?.sessions ?? []).filter((s) => !isSessionLogged(s.id) && s.id !== current?.plannedSessionId)
+  const week = plan ? weekStatus(plan, loggedSessions) : null
+  const pending = (week?.sessions ?? [])
+    .filter((x) => (x.status === 'to-do' || x.status === 'in-progress') && x.session.id !== current?.plannedSessionId)
+    .map((x) => x.session)
   const upcoming = pending
     .filter((s) => s.date >= today)
     .sort((a, b) => a.date.localeCompare(b.date))
@@ -165,11 +166,11 @@ export function Home() {
         )}
 
         {/* Week stats pill */}
-        {plan && (
+        {week && (
           <div className="flex items-center justify-between bg-[#161616] rounded-2xl px-4 py-3 border border-[#2a2a2a]">
             <span className="text-sm text-[#949494]">Week {program.week} of {program.length}</span>
             <span className="text-sm font-medium text-[#f5f5f0]">
-              {plan.sessions.filter((s) => isSessionLogged(s.id)).length}/{plan.sessions.length} sessions
+              {week.done}/{week.total} sessions
             </span>
           </div>
         )}

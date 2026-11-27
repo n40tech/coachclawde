@@ -16,9 +16,3 @@ Preview: <!-- the Vercel preview link for this PR -->
 
 <!-- Each new test by name, and the assertion it failed on before the code was
 written. Or: "None: UI only (manual-test)", with the phone steps above covering it. -->
-
-## Review checklist
-
-- [ ] I read the whole diff
-- [ ] I read the tests, and each one would fail if the feature broke
-- [ ] I tried it on my phone using the steps above

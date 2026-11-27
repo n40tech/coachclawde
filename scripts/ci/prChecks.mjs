@@ -14,24 +14,6 @@ export function isTestFile(path) {
   return /\.(test|spec)\.[cm]?[jt]sx?$/.test(path)
 }
 
-/**
- * Reads the "## Review checklist" section of a PR body. `ok` only when the
- * section exists, has boxes and every one is ticked.
- */
-export function checklistVerdict(body) {
-  const lines = body.split(/\r?\n/)
-  const start = lines.findIndex((l) => /^##\s+Review checklist\s*$/i.test(l))
-  if (start === -1) return { ok: false, unticked: [] }
-  const items = []
-  for (const line of lines.slice(start + 1)) {
-    if (/^#{1,2}\s/.test(line)) break
-    const m = line.match(/^\s*[-*]\s+\[( |x|X)\]\s+(.*\S)\s*$/)
-    if (m) items.push({ ticked: m[1] !== ' ', text: m[2] })
-  }
-  const unticked = items.filter((i) => !i.ticked).map((i) => i.text)
-  return { ok: items.length > 0 && unticked.length === 0, unticked }
-}
-
 export function labelVerdict(labels) {
   const types = labels.filter((l) => TYPE_LABELS.includes(l))
   if (types.length === 1) return { ok: true, message: `Release label: ${types[0]}.` }

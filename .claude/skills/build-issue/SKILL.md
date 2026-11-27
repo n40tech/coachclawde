@@ -1,6 +1,6 @@
 ---
 name: build-issue
-description: Build one GitHub issue test-first and open it as a draft PR for review.
+description: Build one GitHub issue test-first and open it as a PR that merges itself once its checks pass.
 disable-model-invocation: true
 ---
 
@@ -23,22 +23,20 @@ file before starting.
 6. **Check**: `npm run lint`, `npm run build` and `npm test` all green. Follow
    the current release rules in `docs/DEVELOPING.md` for the version and
    release notes.
-7. **Open a draft PR**: commit, push, then `gh pr create --draft` with the body
-   from `.github/pull_request_template.md`, every section filled: `Closes #<number>`,
-   phone steps that start from the screen the app opens on and say what the
-   user should see, and each test with the assertion it failed on. Add exactly
-   one of `feature`, `fix` or `internal`, plus `manual-test` if there are no
-   new tests. Leave the review checklist unticked: it is the user's.
-8. **Add the preview link**: once `gh pr checks <pr>` shows Vercel passing,
-   read the bot's comment
-   (`gh pr view <pr> --json comments --jq '.comments[] | select(.author.login=="vercel") | .body'`)
-   and take its **Preview** link, the `coach-claude-git-<branch>-…vercel.app`
-   alias that follows every push to the branch. Put it in the PR body under
-   "Try it on your phone". Edit the body with
-   `gh api -X PATCH repos/{owner}/{repo}/pulls/<pr> -F body=@<file>`
-   (`gh pr edit` fails on this repo over the retired Projects classic API).
+7. **Open the PR**: commit, push, then `gh pr create` (ready, not draft) with
+   the body from `.github/pull_request_template.md`, every section filled:
+   `Closes #<number>`, phone steps that start from the screen the app opens on
+   and say what the user should see, and each test with the assertion it
+   failed on. Straight away add exactly one of `feature`, `fix` or
+   `internal`, plus `manual-test` if there are no new tests
+   (`gh api repos/{owner}/{repo}/issues/<pr>/labels -f "labels[]=fix"`).
+8. **Auto-merge**: `gh pr merge <pr> --auto --merge`, unless the user asked to
+   hold it or it adds a database migration. If a check fails, fix it on the
+   branch.
+9. **Report**: once it merges, tell the user in plain words what changed and
+   how to try it on `main`'s preview,
+   `https://coach-claude-git-main-natecode.vercel.app` (demo data). Say if it
+   can only be tried in production (sign-in, sync).
 
-Done when the draft PR is open with every check green except the review
-checklist (the user's to tick), every template section filled,
-and the preview link in place. End with the PR link, the preview link and the
-phone steps, so the user can test from their phone straight away.
+Done when the PR has merged (or is held, with the reason) and the user has
+the plain summary and phone steps.

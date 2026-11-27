@@ -8,6 +8,11 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, labeled, unlabeled]
 
+# A newer run (a push, a label) cancels the one before it.
+concurrency:
+  group: fail-on-main-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 

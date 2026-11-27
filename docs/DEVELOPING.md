@@ -7,45 +7,56 @@ touches the app code.
 
 ## Workflow
 
-Every code change follows this cycle. The maintainer reads, phone-tests and
-merges every PR by hand on GitHub; Claude opens PRs and never merges them.
+The maintainer asks for changes in chat and signs off once per release, not
+once per PR: merging to `main` ships nothing to testers (see Releasing), so
+PRs merge themselves when their checks pass, and the maintainer looks at
+`main`'s preview on their phone before pressing Release.
 
-1. **Issue.** A change starts as a GitHub issue whose acceptance criteria say
-   what the athlete will see or what the app will do. `/backlog` turns a
-   brain-dump of ideas into issues. Copy and typo fixes can skip the issue.
-2. **One issue, one PR.** Branch from an up-to-date `main` and open the PR as a
-   **draft**. Keep it reviewable: under ~300 lines of non-test code, or split
-   the issue. When two issues touch the same code, finish one before starting
-   the other. `/build-issue <number>` runs steps 2–5.
+1. **Ask.** A request arrives in chat (a brain-dump is fine). Claude may keep
+   the work as GitHub issues, its own queue (`/backlog` turns a dump into
+   issues), but the maintainer never has to read or write them.
+2. **Small PRs, one at a time.** Branch from an up-to-date `main`. Keep each PR
+   reviewable: under ~300 lines of non-test code, or split it. When two
+   changes touch the same code, merge one before starting the other, so PRs
+   never conflict. `/build-issue <number>` runs steps 2–6.
 3. **Thin components.** Behaviour (calculations, what gets saved, prompt text,
    timer and set rules) lives in `src/lib` as plain functions; components call
    them and handle only layout and events. This is what keeps behaviour
    testable without a browser.
-4. **Tests first.** Each behavioural acceptance criterion gets a test written
-   before the code. It must go **red on an assertion** (not a missing import:
-   stub the function first), then green once the code is written. Name tests
-   as sentences about behaviour ("skips the rest timer after the last set").
+4. **Tests first.** Each behavioural change gets a test written before the
+   code. It must go **red on an assertion** (not a missing import: stub the
+   function first), then green once the code is written. Name tests as
+   sentences about behaviour ("skips the rest timer after the last set").
    Look and feel has no automated test; the maintainer checks it on their
    phone.
 5. **Labels and PR body.** Exactly one of `feature` (a tester would notice
    something new or a changed way of doing things), `fix` (something that
    should have worked now does) or `internal` (nothing visible changed); the
-   Release workflow picks the version from them. Add
-   `manual-test` when the PR adds no tests because it only changes the UI.
-   Fill in every section of `.github/pull_request_template.md`. The review
-   checklist is the maintainer's sign-off: leave its boxes unticked.
-6. **Merge checks.** A PR merges only when these are green (branch protection
-   on `main`, admins included):
+   Release workflow picks the version from them. Add `manual-test` when the
+   PR adds no tests because it only changes the UI. Add the labels straight
+   after opening the PR. Fill in `.github/pull_request_template.md`.
+6. **Auto-merge.** Open the PR ready for review (not draft) and turn on
+   auto-merge (`gh pr merge <n> --auto --merge`); GitHub merges it once these
+   are green (branch protection on `main`, admins included), then deletes the
+   branch:
    - **check** (`ci.yml`): lint, tests, build.
    - **New tests fail on main** (`tests-fail-on-main.yml`): the PR's new and
      changed tests run against `main`'s code. At least one must fail there,
      and no newly named test may already pass there. Skipped for
      `manual-test` and `internal`.
-   - **Review checklist** and **Release label** (`pr-body.yml`): every box
-     ticked, exactly one release label.
+   - **Release label** (`pr-body.yml`): exactly one release label.
 
    Their rules live in `scripts/ci/prChecks.mjs`, tested in
-   `prChecks.test.mjs`.
+   `prChecks.test.mjs`. A newer run of a check cancels the older one, so a
+   check that's red only because the labels weren't on yet leaves no failure
+   behind. If a check fails for real, Claude fixes it on the branch.
+   **Hold** (no auto-merge; the maintainer reads it and merges by hand) when
+   the maintainer asks, and for database migrations.
+7. **Report.** After the merge, tell the maintainer in plain words what
+   changed and how to try it on `main`'s preview
+   (`coach-claude-git-main-natecode.vercel.app`). Changes to sign-in or sync
+   can't be tried on previews (they run in demo mode): say so, and suggest
+   releasing them on their own.
 
 Issues use the conventions in `docs/agents/` (`issue-tracker.md`,
 `triage-labels.md`); `domain.md` covers `GLOSSARY.md` and `docs/adr/` once

@@ -59,3 +59,12 @@ export function secondsToDisplay(remaining: number): string {
   const s = remaining % 60
   return `${m}:${s.toString().padStart(2, '0')}`
 }
+
+/**
+ * The athlete's local calendar day (`YYYY-MM-DD`) a logged session belongs
+ * to: the day it was finished, else its planned date. `completedAt` is a UTC
+ * timestamp, so it is converted to local time before the date is taken.
+ */
+export function sessionDayKey(s: { date: string; completedAt?: string }): string {
+  return s.completedAt ? format(parseISO(s.completedAt), 'yyyy-MM-dd') : s.date.slice(0, 10)
+}

@@ -1,25 +1,22 @@
 import { describe, expect, it } from 'vitest'
 import { buildWeekPlanPrompt, promptScope } from './promptBuilder'
-import { profilePatchFromGoal, toGoalProfile } from './goalFlow'
+import { LEGACY_GOAL_PATCHES as athletes } from './legacyGoalProfiles.testdata'
 import { DEFAULT_PROFILE } from './profileData'
 import type { UserProfile } from '../types'
-import type { FlowAnswers } from './flow'
 
-const now = new Date('2026-10-01T12:00:00')
 const monday = new Date('2026-10-05T00:00:00')
 
-/** A brand-new athlete's prompt, straight from their onboarding answers. */
-function promptFor(answers: FlowAnswers, extra: Partial<UserProfile> = {}): string {
-  const patch = profilePatchFromGoal(toGoalProfile(answers, { now }), { now })
+/** The prompt for an athlete who onboarded with the old goal tree. */
+function promptFor(patch: Partial<UserProfile>, extra: Partial<UserProfile> = {}): string {
   const profile = { ...DEFAULT_PROFILE, dietaryNotes: [], onboarded: true, ...patch, ...extra } as UserProfile
   return buildWeekPlanPrompt(['Mon', 'Wed', 'Fri'], '', 60, undefined, monday, profile, [])
 }
 
-const gymLifter = promptFor({ why: 'strength', 'str.kind': 'lifts', lifting: '1y+', 'str.numbers': 'test', time: { days: '3', mins: '60' }, kit: ['gym'], health: ['ok'] })
-const runnerNoStrength = promptFor({ why: 'event', 'ev.kind': '10k', 'ev.date': '2026-12-06', 'ev.aim': 'finish-strong', 'ev.now': 'mid', 'ev.result': 'none', time: { days: '3', mins: '45' }, kit: ['none'], health: ['ok'] })
-const homeBodyweight = promptFor({ why: 'physique', 'phy.change': 'recomp', 'phy.date': 'none', lifting: 'none', time: { days: '3', mins: '30' }, kit: ['bodyweight'], health: ['ok'] })
-const homeWeights = promptFor({ why: 'strength', 'str.kind': 'all-round', lifting: 'on-off', time: { days: '3', mins: '45' }, kit: ['home'], health: ['ok'] })
-const rugby = promptFor({ why: 'sport', 'sp.sport': 'Rugby', 'sp.season': 'in', 'sp.fixed': { Sat: 'match' }, 'sp.want': ['power'], time: { days: '2', mins: '45' }, kit: ['gym'], health: ['ok'] })
+const gymLifter = promptFor(athletes.gymLifter)
+const runnerNoStrength = promptFor(athletes.runnerNoStrength)
+const homeBodyweight = promptFor(athletes.homeBodyweight)
+const homeWeights = promptFor(athletes.homeWeights)
+const rugby = promptFor(athletes.rugby)
 
 describe('the plan prompt is tailored to the athlete', () => {
   it('never mentions cardio to someone who only goes to the gym', () => {
@@ -58,7 +55,7 @@ describe('the plan prompt is tailored to the athlete', () => {
 
   it('only mentions diet when there are dietary needs', () => {
     expect(gymLifter).not.toMatch(/dietary/i)
-    const withDiet = promptFor({ why: 'strength', 'str.kind': 'all-round', lifting: 'none', time: { days: '3', mins: '45' }, kit: ['gym'], health: ['ok'] }, { dietaryNotes: ['Vegan'] })
+    const withDiet = promptFor(athletes.gymAllRound, { dietaryNotes: ['Vegan'] })
     expect(withDiet).toMatch(/Respect my dietary needs\*\* \(Vegan\)/)
   })
 
@@ -73,9 +70,8 @@ describe('the plan prompt is tailored to the athlete', () => {
     for (const p of [gymLifter, runnerNoStrength, homeBodyweight, rugby]) {
       expect(p).not.toMatch(/niggle|safety|medical|prehab/i)
     }
-    const knee: FlowAnswers = { why: 'strength', 'str.kind': 'lifts', lifting: '1y+', 'str.numbers': 'test', time: { days: '3', mins: '60' }, kit: ['gym'], health: ['injury'], 'health.injury': 'Left knee aches on stairs' }
-    const goal = toGoalProfile(knee, { now })
-    const p = promptFor(knee, { goal: { ...goal, health: { ...goal.health, injuryStatus: { 'Left knee aches on stairs': 'worse' } } } })
+    const goal = athletes.kneeLifter.goal
+    const p = promptFor(athletes.kneeLifter, { goal: { ...goal, health: { ...goal.health, injuryStatus: { 'Left knee aches on stairs': 'worse' } } } })
     expect(p.match(/Left knee aches on stairs/g)).toHaveLength(1)
     expect(p).toMatch(/Niggles to train around:\*\* Left knee aches on stairs \(worse this week\)/)
     expect(p).toMatch(/change only the\s+exercises that provoke it/)

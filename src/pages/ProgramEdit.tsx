@@ -12,6 +12,7 @@ import {
   LENGTH_OPTIONS, DAYS_PER_WEEK_OPTIONS, daysPerWeekLabel,
 } from '../lib/programOptions'
 import type { ProgramConfig } from '../types'
+import { withTrainingSetup } from '../lib/trainingSetup'
 
 function toggle<T>(list: T[], value: T): T[] {
   return list.includes(value) ? list.filter((v) => v !== value) : [...list, value]
@@ -49,11 +50,12 @@ export function ProgramEdit() {
   }, [pushProgram])
 
   function update(patch: Partial<ProgramConfig>) {
-    // Days a week also lives in the goal profile; keep the two in step.
-    const goal = profile.goal && patch.daysPerWeek
-      ? { ...profile.goal, constraints: { ...profile.goal.constraints, daysPerWeek: patch.daysPerWeek } }
-      : profile.goal
-    setProfile({ program: { ...program, ...patch }, goal })
+    // Facilities and days a week also live in the goal: lib/trainingSetup keeps both copies in step.
+    const { facilities, daysPerWeek, ...rest } = patch
+    setProfile(withTrainingSetup({ ...profile, program: { ...program, ...rest } }, {
+      ...(facilities ? { facilities } : {}),
+      ...(daysPerWeek ? { daysPerWeek } : {}),
+    }))
     scheduleSync()
   }
 

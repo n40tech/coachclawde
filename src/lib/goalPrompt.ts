@@ -5,6 +5,7 @@ import { predictSeconds, vdot, describeDistance } from './zones'
 import { formatClock } from './cardioUtils'
 import { EVENT_LABEL, weeksUntil } from './goalFlow'
 import { daysPerWeekLabel } from './programOptions'
+import { trainingSetup } from './trainingSetup'
 
 /**
  * The plan prompt's "## Goal" section (§3.7). The phase skeleton is computed
@@ -144,7 +145,8 @@ export function buildGoalSection(profile: UserProfile, weekStart: Date): string 
   }
 
   if (goal.pursuit === 'event' && goal.constraints.strengthWork === false) lines.push('No strength sessions wanted: running only (mobility inside warm-ups is fine).')
-  lines.push(`Wants about ${daysPerWeekLabel(goal.constraints.daysPerWeek)} sessions a week of ~${goal.constraints.sessionMinutes} min (this week's days and length above take precedence).`)
+  const setup = trainingSetup(profile)
+  lines.push(`Wants about ${daysPerWeekLabel(setup.daysPerWeek)} sessions a week of ~${setup.sessionMinutes} min (this week's days and length above take precedence).`)
 
   // Health: flags only, never diagnoses. Niggles and their status are on the
   // profile's "Niggles to train around" line; the app gives referral advice.

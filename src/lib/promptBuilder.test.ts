@@ -3,6 +3,7 @@ import { buildWeekPlanPrompt } from './promptBuilder'
 import { DEFAULT_PROFILE } from './profileData'
 import type { UserProfile } from '../types'
 import { goalFromLegacyProfile } from './goalProfile'
+import { LEGACY_GOAL_PATCHES } from './legacyGoalProfiles.testdata'
 
 const monday = new Date('2026-10-05T00:00:00')
 
@@ -25,14 +26,8 @@ describe('buildWeekPlanPrompt', () => {
 })
 
 describe('Goal section', () => {
-  it('embeds the goal, the phase skeleton and the deload flag', async () => {
-    const { toGoalProfile, profilePatchFromGoal } = await import('./goalFlow')
-    const now = new Date('2026-10-01T12:00:00')
-    const goal = toGoalProfile({
-      why: 'event', 'ev.kind': 'half', 'ev.date': '2027-03-14', 'ev.aim': 'time:6300', 'ev.now': 'mid',
-      'ev.result': { distance: '5000', time: '1470' }, time: { days: '4', mins: '60' }, kit: ['gym'], health: ['ok'],
-    }, { now })
-    const profile = { ...DEFAULT_PROFILE, ...profilePatchFromGoal(goal, { now }) } as UserProfile
+  it('embeds the goal, the phase skeleton and the deload flag', () => {
+    const profile = { ...DEFAULT_PROFILE, ...LEGACY_GOAL_PATCHES.halfMarathoner } as UserProfile
     // Week 8 of the block: 2026-11-16.
     const p = buildWeekPlanPrompt(['Mon'], '', 60, undefined, new Date('2026-11-16T00:00:00'), profile, [])
     expect(p).toMatch(/## Goal\n- Half marathon on 2027-03-14 \(17 weeks from this week\)\. Aim: 1:45:00 \(current fitness predicts ~1:52:\d\d\)\./)

@@ -162,8 +162,9 @@ things are the way they are.
   stay in sync.
 - `src/store/useAppStore.ts` — main Zustand store (profile, week plans, logged
   sessions, active session, rest timer). Persisted to `localStorage` under
-  `coach-clawde-store` via `partialize` (timer/active session are intentionally
-  not persisted) — this is the offline working cache; Supabase is the source of
+  `coach-clawde-store` via `partialize` (the active session id is not
+  persisted; the rest timer and set clock are, so a rest carries on when the
+  app is reopened) — this is the offline working cache; Supabase is the source of
   truth. `src/store/useSettingsStore.ts` — per-device settings: sync status,
   display units, rest alerts and the minimised rest timer.
 - `src/auth/` — `AuthProvider` (Supabase session + `useAuth()`), `RequireAuth`
@@ -189,8 +190,7 @@ things are the way they are.
   `Onboarding` is the first-run flow: one short form of basics
   (`lib/basicOnboarding` turns it into the GoalProfile and legacy fields),
   then a finish screen. An onboarded athlete opening it gets the same form
-  pre-filled. `lib/goalFlow` (the old goal tree) is still used by check-ins
-  and the migration flow; `components/onboarding/ChatFlow` renders check-ins.
+  pre-filled. `components/onboarding/ChatFlow` renders check-ins.
 - `components/shared/BetaFeedbackTile` — the Home tile linking beta testers
   to the WhatsApp feedback group. The invite link is build-time config
   (`VITE_BETA_FEEDBACK_URL`, read in `lib/betaFeedback`), never source, and
@@ -293,18 +293,19 @@ things are the way they are.
   - `lib/flow` — the flow-as-data engine (`walk`, `rewindTo`, `enumeratePaths`)
     behind every chat. Deterministic, no AI. `components/onboarding/ChatFlow`
     renders any flow.
-  - `lib/goalFlow` — the onboarding goal tree, reflections/feasibility,
-    `toGoalProfile` and `profilePatchFromGoal` (legacy fields are derived from
-    the `GoalProfile`). Tests enforce ≤ 10 questions on every path.
+  - `lib/goalFlow` — what's left of the old onboarding goal tree (on the
+    `cardio-archive` branch): event labels, `weeksUntil` and
+    `blockLengthWeeks`. Prompt tests use athletes it built, saved in
+    `lib/legacyGoalProfiles.testdata`, since older accounts still have goals
+    like theirs.
   - `lib/goalPrompt` — the prompt's Goal section and the phase skeleton.
     `lib/goalProfile` — zones / measurement helpers and the legacy mapping.
   - `lib/checkIn` (rules C1–C10, budget, actions), `lib/checkInTriggers`
     (when to suggest one), `lib/migrationFlow` (the three-question upgrade for
     pre-v1.0.2 athletes), `pages/CheckIn`.
-  - `lib/workout` (structured workouts, legacy `intervals[]` conversion,
-    notation), `lib/zones` (VDOT pace zones), `lib/runEngine` (Run Mode cue
-    timing), `lib/audioCues` (Web Audio tones, `transient` audio session,
-    Android vibration), `components/session/RunMode`.
+  - `lib/workout` (reads older plans' structured workouts and converts legacy
+    `intervals[]`), `lib/zones` (VDOT pace zones), `lib/audioCues` (Web Audio
+    tones, `transient` audio session, Android vibration).
   - `lib/coachingConfig` — **every coaching number** (min weeks, ambition
     thresholds, zones, tapers, deloads). Must be reviewed by a qualified coach.
   - `lib/quickLog` — "Did something else?" and "Log a session".

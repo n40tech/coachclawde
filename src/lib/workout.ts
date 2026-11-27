@@ -1,16 +1,16 @@
 import type {
-  CardioType, Effort, LoggedInterval, LoggedStep, PlannedInterval, PlannedSession, RepeatBlock,
+  CardioType, Effort, PlannedInterval, PlannedSession, RepeatBlock,
   StepEnd, StepRole, WeekPlan, WorkoutItem, WorkoutStep,
 } from '../types'
-import { formatClock, parseDistanceToMeters, parseDurationToSeconds } from './cardioUtils'
-import { describeDistance, estimateSeconds, resolveTarget, type RunZones } from './zones'
-import type { DistanceUnit } from './units'
+import { parseDistanceToMeters, parseDurationToSeconds } from './cardioUtils'
+import { estimateSeconds, type RunZones } from './zones'
 
 /**
  * The structured cardio workout (§5.2 of docs/RUNNERS-AND-ATHLETES.md): steps
  * with a role, an effort and what ends them, grouped into repeat blocks.
- * This module converts legacy `intervals[]`, validates imported workouts, and
- * flattens a workout into the step list Run Mode plays.
+ * Run Mode is gone (1.1, kept on the `cardio-archive` branch); this module
+ * stays so older plans still load: it converts legacy `intervals[]`,
+ * validates imported workouts, and flattens a workout to estimate its length.
  */
 
 export const EFFORTS: Effort[] = ['recovery', 'easy', 'steady', 'marathon', 'threshold', 'interval', 'repetition', 'sprint']
@@ -21,7 +21,7 @@ const MAX_TIMES = 50
 // --- legacy conversion -------------------------------------------------------
 
 /** Best-guess effort and role from a legacy interval's free-text label. */
-export function inferEffort(text: string): { effort: Effort; role: StepRole } {
+function inferEffort(text: string): { effort: Effort; role: StepRole } {
   const t = text.toLowerCase()
   if (/warm[\s-]?up/.test(t)) return { effort: 'easy', role: 'warmup' }
   if (/cool[\s-]?down/.test(t)) return { effort: 'easy', role: 'cooldown' }
@@ -51,7 +51,7 @@ function legacyEnd(iv: PlannedInterval): StepEnd {
  * rest. The old pace text is kept as the step's `target`, so nothing the plan
  * said is lost. Every old plan can therefore run in Run Mode.
  */
-export function intervalsToWorkout(intervals: PlannedInterval[]): WorkoutItem[] {
+function intervalsToWorkout(intervals: PlannedInterval[]): WorkoutItem[] {
   return intervals.map((iv, i): WorkoutItem => {
     const { effort, role } = inferEffort(`${iv.label} ${iv.targetPace ?? ''}`)
     const work: WorkoutStep = {
@@ -223,17 +223,10 @@ export function flattenWorkout(items: WorkoutItem[]): FlatStep[] {
   return out
 }
 
-// --- durations & text -----------------------------------------------------------
-
-/** "15′", "90 s", "2′30″" */
-export function formatStepDuration(seconds: number): string {
-  if (seconds < 120 && seconds % 60 !== 0) return `${seconds} s`
-  if (seconds % 60 === 0) return `${seconds / 60}′`
-  return `${Math.floor(seconds / 60)}′${String(seconds % 60).padStart(2, '0')}″`
-}
+// --- durations ---------------------------------------------------------------
 
 /** Expected duration of a flat step, for strips, clocks and estimates. */
-export function expectedSeconds(f: FlatStep, modality: CardioType, zones?: RunZones): number {
+function expectedSeconds(f: FlatStep, modality: CardioType, zones?: RunZones): number {
   const { end, effort } = f.step
   if (f.cycleSeconds) return end.by === 'time' && end.seconds > 0 ? end.seconds : Math.max(10, f.cycleSeconds * 0.25)
   if (end.by === 'time') return end.seconds
@@ -241,152 +234,6 @@ export function expectedSeconds(f: FlatStep, modality: CardioType, zones?: RunZo
   return 120
 }
 
-function endText(end: StepEnd): string {
-  if (end.by === 'time') return formatStepDuration(end.seconds)
-  if (end.by === 'distance') return describeDistance(end.meters)
-  return 'until LAP'
-}
-
-function effortText(step: WorkoutStep, modality: CardioType, zones?: RunZones, d?: DistanceUnit): string {
-  if (step.role === 'recover') return step.recovery ?? 'rest'
-  if (step.target) return `@ ${step.effort} (${step.target})`
-  if (step.effort === 'easy' || step.effort === 'recovery') return step.effort
-  const t = resolveTarget(step.effort, modality, zones, step.end.by === 'distance' ? step.end.meters : undefined, d)
-  if (modality === 'run' && zones) {
-    const aim = t.secondary?.replace('aim ', '')
-    return `@ ${step.effort} (${t.primary}${aim ? ` ${aim}` : ''})`
-  }
-  return `@ ${step.effort}`
-}
-
-function stepNotation(step: WorkoutStep, modality: CardioType, zones?: RunZones, d?: DistanceUnit): string {
-  return `${endText(step.end)} ${effortText(step, modality, zones, d)}`.trim()
-}
-
-function itemNotation(item: WorkoutItem, modality: CardioType, zones?: RunZones, d?: DistanceUnit): string {
-  if (item.kind === 'step') return stepNotation(item, modality, zones, d)
-  const inner = item.steps.map((s) => itemNotation(s, modality, zones, d)).join(' · ')
-  const every = item.everySeconds ? ` on ${formatClock(item.everySeconds)}` : ''
-  if (item.times === 1) return inner
-  // "6 × 800 m @ interval · 90 s jog" reads unambiguously when a block is one
-  // effort plus its recovery; anything richer gets brackets.
-  const simple = item.steps[0].kind === 'step' &&
-    item.steps.slice(1).every((s) => s.kind === 'step' && s.role === 'recover')
-  return simple && !every ? `${item.times} × ${inner}` : `${item.times} × (${inner})${every}`
-}
-
-/**
- * One-line notation, always in the same form:
- * `15′ easy · 6 × (800 m @ interval (4:45/km ≈ 3:48) · 90 s jog) · 10′ easy`.
- */
-export function workoutNotation(items: WorkoutItem[], modality: CardioType, zones?: RunZones, d?: DistanceUnit): string {
-  return items.map((i) => itemNotation(i, modality, zones, d)).join(' · ')
-}
-
-export interface StripSegment {
-  path: string
-  effort: Effort
-  role: StepRole
-  seconds: number
-}
-
-/** Segments for the workout strip: width ∝ expected duration, colour by effort. */
-export function workoutStrip(flat: FlatStep[], modality: CardioType, zones?: RunZones): StripSegment[] {
-  return flat.map((f) => ({ path: f.path, effort: f.step.effort, role: f.step.role, seconds: expectedSeconds(f, modality, zones) }))
-}
-
 export function totalSeconds(flat: FlatStep[], modality: CardioType, zones?: RunZones): number {
   return flat.reduce((t, f) => t + expectedSeconds(f, modality, zones), 0)
-}
-
-/** Distances of the lap-ended reps, e.g. "800 m" — for the instructions. */
-function lapDistances(flat: FlatStep[]): string[] {
-  const set = new Set<string>()
-  for (const f of flat) {
-    if (f.step.end.by === 'distance') set.add(describeDistance(f.step.end.meters))
-  }
-  return [...set]
-}
-
-/** "How this works", generated from the structure. */
-export function howItWorks(flat: FlatStep[]): string {
-  const laps = lapDistances(flat)
-  const hasLapOnly = flat.some((f) => f.step.end.by === 'lap')
-  const parts = ['Press Start and I’ll time every step, with a tone at each change: rising for go, falling for recover, and three pips just before.']
-  if (laps.length) {
-    parts.push(`For each ${laps.join(' or ')}, press LAP when you reach the distance and I’ll time it.`)
-  }
-  if (hasLapOnly) parts.push('Steps without a set length run until you press LAP.')
-  if (!laps.length && !hasLapOnly) parts.push('Every step ends by itself, so you never need to touch the phone.')
-  return parts.join(' ')
-}
-
-/** "You’ll record", from the recording contract (§5.7). */
-export function youllRecord(flat: FlatStep[]): string {
-  const laps = lapDistances(flat).length > 0
-  const timed = flat.some((f) => f.step.role !== 'recover' && f.step.end.by === 'time')
-  const parts = [laps ? 'Nothing during the run: LAP gives me each rep time.' : 'Nothing during the run: I time every rep.']
-  if (timed) parts.push('Add distances afterwards if your watch has them.')
-  parts.push('At the end, one effort score.')
-  return parts.join(' ')
-}
-
-/** Steps worth a row in the manual log (everything but recoveries). */
-export function loggableSteps(flat: FlatStep[]): FlatStep[] {
-  return flat.filter((f) => f.step.role !== 'recover')
-}
-
-/** Display label for a step: its legacy label, or one built from the structure. */
-export function stepLabel(f: FlatStep): string {
-  const { step } = f
-  if (step.label) return step.label
-  const roleName: Record<StepRole, string> = { warmup: 'Warm-up', cooldown: 'Cool-down', recover: 'Recover', steady: 'Steady', work: 'Rep' }
-  if (step.role === 'work') return `${endText(step.end)} ${step.effort}`
-  if (step.role === 'recover') return `${f.cycleSeconds ? 'Rest to the send-off' : endText(step.end)} ${step.recovery ?? 'rest'}`
-  return `${roleName[step.role]} · ${endText(step.end)} ${step.effort}`
-}
-
-/** "Rep 3 of 6" / "Set 2 · rep 1 of 4" / "Warm-up". */
-export function stepPosition(f: FlatStep): string {
-  const base = f.step.role === 'work'
-    ? f.rep ? `Rep ${f.rep.index} of ${f.rep.of}` : 'Work'
-    : ({ warmup: 'Warm-up', cooldown: 'Cool-down', recover: 'Recover', steady: 'Steady', work: 'Work' } as const)[f.step.role]
-  return f.set ? `Set ${f.set.index} of ${f.set.of} · ${base}` : base
-}
-
-// --- logging --------------------------------------------------------------------
-
-/**
- * Logged interval rows for a workout, one per loggable step, with the number
- * the plan fixes pre-filled-able (legacy manual cardio rows).
- */
-export function initialLoggedIntervals(flat: FlatStep[]): LoggedInterval[] {
-  return loggableSteps(flat).map((f, i) => ({
-    label: stepLabel(f),
-    repeatIndex: f.rep ? f.rep.index - 1 : i,
-    targetPace: f.step.target,
-    targetDuration: f.step.end.by === 'time' ? formatClock(f.step.end.seconds) : undefined,
-    completed: false,
-    stepPath: f.path,
-  }))
-}
-
-/**
- * Turns Run Mode's step records into the session log: every step as timed,
- * plus the interval rows (time from the clock; distance from the plan when a
- * distance rep was ended with LAP).
- */
-export function runLogToIntervals(flat: FlatStep[], steps: LoggedStep[]): LoggedInterval[] {
-  const byPath = new Map(steps.map((s) => [s.path, s]))
-  return initialLoggedIntervals(flat).map((row) => {
-    const rec = row.stepPath ? byPath.get(row.stepPath) : undefined
-    if (!rec || rec.endedBy === 'skip' || rec.seconds <= 0) return row
-    return {
-      ...row,
-      actualSeconds: Math.round(rec.seconds),
-      actualTime: formatClock(rec.seconds),
-      ...(rec.meters ? { actualDistanceMeters: rec.meters } : {}),
-      completed: true,
-    }
-  })
 }

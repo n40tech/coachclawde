@@ -1,10 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import {
-  flattenWorkout, howItWorks, inferEffort, intervalsToWorkout, normalizePlan, normalizeWorkout,
-  runLogToIntervals, totalSeconds, workoutNotation, youllRecord,
-} from './workout'
+import { flattenWorkout, normalizePlan, normalizeSession, normalizeWorkout, totalSeconds } from './workout'
 import { runZones } from './zones'
-import type { PlannedInterval, WeekPlan, WorkoutItem } from '../types'
+import type { PlannedInterval, PlannedSession, WeekPlan, WorkoutItem } from '../types'
 
 // §5.2: "15 min easy, 6 × 800 m at interval pace with 90 s jog, 10 min easy".
 const SIX_800S: WorkoutItem[] = [
@@ -24,7 +21,8 @@ describe('legacy interval conversion', () => {
     { label: '3 min threshold', repeats: 2, targetDuration: '3:00', restSeconds: 60 },
     { label: 'Finish', repeats: 1, restSeconds: 0 },
   ]
-  const workout = intervalsToWorkout(legacy)
+  const session = { id: 's', date: '2026-09-28', dayOfWeek: 'Mon', type: 'cardio', title: 'Run', focus: '', estimatedMinutes: 40, intensity: 'hard', intervals: legacy } as PlannedSession
+  const workout = normalizeSession(session).workout!
 
   it('ends a piece by distance, else time, else LAP', () => {
     const ends = workout.map((w) => w.kind === 'repeat' && w.steps[0].kind === 'step' ? w.steps[0].end : null)
@@ -44,14 +42,6 @@ describe('legacy interval conversion', () => {
         { kind: 'step', role: 'recover', end: { by: 'time', seconds: 90 }, effort: 'recovery' },
       ],
     })
-  })
-
-  it('infers effort and role from the label', () => {
-    expect(inferEffort('Easy warm-up jog')).toEqual({ effort: 'easy', role: 'warmup' })
-    expect(inferEffort('Tempo run')).toEqual({ effort: 'threshold', role: 'work' })
-    expect(inferEffort('400m reps')).toEqual({ effort: 'repetition', role: 'work' })
-    expect(inferEffort('6 x 3 min reps')).toEqual({ effort: 'interval', role: 'work' })
-    expect(inferEffort('Zone 2 steady')).toEqual({ effort: 'easy', role: 'steady' })
   })
 
   it('maps flat work steps 1:1 onto the old flat interval rows', () => {
@@ -101,22 +91,7 @@ describe('flattenWorkout', () => {
   })
 })
 
-describe('notation and instructions', () => {
-  it('writes the one-line notation in the documented form', () => {
-    expect(workoutNotation(SIX_800S, 'run', zones))
-      .toBe('15′ easy · 6 × 800 m @ interval (4:45/km ≈ 3:48) · 90 s jog · 10′ easy')
-    expect(workoutNotation(SIX_800S, 'run')).toBe('15′ easy · 6 × 800 m @ interval · 90 s jog · 10′ easy')
-  })
-
-  it('explains LAP for distance reps and nothing to do for timed ones', () => {
-    const flat = flattenWorkout(SIX_800S)
-    expect(howItWorks(flat)).toMatch(/For each 800 m, press LAP/)
-    expect(youllRecord(flat)).toMatch(/LAP gives me each rep time/)
-    const timed = flattenWorkout([{ kind: 'step', role: 'steady', end: { by: 'time', seconds: 2400 }, effort: 'easy' }])
-    expect(howItWorks(timed)).toMatch(/ends by itself/)
-    expect(youllRecord(timed)).toMatch(/Add distances afterwards/)
-  })
-
+describe('totalSeconds', () => {
   it('estimates the session length from zones', () => {
     const minutes = totalSeconds(flattenWorkout(SIX_800S), 'run', zones) / 60
     expect(minutes).toBeGreaterThan(55)
@@ -137,19 +112,5 @@ describe('normalizeWorkout', () => {
     const inner = outer.steps[0] as Extract<WorkoutItem, { kind: 'repeat' }>
     expect(inner.steps[0]).toMatchObject({ kind: 'step', end: { by: 'distance', meters: 200 }, effort: 'threshold' })
     expect(normalizeWorkout([])).toBeUndefined()
-  })
-})
-
-describe('runLogToIntervals', () => {
-  it('fills rows from Run Mode: clock time, planned distance on a LAP', () => {
-    const flat = flattenWorkout(SIX_800S)
-    const rows = runLogToIntervals(flat, [
-      { path: '0', role: 'warmup', startedAt: '', seconds: 900, endedBy: 'time' },
-      { path: '1.0.0', role: 'work', startedAt: '', seconds: 226.4, meters: 800, endedBy: 'lap' },
-      { path: '1.1.0', role: 'work', startedAt: '', seconds: 12, endedBy: 'skip' },
-    ])
-    expect(rows[0]).toMatchObject({ actualSeconds: 900, completed: true })
-    expect(rows[1]).toMatchObject({ actualSeconds: 226, actualTime: '3:46', actualDistanceMeters: 800, completed: true, stepPath: '1.0.0' })
-    expect(rows[2]).toMatchObject({ completed: false })
   })
 })

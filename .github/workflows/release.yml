@@ -2,7 +2,8 @@
 #
 # Ships everything merged to main since the last release:
 #   1. works out the version from the merged PRs' labels (scripts/release)
-#   2. commits "Release vX.Y.Z" (the version stamp) on top of main, tags it,
+#   2. runs the smoke test (e2e/smoke.e2e.ts)
+#   3. commits "Release vX.Y.Z" (the version stamp) on top of main, tags it,
 #      and points the `production` branch at it; Vercel deploys production
 # It holds no database credentials: a release with database or Edge Function
 # changes stops until they're applied (ask Claude) and the box is ticked.
@@ -46,6 +47,15 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           DRY_RUN: ${{ inputs.dry_run }}
           APPLIED: ${{ inputs.applied }}
+
+      # The smoke test (e2e/smoke.e2e.ts) on what's about to ship; a failure
+      # stops the release before anything is tagged or pushed.
+      - name: Smoke test
+        if: steps.plan.outputs.version && !inputs.dry_run
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+          npm run smoke
 
       - name: Stamp, tag and ship
         if: steps.plan.outputs.version && !inputs.dry_run

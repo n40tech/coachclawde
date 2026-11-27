@@ -1,0 +1,34 @@
+# The smoke test (e2e/smoke.e2e.ts) on every merge to main: a demo-mode build
+# on a phone-sized browser loads, shows Home and opens a workout with no
+# errors. Release runs it too, before shipping. Not a PR check: PRs are tried
+# by hand on the phone preview.
+name: Smoke
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    name: Smoke test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run smoke
+      - name: Keep the trace of a failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: smoke-test-results
+          path: test-results
+          retention-days: 7

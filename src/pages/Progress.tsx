@@ -11,6 +11,7 @@ import { getProgramProgress } from '../lib/programProgress'
 import { Dumbbell, Layers, TrendingUp, Trophy, Zap, Settings, ChevronRight } from 'lucide-react'
 import { parseISO, isSameWeek } from 'date-fns'
 import { getMonday, addDays, toLocalISODate, WEEK_DAYS_MON } from '../lib/weekUtils'
+import { sessionDayKey } from '../lib/dateUtils'
 import type { LoggedSession } from '../types'
 
 export function Progress() {
@@ -163,7 +164,7 @@ export function Progress() {
 function ActivityCalendar({ sessions }: { sessions: LoggedSession[] }) {
   const counts = new Map<string, number>()
   for (const s of sessions) {
-    const key = (s.completedAt ?? s.date).slice(0, 10)
+    const key = sessionDayKey(s)
     counts.set(key, (counts.get(key) ?? 0) + 1)
   }
 

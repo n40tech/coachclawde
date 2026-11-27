@@ -10,8 +10,7 @@ where they train (gym, home weights, bodyweight), injuries (plus one
 "medical/heart condition or pregnant" checkbox that keeps plans moderate until
 cleared) and free-text notes. It builds a `GoalProfile` (always all-round
 strength and a balanced physique) and derives the legacy profile fields from
-it. Weekly check-ins (`src/lib/checkIn.ts`) keep it current. There is no
-onboarding prompt to answer here.
+it. There is no onboarding prompt to answer here.
 
 ## Weights-first
 
@@ -32,7 +31,7 @@ The app is **multi-user** and each athlete's data lives in a per-user database (
 - **What they're training for, block phases, starting point** → the prompt's "Goal" section (when present)
 - **Athlete profile, injuries, goals, program preferences** → the prompt's "Athlete profile" section
 - **Pace zones and what they can measure with** → the prompt's "Cardio: paces & what I can measure" section
-- **Recent training history, notes, swaps, working weights and the latest check-in** → the prompt's "Training history (summary)" section
+- **Recent training history, notes, swaps and working weights** → the prompt's "Training history (summary)" section
 - **Programming rules & the WeekPlan schema** → this file (`CLAUDE.md`)
 
 Always apply the Critical Programming Rules below and progressive overload against the current working weights given in the prompt.
@@ -166,7 +165,7 @@ training plan"**.
 Athletes who follow their own plan paste a **"Convert my training plan"**
 prompt. Convert it into a `WeekPlan` exactly as
 written: don't reprogram it, and flag anything that loads an injury marked
-worse at a check-in with a "⚠️" in `coachNotes` rather than rewriting it.
+worse with a "⚠️" in `coachNotes` rather than rewriting it.
 
 ## Athlete Data
 
@@ -211,7 +210,7 @@ hard-coded here — they come from each athlete's own profile (their `injuries`
 and `dietaryNotes`), so apply them per-athlete using your own coaching judgement
 rather than assuming any particular injury.
 
-1. **TRAIN AROUND NIGGLES, PROPORTIONATELY**: The prompt lists each niggle once, with its latest check-in status. Change only the exercises that provoke it (a different variation, range of motion or load) and train everything else normally; say what you changed once, in that exercise's `coachNotes`. For one marked "worse this week", go lighter on the movements that load it. Don't add rehab or "protective" moves unless asked, and don't give medical or referral advice: the app does that itself, on specific triggers (an uncleared medical flag, a niggle getting worse). With no niggles listed, don't mention injuries at all. An uncleared medical flag (in the Goal section) means moderate intensity and no maximal efforts, whatever the coaching style.
+1. **TRAIN AROUND NIGGLES, PROPORTIONATELY**: The prompt lists each niggle once, with its saved status. Change only the exercises that provoke it (a different variation, range of motion or load) and train everything else normally; say what you changed once, in that exercise's `coachNotes`. For one marked "worse this week", go lighter on the movements that load it. Don't add rehab or "protective" moves unless asked, and don't give medical or referral advice: the app does that itself, on specific triggers (an uncleared medical flag, a niggle getting worse). With no niggles listed, don't mention injuries at all. An uncleared medical flag (in the Goal section) means moderate intensity and no maximal efforts, whatever the coaching style.
 2. **Respect dietary needs**: Note any dietary restrictions the athlete lists when making nutrition suggestions; they don't otherwise change the programming.
 3. **Progressive overload**: Keep last week's exercises, with the same names, unless the athlete swapped one or a new block starts (working weights are matched by name), and slightly increase volume or intensity vs the previous week's logged data.
 4. **BALANCED, FULL-BODY DEVELOPMENT (default goal)**: Unless the athlete says otherwise, program for a balanced physique. Across the week, hit every major muscle group with roughly even volume — push (chest/triceps), pull (back/biceps), legs (quads/hamstrings/glutes/calves), shoulders and core. Don't let any one area dominate. Each individual session should also state its `focus` honestly and cover a coherent group of muscles rather than a random mix. Session shape: 3–6 exercises (up to 7 past beginner), main compound exercise first, most sets 1–3 reps short of failure (RPE 7–9), rest 2–3 min on compound exercises and 60–90 s on isolation work; where the days allow, train each major muscle group at least twice a week.
@@ -232,10 +231,9 @@ rather than assuming any particular injury.
    - Warm-up moves aren't logged, so don't repeat them in `exercises`.
    The app's prompt (`src/lib/promptBuilder.ts`) carries the same spec plus a worked JSON example. Keep the two in sync.
 10. **STANDARD EXERCISE NAMES**: Name every exercise and warm-up/cool-down move with its common gym name (e.g. "Dumbbell Bench Press", "Romanian Deadlift", "Cat Stretch"). The app matches names against an exercise library (free-exercise-db) to show a movement guide, with a YouTube search as backup. Put variations and cues in `coachNotes` / `notes`, not the name. Stick to well-known exercises that fit the athlete's equipment: no hybrids or novelty moves.
-11. **APPLY THE LATEST CHECK-IN**: When the history includes a "Latest check-in", apply it: shorter sessions, a lighter week, intensity up or down, injury status (worse → lighter on the movements that load it; the app gives any referral advice), and next week's events. The athlete answered those questions for this plan.
-12. **PRESCRIBE ONLY WHAT CAN BE MEASURED**: The prompt's "Runs with" line says what the athlete measures with. With a phone only (or unknown), end reps by **time**, never by distance. Distance reps need a GPS watch or a track; on a treadmill give speeds in km/h as `target`. Cardio always goes in `workout`, not `intervals`.
-13. **STRICT JSON OUTPUT**: The athlete pastes the JSON straight into the app. Output strict JSON (no comments, trailing commas or nulls — omit optional fields instead), only schema fields, exact enum values, and unique ids across sessions and exercises.
-14. **METRIC ONLY**: Weights in kg, distances in m or km, paces per km, speeds in km/h, even when the athlete's notes or pasted plan use lb or miles (convert them). In text, put the number right before its unit ("8 × 12kg", "5 km", "4:45/km"); numeric fields are plain numbers. The athlete picks kg/lb and km/mi in Settings and the app converts for display.
+11. **PRESCRIBE ONLY WHAT CAN BE MEASURED**: The prompt's "Runs with" line says what the athlete measures with. With a phone only (or unknown), end reps by **time**, never by distance. Distance reps need a GPS watch or a track; on a treadmill give speeds in km/h as `target`. Cardio always goes in `workout`, not `intervals`.
+12. **STRICT JSON OUTPUT**: The athlete pastes the JSON straight into the app. Output strict JSON (no comments, trailing commas or nulls — omit optional fields instead), only schema fields, exact enum values, and unique ids across sessions and exercises.
+13. **METRIC ONLY**: Weights in kg, distances in m or km, paces per km, speeds in km/h, even when the athlete's notes or pasted plan use lb or miles (convert them). In text, put the number right before its unit ("8 × 12kg", "5 km", "4:45/km"); numeric fields are plain numbers. The athlete picks kg/lb and km/mi in Settings and the app converts for display.
 
 ## Session Export
 

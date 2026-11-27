@@ -65,7 +65,7 @@ Why each one matters:
 | `0003_fix_new_user_onboarding` | **Not optional.** Without it, new accounts skip onboarding and land in the app with an empty profile (no injuries, no goals), which plan generation depends on. |
 | `0004_profile_birth_date` | The `birth_date` column. Every profile save writes it, so saves fail without it. |
 | `0005_goal_profile` | The `goal_profile` column (goal, event, constraints, health flags). Same failure mode as `0004`. |
-| `0006_check_ins` | The weekly check-ins table. Without it check-ins stay on the device and the sync indicator shows an error. |
+| `0006_check_ins` | The weekly check-ins table. Check-ins were removed from the app in 0.3; the table stays (migrations only add) and nothing reads or writes it. |
 | `0007_rest_alarms` | Rest-timer alerts: the alarm table and its pg_cron ticker (enables `pg_cron` and `pg_net`). Harmless on its own; the alerts also need [§7](#7-rest-timer-alerts-optional). |
 
 *(Prefer the CLI? `npm i -g supabase`, `supabase link --project-ref <ref>`,
@@ -285,7 +285,7 @@ with demo data. The Release workflow moves `production` (see
 There is no AI call on the server. The app builds a **self-contained prompt**
 (`src/lib/promptBuilder.ts`): the athlete's profile and goal, a *summarised*
 recent history (`src/lib/historySummary.ts`: recent sessions, working weights,
-PRs, the latest check-in, capped so the prompt stays focused), the programming
+PRs and notes, capped so the prompt stays focused), the programming
 rules and the `WeekPlan` JSON schema. It opens in the Claude app (or claude.ai)
 pre-filled, the athlete sends it, and pastes the JSON reply back into the app.
 `CLAUDE.md` holds the full, general version of the rules and schema.

@@ -1,5 +1,7 @@
 import { differenceInCalendarWeeks, parseISO } from 'date-fns'
-import type { UserProfile } from '../types'
+import type { ProgramConfig, UserProfile } from '../types'
+import { blockLengthWeeks } from './goalFlow'
+import { getMonday, toLocalISODate } from './weekUtils'
 
 export const DEFAULT_PROGRAM_LENGTH_WEEKS = 12
 
@@ -39,5 +41,19 @@ export function getProgramProgress(profile: UserProfile, now: Date = new Date())
     length,
     isComplete: rawWeek > length,
     percent: Math.min(100, Math.round((cappedWeek / length) * 100)),
+  }
+}
+
+/**
+ * The athlete's program restarted as a new block this week: same goal and
+ * preferences, a fresh start date and the block length the goal calls for.
+ * Undefined when they have no program yet.
+ */
+export function nextBlockProgram(profile: UserProfile, now: Date = new Date()): ProgramConfig | undefined {
+  if (!profile.program) return undefined
+  return {
+    ...profile.program,
+    startDate: toLocalISODate(getMonday(now)),
+    lengthWeeks: profile.goal ? blockLengthWeeks(profile.goal, now) : profile.program.lengthWeeks,
   }
 }

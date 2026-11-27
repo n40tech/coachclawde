@@ -25,7 +25,6 @@ import { needsBasicsForm } from './lib/basicOnboarding'
 // first visit.
 const Login = lazyPage(() => import('./pages/Login'), 'Login')
 const Onboarding = lazyPage(() => import('./pages/Onboarding'), 'Onboarding')
-const CheckIn = lazyPage(() => import('./pages/CheckIn'), 'CheckIn')
 const WeekPlanner = lazyPage(() => import('./pages/WeekPlanner'), 'WeekPlanner')
 const History = lazyPage(() => import('./pages/History'), 'History')
 const Progress = lazyPage(() => import('./pages/Progress'), 'Progress')
@@ -61,7 +60,7 @@ function App() {
                 <RequireAuth>
                   <Routes>
                     <Route path="/onboarding" element={<PhoneColumn><Onboarding /></PhoneColumn>} />
-                    <Route path="/check-in" element={<RequireOnboarded><PhoneColumn><CheckIn /></PhoneColumn></RequireOnboarded>} />
+                    <Route path="/check-in" element={<Navigate to="/" replace />} />
                     <Route
                       path="/*"
                       element={

@@ -68,7 +68,7 @@ function eventLine(goal: GoalProfile, now: Date): string[] {
   const name = ev.name ?? EVENT_LABEL[ev.kind]
   const cap = name.charAt(0).toUpperCase() + name.slice(1)
   const lines: string[] = []
-  const when = ev.date ? `on ${ev.date} (${weeksUntil(ev.date, now)} weeks from this week)` : '(no date yet: build base and confirm the date at a check-in)'
+  const when = ev.date ? `on ${ev.date} (${weeksUntil(ev.date, now)} weeks from this week)` : '(no date yet: build base until I set one)'
   let aim = ev.aim === 'time' && ev.targetSeconds ? `Aim: ${formatClock(ev.targetSeconds)}` : ev.aim === 'finish-strong' ? 'Aim: finish strong' : 'Aim: get round comfortably'
   const meters = EVENT_METERS[ev.kind as keyof typeof EVENT_METERS]
   const r = goal.starting.recentResult

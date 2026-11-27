@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
-import { wantsCheckIns } from '../lib/checkInTriggers'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAppStore } from '../store/useAppStore'
 import { WorkoutSheet } from '../components/session/WorkoutSheet'
@@ -56,7 +55,7 @@ export function Session() {
       ? afterPopstate(() => navigate(-1))
       : navigate('/', { replace: true }))
   const {
-    weekPlans, loggedSessions, addLoggedSession, updateLoggedSession, setActiveSession, profile, dismissCheckIn,
+    weekPlans, loggedSessions, addLoggedSession, updateLoggedSession, setActiveSession,
     setClock, startSetClock,
   } = useAppStore()
   const { startTimer, skipTimer, isActive: resting, label: restLabel } = useRestTimer()
@@ -75,15 +74,6 @@ export function Session() {
   const [loggedSession, setLoggedSession] = useState<LoggedSession | null>(existingLog ?? null)
 
   const weekPlan = weekPlans.find((p) => p.sessions.some((s) => s.id === id))
-
-  // Determine if this is the last session of the week
-  const isLastSession = useMemo(() => {
-    if (!weekPlan || !id) return false
-    const completedIds = loggedSessions.filter((ls) => ls.status === 'complete').map((ls) => ls.plannedSessionId)
-    const remaining = weekPlan.sessions.filter((s) => s.id !== id && !completedIds.includes(s.id))
-    // No invitation for athletes who turned check-ins off (or just track).
-    return remaining.length === 0 && wantsCheckIns(profile)
-  }, [weekPlan, id, loggedSessions, profile])
 
   // When a rest runs out on screen, only a tone plays: say it too, for screen
   // reader users with the sound off. Not when it was skipped (that's a tap).
@@ -348,17 +338,6 @@ export function Session() {
     if (useAppStore.getState().setClock?.sessionId === planned!.id) startSetClock(null)
   }
 
-  // The week-done invitation opens a check-in, or snoozes until the next trigger.
-  const reviewWeek = weekPlan?.weekStartDate ?? ''
-  function openCheckIn() {
-    setSummary(null)
-    navigate(`/check-in?trigger=week-complete&week=${reviewWeek}`, { replace: true })
-  }
-  function declineCheckIn() {
-    dismissCheckIn(`week:${reviewWeek}`)
-    finishAndLeave()
-  }
-
   function finishAndLeave() {
     setSummary(null)
     navigate('/')
@@ -582,10 +561,7 @@ export function Session() {
       {summary && (
         <WorkoutComplete
           summary={summary}
-          isLastSessionOfWeek={isLastSession}
           onSave={handleSessionSave}
-          onCheckIn={openCheckIn}
-          onNotNow={declineCheckIn}
           onFinish={finishAndLeave}
           onCancel={() => setSummary(null)}
           onDelete={deleteWorkout}

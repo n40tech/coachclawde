@@ -149,8 +149,8 @@ injected script. It checks for a new version whenever the app returns to the
 foreground (iPhone Home Screen apps are resumed, not relaunched, so `load`
 rarely fires), every 30 minutes, and when back online. A new worker takes
 over at once (`skipWaiting` + `clientsClaim`), and the page reloads at a safe
-moment: immediately on most screens, but never on `/session/*`, `/onboarding`
-or `/check-in`, or while a text field has focus. There it waits for the next
+moment: immediately on most screens, but never on `/session/*` or `/onboarding`,
+or while a text field has focus. There it waits for the next
 navigation or for the app going into the background. `vercel.json` sends
 `no-cache` for `/`, `/index.html`, `/sw.js` and the manifest so a deploy is
 always seen, and caches the hashed `/assets/*` forever.
@@ -203,7 +203,9 @@ things are the way they are.
   then a finish screen. An onboarded athlete opening it gets the same form
   pre-filled. Athletes from builds before goals existed are sent to it once
   (`needsBasicsForm`, checked by `RequireOnboarded` in `App.tsx`).
-  `components/onboarding/ChatFlow` renders check-ins.
+  Weekly check-ins were removed (#25): `/check-in` goes to Home, and the
+  `check_ins` table is left as it is. When the block ends, Home's "Start the
+  next block" restarts it (`nextBlockProgram` in `lib/programProgress`).
 - `components/shared/BetaFeedbackTile` — the Home tile linking beta testers
   to the WhatsApp feedback group. The invite link is build-time config
   (`VITE_BETA_FEEDBACK_URL`, read in `lib/betaFeedback`), never source, and
@@ -303,9 +305,6 @@ things are the way they are.
   (shared labels for the program preference enums).
   `useAutoSync` (in `src/hooks/`) is the push/pull facade used by pages.
 - **Runners & athletes (v1.0.2):**
-  - `lib/flow` — the flow-as-data engine (`walk`, `rewindTo`, `enumeratePaths`)
-    behind every chat. Deterministic, no AI. `components/onboarding/ChatFlow`
-    renders any flow.
   - `lib/goalFlow` — what's left of the old onboarding goal tree (on the
     `cardio-archive` branch): event labels, `weeksUntil` and
     `blockLengthWeeks`. Prompt tests use athletes it built, saved in
@@ -313,8 +312,6 @@ things are the way they are.
     like theirs.
   - `lib/goalPrompt` — the prompt's Goal section and the phase skeleton.
     `lib/goalProfile` — zones / measurement helpers and the legacy mapping.
-  - `lib/checkIn` (rules C1–C10, budget, actions), `lib/checkInTriggers`
-    (when to suggest one), `pages/CheckIn`.
   - `lib/workout` (reads older plans' structured workouts and converts legacy
     `intervals[]`), `lib/zones` (VDOT pace zones), `lib/audioCues` (Web Audio
     tones, `transient` audio session, Android vibration).
@@ -371,9 +368,11 @@ things are the way they are.
   already lives there).
 - Keep changes minimal and typed. Injury handling is deliberately
   proportionate (CLAUDE.md, rule 1): its wording can change, but never remove
-  its safety triggers — an uncleared medical flag's limits, the "worse" status
-  from check-ins (lighter loading, plus the app's own referral note), and
-  changing only the exercises that provoke a niggle.
+  its safety triggers — an uncleared medical flag's limits, a niggle marked
+  "worse" (lighter loading on what loads it), recent pain notes in the
+  prompt's history, and changing only the exercises that provoke a niggle.
+  Since check-ins were removed nothing marks a niggle "worse" any more; a
+  status saved before then stays until the injury line is edited.
 - `dist/` and `node_modules/` are git-ignored — never commit them.
 - **No athlete data belongs in this repo.** It lives in each user's Supabase
   rows; nothing in the app writes to git any more.

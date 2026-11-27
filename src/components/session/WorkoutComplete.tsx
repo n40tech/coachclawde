@@ -21,13 +21,8 @@ export interface SessionCompleteData {
 
 interface WorkoutCompleteProps {
   summary: WorkoutSummary
-  isLastSessionOfWeek: boolean
-  /** Saves the session. The page then shows the week invitation if there is one. */
+  /** Saves the session. */
   onSave: (data: SessionCompleteData) => void
-  /** Week-done invitation accepted: open a check-in. */
-  onCheckIn: () => void
-  /** Week-done invitation declined ("Not now"). */
-  onNotNow: () => void
   /** Leave after saving (navigates away). */
   onFinish: () => void
   /** Back to the workout, nothing saved. */
@@ -44,11 +39,10 @@ const FEEL = ['', 'Terrible', 'Poor', 'OK', 'Good', 'Great']
  * three shareable cards, how it felt and notes; then save, go back, or
  * delete the workout.
  */
-export function WorkoutComplete({ summary, isLastSessionOfWeek, onSave, onCheckIn, onNotNow, onFinish, onCancel, onDelete }: WorkoutCompleteProps) {
+export function WorkoutComplete({ summary, onSave, onFinish, onCancel, onDelete }: WorkoutCompleteProps) {
   const panel = useRef<HTMLDivElement>(null)
-  const [step, setStep] = useState<'summary' | 'invite'>('summary')
   const [confirmDelete, setConfirmDelete] = useState(false)
-  useModal(panel, { onEscape: () => (step === 'summary' ? onCancel() : onNotNow()) })
+  useModal(panel, { onEscape: onCancel })
 
   const [feelings, setFeelings] = useState<Rating | null>(null)
   const [notes, setNotes] = useState('')
@@ -64,8 +58,7 @@ export function WorkoutComplete({ summary, isLastSessionOfWeek, onSave, onCheckI
       // Notes saying what changed are what Clawde reads; no separate toggle.
       outcome: 'as-planned' as SessionOutcome,
     })
-    if (isLastSessionOfWeek) setStep('invite')
-    else onFinish()
+    onFinish()
   }
 
   return (
@@ -80,8 +73,7 @@ export function WorkoutComplete({ summary, isLastSessionOfWeek, onSave, onCheckI
         style={{ backgroundImage: 'radial-gradient(ellipse 120% 420px at 50% 0, rgba(217,119,86,0.28), transparent 70%)' }}
       >
         <div className="w-full max-w-md mx-auto px-5 pt-safe pb-edge flex flex-col gap-6">
-          {step === 'summary' ? (
-            <>
+          <>
               {/* Title */}
               <div className="pt-8">
                 <p className="font-mono text-2xs font-bold uppercase tracking-[0.12em] text-[#a39e98]">
@@ -198,20 +190,7 @@ export function WorkoutComplete({ summary, isLastSessionOfWeek, onSave, onCheckI
                   <Trash2 size={14} aria-hidden /> Delete workout
                 </button>
               </div>
-            </>
-          ) : (
-            <div className="min-h-[80svh] flex flex-col items-center justify-center text-center gap-5">
-              <ClawdeMark size={120} cheer sweat />
-              <h2 className="text-2xl font-bold text-[#f5f5f0]">That's your week done</h2>
-              <p className="text-sm text-[#a39e98] leading-relaxed max-w-xs">
-                Workout saved. A 1-minute check-in? Your answers shape next week’s plan. Totally optional.
-              </p>
-              <div className="w-full flex flex-col gap-2.5 mt-2">
-                <Pill onClick={onCheckIn}>Check in</Pill>
-                <Pill ghost onClick={onNotNow}>Not now</Pill>
-              </div>
-            </div>
-          )}
+          </>
         </div>
       </div>
 

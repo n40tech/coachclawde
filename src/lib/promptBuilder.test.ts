@@ -23,6 +23,11 @@ describe('buildWeekPlanPrompt', () => {
     expect(p).toMatch(/exercises: PlannedExercise\[\]/)
     expect(p).not.toMatch(/Training types:.*cardio/)
   })
+
+  it('has no check-in section and no rule about applying a check-in', () => {
+    const p = prompt(DEFAULT_PROFILE)
+    expect(p).not.toMatch(/check-in/i)
+  })
 })
 
 describe('Goal section', () => {

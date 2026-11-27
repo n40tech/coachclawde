@@ -30,7 +30,7 @@ if (import.meta.env.VITE_DEMO_DATA === 'true') {
       const action = demoAction({ demoBuild: true, onboarded: !!store.profile.onboarded, search: location.search })
       if (action) {
         store.reset()
-        store.restoreFromRemote({ ...buildDemoData(new Date()), checkIns: [] })
+        store.restoreFromRemote(buildDemoData(new Date()))
       }
       if (action === 'reset') history.replaceState(null, '', location.pathname)
     })

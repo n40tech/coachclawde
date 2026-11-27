@@ -385,37 +385,6 @@ export interface SubstituteActivity {
   notes?: string;
 }
 
-// --- Check-ins ---------------------------------------------------------------
-
-export type CheckInTrigger = 'week-complete' | 'week-end' | 'planner' | 'milestone' | 'reactive' | 'migration';
-
-/** What a check-in answer does. Applied by the app and summarised for Claude. */
-export type CheckInAction =
-  | { kind: 'session-minutes'; value: number }
-  | { kind: 'fewer-days' }
-  | { kind: 'lighter-week' }
-  | { kind: 'intensity'; value: 'up' | 'down' }
-  | { kind: 'injury-status'; injury: string; status: InjuryStatus | 'gone'; fromPainNote?: boolean }
-  | { kind: 'zone-offset'; value: number }
-  | { kind: 'planner-notes'; value: string }
-  | { kind: 'deferred'; id: DeferredId; value: string[] }
-  | { kind: 'reopen-goal'; node: string }
-  | { kind: 'event-result'; seconds?: number; outcome: 'finished' | 'dnf' | 'dns' }
-  | { kind: 'log-swap' }
-  | { kind: 'new-block' };
-
-export interface CheckIn {
-  id: string;
-  /** Monday of the week being reviewed. */
-  weekStartDate: string;
-  createdAt: string;
-  trigger: CheckInTrigger;
-  answers: Record<string, unknown>;
-  actions: CheckInAction[];
-  /** Plain English, one line per action (≤ 6), embedded in the next prompt. */
-  summary: string;
-}
-
 export interface TimerState {
   isActive: boolean;
   endTime: number | null;
@@ -442,7 +411,6 @@ export interface AppState {
   profile: UserProfile;
   weekPlans: WeekPlan[];
   loggedSessions: LoggedSession[];
-  checkIns: CheckIn[];
   activeSessionId: string | null;
   timer: TimerState;
 }

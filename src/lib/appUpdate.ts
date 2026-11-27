@@ -12,9 +12,8 @@ import { registerSW } from 'virtual:pwa-register'
  *   2. once a new version has activated (the worker skips waiting, see
  *      `registerType: 'autoUpdate'`), reload the page at a *safe* moment.
  *
- * "Safe" means the athlete isn't mid-workout, mid-chat (onboarding or a
- * check-in) or typing: a reload there would lose Run Mode's timing or a
- * half-answered chat. Otherwise the reload waits for the next navigation or
+ * "Safe" means the athlete isn't mid-workout, in onboarding or typing: a
+ * reload there would lose a workout's timing or a half-filled form. Otherwise the reload waits for the next navigation or
  * for the app going into the background. The "What's new" sheet then tells
  * them what changed.
  */
@@ -27,7 +26,7 @@ let pending = false
 let lastCheck = 0
 
 /** Screens where a reload would lose work in progress. */
-const UNSAFE_PATHS = ['/session/', '/onboarding', '/check-in']
+const UNSAFE_PATHS = ['/session/', '/onboarding']
 
 function isSafeToReload(): boolean {
   // Never mid-workout or mid-chat, even in the background: Run Mode keeps

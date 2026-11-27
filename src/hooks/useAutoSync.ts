@@ -2,10 +2,10 @@ import { useCallback } from 'react'
 import { useAppStore } from '../store/useAppStore'
 import { useSettingsStore } from '../store/useSettingsStore'
 import { useAuth } from '../auth/AuthProvider'
-import { pushAll, pushCheckIns, pushWeekPlans, pushLoggedSessions, pushLoggedSession, pushProfile, pullAll, deleteLoggedSession } from '../lib/supabaseSync'
-import type { CheckIn, UserProfile, WeekPlan, LoggedSession } from '../types'
+import { pushAll, pushWeekPlans, pushLoggedSessions, pushLoggedSession, pushProfile, pullAll, deleteLoggedSession } from '../lib/supabaseSync'
+import type { UserProfile, WeekPlan, LoggedSession } from '../types'
 
-export type SyncTarget = 'sessions' | 'plans' | 'profile' | 'checkIns' | 'all'
+export type SyncTarget = 'sessions' | 'plans' | 'profile' | 'all'
 
 /**
  * Pushes/pulls the signed-in user's data to/from Supabase. The local Zustand
@@ -36,7 +36,7 @@ export function useAutoSync() {
    * Remote wins for any session it does have; local-only sessions are kept.
    */
   const applyRemote = useCallback(
-    (remote: { profile: UserProfile | null; weekPlans: WeekPlan[]; loggedSessions: LoggedSession[]; checkIns?: CheckIn[] }) => {
+    (remote: { profile: UserProfile | null; weekPlans: WeekPlan[]; loggedSessions: LoggedSession[] }) => {
       const local = useAppStore.getState().loggedSessions
       const remoteIds = new Set(remote.loggedSessions.map((s) => s.id))
       const localOnly = local.filter((s) => !remoteIds.has(s.id))
@@ -50,10 +50,6 @@ export function useAutoSync() {
         profile: remote.profile ?? useAppStore.getState().profile,
         weekPlans: remote.weekPlans,
         loggedSessions: [...merged, ...localOnly],
-        // Same merge for check-ins; none at all if the table is missing.
-        checkIns: remote.checkIns
-          ? [...remote.checkIns, ...useAppStore.getState().checkIns.filter((c) => !remote.checkIns!.some((r) => r.id === c.id))]
-          : undefined,
       })
     },
     [restoreFromRemote]
@@ -62,14 +58,13 @@ export function useAutoSync() {
   const sync = useCallback(
     async (target: SyncTarget = 'sessions') => {
       if (!user) return
-      const { loggedSessions, weekPlans, profile, checkIns } = useAppStore.getState()
+      const { loggedSessions, weekPlans, profile } = useAppStore.getState()
       setSyncStatus('syncing')
       try {
         if (target === 'sessions') await pushLoggedSessions(user.id, loggedSessions)
         else if (target === 'plans') await pushWeekPlans(user.id, weekPlans)
         else if (target === 'profile') await pushProfile(user.id, profile)
-        else if (target === 'checkIns') await pushCheckIns(user.id, checkIns)
-        else await pushAll(user.id, { profile, weekPlans, loggedSessions, checkIns })
+        else await pushAll(user.id, { profile, weekPlans, loggedSessions })
         markSynced()
       } catch (e: unknown) {
         fail(e, 'Sync failed')

@@ -8,11 +8,10 @@ import { PageHeader } from '../components/layout/PageHeader'
 import { Button } from '../components/shared/Button'
 import { Card, CardSection } from '../components/shared/Card'
 import { SyncIndicator } from '../components/shared/SyncIndicator'
-import { UserCircle, CheckCircle, AlertCircle, RefreshCw, LogOut, Sparkles, ChevronRight, Info, MessageCircle, ShieldCheck, Bell, Timer } from 'lucide-react'
+import { UserCircle, CheckCircle, AlertCircle, RefreshCw, LogOut, Sparkles, ChevronRight, Info, ShieldCheck, Bell, Timer } from 'lucide-react'
 import { ConfirmDialog } from '../components/shared/ConfirmDialog'
 import { Switch } from '../components/shared/Switch'
 import { ChoiceChip, ChoiceGroup } from '../components/shared/Choice'
-import { goalOrLegacy } from '../lib/goalProfile'
 import { APP_VERSION } from '../lib/appVersion'
 import { getDeviceShape } from '../lib/deviceShape'
 import { ageFromBirthDate, isValidBirthDate } from '../lib/dateUtils'
@@ -34,14 +33,7 @@ export function Settings() {
   const age = ageFromBirthDate(birthDate)
   const [profileSaved, setProfileSaved] = useState(false)
   const [confirmHealth, setConfirmHealth] = useState(false)
-  const checkInsOn = !profile.goal?.checkInsOff
   const healthFlags = profile.goal?.health.flags ?? []
-
-  function setCheckIns(on: boolean) {
-    const goal = goalOrLegacy(profile)
-    setProfile({ goal: { ...goal, checkInsOff: !on, updatedAt: new Date().toISOString() } })
-    void sync('profile')
-  }
 
   /**
    * Health-screen answers are special-category data: let the athlete delete
@@ -232,21 +224,10 @@ export function Settings() {
 
         <BetaFeatures />
 
-        {/* Check-ins & health */}
+        {/* Health */}
         <div>
-          <h2 className="text-xs text-[#858585] uppercase tracking-widest font-medium px-1 mb-3">Check-ins & privacy</h2>
+          <h2 className="text-xs text-[#858585] uppercase tracking-widest font-medium px-1 mb-3">Privacy</h2>
           <Card>
-            <CardSection className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-[#d97756]/15 flex items-center justify-center shrink-0">
-                <MessageCircle size={18} className="text-[#d97756]" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p id="checkins-title" className="text-sm font-semibold text-[#f5f5f0]">Suggest weekly check-ins</p>
-                <p id="checkins-desc" className="text-xs text-[#949494] mt-0.5">A one-minute chat at the end of the week. Never required.</p>
-              </div>
-              <Switch checked={checkInsOn} onChange={setCheckIns} labelledBy="checkins-title" describedBy="checkins-desc" />
-            </CardSection>
-            <div className="border-t border-[#2a2a2a]" />
             <CardSection className="flex items-start gap-3">
               <div className="w-10 h-10 rounded-2xl bg-[#d97756]/15 flex items-center justify-center shrink-0">
                 <ShieldCheck size={18} className="text-[#d97756]" />

@@ -5,7 +5,8 @@ import { toLocalISODate } from '../lib/weekUtils'
 import { Card, CardSection } from '../components/shared/Card'
 import { Button } from '../components/shared/Button'
 import { Badge } from '../components/shared/Badge'
-import { ClawdeMark } from '../components/shared/ClawdeMark'
+import { QuinnMark } from '../components/shared/QuinnMark'
+import { Icescape } from '../components/layout/Icescape'
 import { BetaFeedbackTile } from '../components/shared/BetaFeedbackTile'
 import { BETA_FEEDBACK_URL } from '../lib/betaFeedback'
 import { useScrollDirection } from '../hooks/useScrollDirection'
@@ -72,15 +73,16 @@ export function Home() {
   const program = getProgramProgress(profile)
 
   return (
-    <div className="flex flex-col pb-tabbar min-h-svh bg-[#0a0a0a]">
+    <div className="relative flex flex-col pb-tabbar min-h-svh polar-page">
+      <Icescape />
       {/* Header */}
-      <div className="px-4 pt-safe">
+      <div className="relative px-4 pt-safe">
         {/* Top bar with plan action */}
         <div className="flex items-center justify-end gap-2 pt-2">
           <button
             type="button"
             onClick={() => setShowLog(true)}
-            className="relative hit-target h-9 px-3 flex items-center gap-1.5 rounded-2xl bg-[#1a1a1a] text-[#949494] hover:text-[#f5f5f0] transition-colors text-xs font-medium"
+            className="relative hit-target h-9 px-3 flex items-center gap-1.5 rounded-2xl bg-floe ice text-frost hover:text-snow transition-colors text-xs font-medium"
           >
             <Plus size={16} aria-hidden />
             Log a session
@@ -88,31 +90,34 @@ export function Home() {
           <Link
             to="/plan"
             aria-label="Plan your week"
-            className="relative hit-target w-9 h-9 flex items-center justify-center rounded-2xl bg-[#1a1a1a] text-[#949494] hover:text-[#f5f5f0] transition-colors"
+            className="relative hit-target w-9 h-9 flex items-center justify-center rounded-2xl bg-floe ice text-frost hover:text-snow transition-colors"
           >
             <CalendarPlus size={18} aria-hidden />
           </Link>
         </div>
 
-        {/* Centered greeting hero — Clawde, seamless on the background */}
-        <div className="flex flex-col items-center text-center pt-8 short:pt-5 pb-6">
-          <div className="relative mb-3">
+        {/* Centered greeting hero: Quinn on the ice shelf (Icescape), the
+            greeting below it on the open water. pt-14 puts Quinn's feet on the
+            shelf's edge: keep it in step with Icescape's --scene-h and
+            .quinn-flight's landing point. */}
+        <div className="flex flex-col items-center text-center pt-14 pb-6">
+          <div className="relative mb-6">
             <div
-              className="absolute inset-0 -m-3 rounded-full bg-[#d97756]/15 blur-2xl"
+              className="absolute inset-0 -m-3 rounded-full bg-ice-bright/20 blur-2xl"
               aria-hidden
             />
-            <ClawdeMark size={68} cheer={bump} sweat={bump} className="relative" />
+            <QuinnMark size={68} cheer={bump} sweat={bump} className="relative" />
           </div>
-          <p className="text-xs text-[#858585] uppercase tracking-widest font-medium">
+          <p className="font-mono text-xs text-frost uppercase tracking-[0.2em]">
             {format(new Date(), 'EEEE, dd MMM')}
           </p>
-          <h1 className="text-2xl font-bold text-[#f5f5f0] mt-1">
+          <h1 className="text-4xl font-semibold leading-none text-snow mt-1.5">
             {getGreeting()}{firstName ? `, ${firstName}` : ''}
           </h1>
         </div>
       </div>
 
-      <div className="flex flex-col gap-4 px-4">
+      <div className="relative flex flex-col gap-4 px-4">
         {current && <CurrentWorkoutCard session={current} now={now} />}
 
         {program.isComplete && !(invite?.kind === 'milestone' && invite.key.startsWith('milestone:block-end')) && (
@@ -141,7 +146,7 @@ export function Home() {
 
             {futureSessions.length > 0 && (
               <div>
-                <h2 className="text-xs text-[#858585] uppercase tracking-widest font-medium mb-3 px-1">
+                <h2 className="text-xs text-haze uppercase tracking-widest font-medium mb-3 px-1">
                   This week
                 </h2>
                 <div className="grid grid-cols-1 gap-2 @3xl/app:grid-cols-2">
@@ -169,9 +174,9 @@ export function Home() {
 
         {/* Week stats pill */}
         {plan && (
-          <div className="flex items-center justify-between bg-[#161616] rounded-2xl px-4 py-3 border border-[#2a2a2a]">
-            <span className="text-sm text-[#949494]">Week {program.week} of {program.length}</span>
-            <span className="text-sm font-medium text-[#f5f5f0]">
+          <div className="flex items-center justify-between bg-floe ice rounded-2xl px-4 py-3 border border-rime">
+            <span className="text-sm text-mist">Week {program.week} of {program.length}</span>
+            <span className="text-sm font-medium text-snow">
               {plan.sessions.filter((s) => isSessionLogged(s.id)).length}/{plan.sessions.length} sessions
             </span>
           </div>
@@ -191,13 +196,13 @@ export function Home() {
 function InvitationCard({ invite, onOpen, onDismiss }: { invite: HomeInvitation; onOpen: () => void; onDismiss: () => void }) {
   const summary = invite.kind === 'summary'
   return (
-    <div className="rounded-3xl bg-[#161616] border border-[#d97756]/30 p-4 flex items-start gap-3">
-      <div className="w-10 h-10 rounded-2xl bg-[#d97756]/15 flex items-center justify-center shrink-0">
-        {summary ? <CheckCircle size={18} className="text-[#d97756]" /> : <MessageCircle size={18} className="text-[#d97756]" />}
+    <div className="rounded-3xl bg-floe ice border border-ice/30 p-4 flex items-start gap-3">
+      <div className="w-10 h-10 rounded-2xl bg-ice/15 flex items-center justify-center shrink-0">
+        {summary ? <CheckCircle size={18} className="text-ice" /> : <MessageCircle size={18} className="text-ice" />}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold text-[#f5f5f0]">{invite.title}</p>
-        <p className="text-sm text-[#a8a29e] mt-0.5 leading-relaxed">{invite.text}</p>
+        <p className="text-sm font-semibold text-snow">{invite.title}</p>
+        <p className="text-sm text-frost mt-0.5 leading-relaxed">{invite.text}</p>
         {!summary && (
           <div className="flex gap-2 mt-3">
             <Button size="sm" onClick={onOpen}>{invite.kind === 'migration' ? 'Let’s go' : 'Check in'}</Button>
@@ -205,7 +210,7 @@ function InvitationCard({ invite, onOpen, onDismiss }: { invite: HomeInvitation;
           </div>
         )}
       </div>
-      <button type="button" onClick={onDismiss} aria-label={`Dismiss: ${invite.title}`} className="relative hit-target w-9 h-9 -mr-1 -mt-1 flex items-center justify-center rounded-full text-[#858585] hover:text-[#a8a29e] shrink-0">
+      <button type="button" onClick={onDismiss} aria-label={`Dismiss: ${invite.title}`} className="relative hit-target w-9 h-9 -mr-1 -mt-1 flex items-center justify-center rounded-full text-haze hover:text-frost shrink-0">
         <X size={16} aria-hidden />
       </button>
     </div>
@@ -215,13 +220,13 @@ function InvitationCard({ invite, onOpen, onDismiss }: { invite: HomeInvitation;
 /** Tracker athletes who log as they go: logging is the main action. */
 function TrackerLogCTA({ onLog, onConvert }: { onLog: () => void; onConvert: () => void }) {
   return (
-    <div className="rounded-3xl bg-gradient-to-br from-[#d97756]/10 to-[#1a1a1a] border border-[#d97756]/20 p-6 flex flex-col items-center text-center gap-4">
+    <div className="rounded-3xl bg-gradient-to-br from-ice/10 to-slush border border-ice/20 p-6 flex flex-col items-center text-center gap-4">
       <div>
-        <h2 className="text-xl font-bold text-[#f5f5f0]">Your plan, your way</h2>
-        <p className="text-sm text-[#949494] mt-1 leading-relaxed">Log each session as you do it. I'll keep score and send a short weekly summary.</p>
+        <h2 className="text-xl font-bold text-snow">Your plan, your way</h2>
+        <p className="text-sm text-mist mt-1 leading-relaxed">Log each session as you do it. I'll keep score and send a short weekly summary.</p>
       </div>
       <Button onClick={onLog} size="lg" fullWidth><Plus size={18} /> Log a session</Button>
-      <button onClick={onConvert} className="text-xs text-[#949494] hover:text-[#a8a29e]">or paste your plan and convert it</button>
+      <button onClick={onConvert} className="text-xs text-mist hover:text-frost">or paste your plan and convert it</button>
     </div>
   )
 }
@@ -229,16 +234,16 @@ function TrackerLogCTA({ onLog, onConvert }: { onLog: () => void; onConvert: () 
 function NoPlanCTA({ onPlan, tracker }: { onPlan: () => void; tracker?: boolean }) {
   return (
     <div>
-      <div className="rounded-3xl bg-gradient-to-br from-[#d97756]/10 to-[#1a1a1a] border border-[#d97756]/20 p-6 flex flex-col items-center text-center gap-4">
-        <div className="w-14 h-14 rounded-3xl bg-[#d97756]/15 flex items-center justify-center">
-          <Calendar size={28} className="text-[#d97756]" />
+      <div className="rounded-3xl bg-gradient-to-br from-ice/10 to-slush border border-ice/20 p-6 flex flex-col items-center text-center gap-4">
+        <div className="w-14 h-14 rounded-3xl bg-ice/15 flex items-center justify-center">
+          <Calendar size={28} className="text-ice" />
         </div>
         <div>
-          <h2 className="text-xl font-bold text-[#f5f5f0]">{tracker ? 'Bring in your plan' : 'Plan Your Week'}</h2>
-          <p className="text-sm text-[#949494] mt-1 leading-relaxed">
+          <h2 className="text-xl font-bold text-snow">{tracker ? 'Bring in your plan' : 'Plan Your Week'}</h2>
+          <p className="text-sm text-mist mt-1 leading-relaxed">
             {tracker
-              ? 'Paste this week of your plan and Clawde converts it for the app, so you can log it here.'
-              : 'Select your available training days, add any notes, and let Clawde create your personalised workout plan.'}
+              ? 'Paste this week of your plan and Quinn converts it for the app, so you can log it here.'
+              : 'Select your available training days, add any notes, and let Quinn create your personalised workout plan.'}
           </p>
         </div>
         <Button onClick={onPlan} size="lg" fullWidth>
@@ -252,13 +257,13 @@ function NoPlanCTA({ onPlan, tracker }: { onPlan: () => void; tracker?: boolean 
 
 function WeekCompleteBanner({ onPlan }: { onPlan: () => void }) {
   return (
-    <div className="rounded-3xl bg-gradient-to-br from-emerald-500/10 to-[#1a1a1a] border border-emerald-500/20 p-6 flex flex-col items-center text-center gap-4">
+    <div className="rounded-3xl bg-gradient-to-br from-emerald-500/10 to-slush border border-emerald-500/20 p-6 flex flex-col items-center text-center gap-4">
       <div className="w-14 h-14 rounded-3xl bg-emerald-500/15 flex items-center justify-center">
         <CheckCircle size={28} className="text-emerald-400" />
       </div>
       <div>
-        <h2 className="text-xl font-bold text-[#f5f5f0]">Week complete!</h2>
-        <p className="text-sm text-[#949494] mt-1">All sessions done. Plan your next week to keep the momentum.</p>
+        <h2 className="text-xl font-bold text-snow">Week complete!</h2>
+        <p className="text-sm text-mist mt-1">All sessions done. Plan your next week to keep the momentum.</p>
       </div>
       <Button onClick={onPlan} size="lg" fullWidth>
         <Calendar size={18} />
@@ -270,13 +275,13 @@ function WeekCompleteBanner({ onPlan }: { onPlan: () => void }) {
 
 function ProgramCompleteBanner({ length, onRestart }: { length: number; onRestart: () => void }) {
   return (
-    <div className="rounded-3xl bg-gradient-to-br from-[#d97756]/15 to-[#1a1a1a] border border-[#d97756]/30 p-6 flex flex-col items-center text-center gap-4">
-      <div className="w-14 h-14 rounded-3xl bg-[#d97756]/15 flex items-center justify-center">
-        <Trophy size={28} className="text-[#d97756]" />
+    <div className="rounded-3xl bg-gradient-to-br from-ice/15 to-slush border border-ice/30 p-6 flex flex-col items-center text-center gap-4">
+      <div className="w-14 h-14 rounded-3xl bg-ice/15 flex items-center justify-center">
+        <Trophy size={28} className="text-ice" />
       </div>
       <div>
-        <h2 className="text-xl font-bold text-[#f5f5f0]">Program complete! 🎉</h2>
-        <p className="text-sm text-[#949494] mt-1 leading-relaxed">
+        <h2 className="text-xl font-bold text-snow">Program complete! 🎉</h2>
+        <p className="text-sm text-mist mt-1 leading-relaxed">
           You've finished your {length}-week block. A quick check-in on how it went, then your
           next block starts. No need to set everything up again.
         </p>
@@ -295,19 +300,19 @@ function CurrentWorkoutCard({ session, now }: { session: LoggedSession; now: num
   const minutes = Math.max(0, Math.floor((now - Date.parse(session.startedAt)) / 60000))
   return (
     <Card accent glow to={`/session/${session.plannedSessionId}`}>
-      <div className="bg-gradient-to-br from-[#d97756]/8 to-transparent">
+      <div className="bg-gradient-to-br from-ice/8 to-transparent">
         <CardSection className="flex items-center gap-3">
           <div className="w-11 h-11 rounded-2xl bg-accent-fill flex items-center justify-center shrink-0">
             <SessionIcon type={session.type} size={20} className="text-white" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-medium text-[#d97756] uppercase tracking-widest">
+            <p className="text-xs font-medium text-ice uppercase tracking-widest">
               In progress · {minutes < 1 ? 'just started' : `${formatDuration(minutes)} in`}
             </p>
-            <h2 className="text-lg font-bold text-[#f5f5f0] leading-tight mt-0.5 truncate">{localize(session.title, units)}</h2>
-            <p className="text-sm text-[#949494] mt-0.5">Pick up where you left off</p>
+            <h2 className="text-lg font-bold text-snow leading-tight mt-0.5 truncate">{localize(session.title, units)}</h2>
+            <p className="text-sm text-mist mt-0.5">Pick up where you left off</p>
           </div>
-          <ChevronRight size={18} className="text-[#d97756] shrink-0" aria-hidden />
+          <ChevronRight size={18} className="text-ice shrink-0" aria-hidden />
         </CardSection>
       </div>
     </Card>
@@ -318,27 +323,27 @@ function NextSessionCard({ session }: { session: PlannedSession }) {
   const units = useUnits()
   return (
     <Card accent glow to={`/session/${session.id}`}>
-      <div className="bg-gradient-to-br from-[#d97756]/8 to-transparent">
+      <div className="bg-gradient-to-br from-ice/8 to-transparent">
         <CardSection>
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-[#d97756]/15 flex items-center justify-center">
-                <SessionIcon type={session.type} size={16} className="text-[#d97756]" />
+              <div className="w-8 h-8 rounded-xl bg-ice/15 flex items-center justify-center">
+                <SessionIcon type={session.type} size={16} className="text-ice" />
               </div>
-              <span className="text-sm font-medium text-[#d97756]">
+              <span className="text-sm font-semibold text-yolk">
                 {getWeekday(session.date)}
               </span>
             </div>
             <div className="flex items-center gap-2">
               <Badge label={session.intensity} variant={session.intensity as Intensity} />
-              <ChevronRight size={16} className="text-[#858585]" aria-hidden />
+              <ChevronRight size={16} className="text-haze" aria-hidden />
             </div>
           </div>
 
-          <h2 className="text-xl font-bold text-[#f5f5f0] leading-tight">{localize(session.title, units)}</h2>
-          <p className="text-sm text-[#949494] mt-1">{localize(session.focus, units)}</p>
+          <h2 className="text-xl font-bold text-snow leading-tight">{localize(session.title, units)}</h2>
+          <p className="text-sm text-mist mt-1">{localize(session.focus, units)}</p>
 
-          <div className="flex items-center gap-4 mt-4 pt-4 border-t border-[#2a2a2a]">
+          <div className="flex items-center gap-4 mt-4 pt-4 border-t border-rime">
             <StatPill label={formatDuration(session.estimatedMinutes)} icon="⏱" />
             {session.exercises && <StatPill label={`${session.exercises.length} exercises`} icon="💪" />}
           </div>
@@ -354,20 +359,20 @@ function UpcomingTile({ session, missed = false }: { session: PlannedSession; mi
     <Card to={`/session/${session.id}`}>
       <CardSection className="flex items-center gap-3 py-3">
         <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${
-          missed ? 'bg-amber-500/15' : 'bg-[#2a2a2a]'
+          missed ? 'bg-amber-500/15' : 'bg-rime'
         }`}>
-          <SessionIcon type={session.type} size={18} className={missed ? 'text-amber-500' : 'text-[#949494]'} />
+          <SessionIcon type={session.type} size={18} className={missed ? 'text-amber-500' : 'text-mist'} />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-[#f5f5f0] truncate">{localize(session.title, units)}</p>
-          <p className="text-xs text-[#949494] mt-0.5">
+          <p className="text-sm font-semibold text-snow truncate">{localize(session.title, units)}</p>
+          <p className="text-xs text-mist mt-0.5">
             {missed && <span className="text-amber-500/80">Missed · </span>}
             {getWeekday(session.date)} · {formatDuration(session.estimatedMinutes)}
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <Badge label={session.intensity} variant={session.intensity as Intensity} />
-          <ChevronRight size={14} className="text-[#858585]" aria-hidden />
+          <ChevronRight size={14} className="text-haze" aria-hidden />
         </div>
       </CardSection>
     </Card>
@@ -378,7 +383,7 @@ function StatPill({ label, icon }: { label: string; icon: string }) {
   return (
     <div className="flex items-center gap-1.5">
       <span className="text-sm" aria-hidden>{icon}</span>
-      <span className="text-xs text-[#949494]">{label}</span>
+      <span className="text-xs text-mist">{label}</span>
     </div>
   )
 }

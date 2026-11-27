@@ -54,10 +54,10 @@ export function ExerciseTile({ planned, logged, onUpdateSet, onSetComplete, onSe
       // Scrolled to from a rest alert: a little clear of the sheet's header.
       className={`scroll-mt-3 rounded-[2rem] border overflow-hidden transition-all duration-200 ${
         isActive
-          ? 'border-[#d97756]/40 bg-gradient-to-br from-[#d97756]/5 to-[#161616]'
+          ? 'border-ice/40 bg-gradient-to-br from-ice/5 to-floe'
           : allDone
-          ? 'border-emerald-500/20 bg-[#161616]'
-          : 'border-[#2a2a2a] bg-[#161616]'
+          ? 'border-emerald-500/20 bg-floe ice'
+          : 'border-rime bg-floe ice'
       }`}
     >
       {/* Header */}
@@ -77,29 +77,29 @@ export function ExerciseTile({ planned, logged, onUpdateSet, onSetComplete, onSe
               <span
                 key={i}
                 className={`w-2 h-2 rounded-full transition-colors ${
-                  logged.sets[i]?.unconfirmed ? 'bg-[#d97756]' : logged.sets[i]?.completed ? 'bg-emerald-400' : isActive ? 'bg-[#d97756]/40' : 'bg-[#2a2a2a]'
+                  logged.sets[i]?.unconfirmed ? 'bg-ice' : logged.sets[i]?.completed ? 'bg-emerald-400' : isActive ? 'bg-ice/40' : 'bg-rime'
                 }`}
               />
             ))}
           </div>
 
           <div className="flex-1 min-w-0">
-            <p className={`font-semibold text-sm leading-tight ${allDone ? 'text-[#949494] line-through' : 'text-[#f5f5f0]'}`}>
+            <p className={`font-semibold text-sm leading-tight ${allDone ? 'text-mist line-through' : 'text-snow'}`}>
               {planned.name}
             </p>
-            <p className="text-xs text-[#858585] mt-0.5">
+            <p className="text-xs text-haze mt-0.5">
               {completedSets}/{totalSets} sets · rest {formatRestTime(planned.sets[0]?.restSeconds ?? 90)}
             </p>
           </div>
 
-          {expanded ? <ChevronUp size={16} aria-hidden className="text-[#858585] shrink-0" /> : <ChevronDown size={16} aria-hidden className="text-[#858585] shrink-0" />}
+          {expanded ? <ChevronUp size={16} aria-hidden className="text-haze shrink-0" /> : <ChevronDown size={16} aria-hidden className="text-haze shrink-0" />}
         </button>
 
         <button
           type="button"
           onClick={() => setShowGuide(true)}
           aria-label={`How to do ${planned.name}`}
-          className="relative hit-target w-9 h-9 rounded-xl flex items-center justify-center text-[#949494] hover:text-[#d97756] hover:bg-[#d97756]/10 transition-colors shrink-0"
+          className="relative hit-target w-9 h-9 rounded-xl flex items-center justify-center text-mist hover:text-ice hover:bg-ice/10 transition-colors shrink-0"
         >
           <CircleQuestionMark size={18} aria-hidden />
         </button>
@@ -109,9 +109,9 @@ export function ExerciseTile({ planned, logged, onUpdateSet, onSetComplete, onSe
         <div className="px-4 pb-4 flex flex-col gap-2 [--nest-radius:2rem] [--nest-inset:1rem]">
           {/* Coach notes */}
           {planned.coachNotes && (
-            <div className="flex items-start gap-2 bg-[#d97756]/8 rounded-nested px-3 py-2.5 mb-1">
-              <Info size={13} className="text-[#d97756] mt-0.5 shrink-0" aria-hidden />
-              <p className="text-xs text-[#d97756]/90">{localize(planned.coachNotes, units)}</p>
+            <div className="flex items-start gap-2 bg-ice/8 rounded-nested px-3 py-2.5 mb-1">
+              <Info size={13} className="text-ice mt-0.5 shrink-0" aria-hidden />
+              <p className="text-xs text-ice/90">{localize(planned.coachNotes, units)}</p>
             </div>
           )}
 

@@ -43,7 +43,7 @@ export function BottomSheet({
           aria-modal="true"
           aria-label={label}
           tabIndex={-1}
-          className="sheet-panel outline-none mt-auto w-full max-w-md md:max-w-lg mx-auto bg-[#111] rounded-t-3xl border-t border-[#2a2a2a] flex flex-col slide-up"
+          className="sheet-panel outline-none mt-auto w-full max-w-md md:max-w-lg mx-auto bg-[#0a2438]/95 ice rounded-t-3xl border-t border-rime flex flex-col slide-up"
           onClick={(e) => e.stopPropagation()}
         >
           {children}
@@ -59,7 +59,7 @@ export function SheetCloseButton({ onClose, label = 'Close' }: { onClose: () => 
     <button
       onClick={onClose}
       aria-label={label}
-      className="w-11 h-11 -mr-2 -mt-1.5 shrink-0 flex items-center justify-center rounded-full text-[#949494] hover:text-[#f5f5f0] hover:bg-[#1a1a1a] transition-colors"
+      className="w-11 h-11 -mr-2 -mt-1.5 shrink-0 flex items-center justify-center rounded-full text-mist hover:text-snow hover:bg-slush transition-colors"
     >
       <X size="1.25em" aria-hidden />
     </button>

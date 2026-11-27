@@ -33,7 +33,7 @@ export const RUN_VOLUME_KM: Record<RunVolume, [number, number]> = {
 
 /**
  * Minimum weeks of runway for an event from a starting volume. Below this,
- * Clawde says it's tight and plans to get round safely rather than chase a
+ * Quinn says it's tight and plans to get round safely rather than chase a
  * time. (§3.5: half — not yet 16 · <10 km 12 · 10–25 km 8 · 25+ km 6;
  * marathon — <25 km 18 · 25–50 km 14 · 50+ km 12.)
  */

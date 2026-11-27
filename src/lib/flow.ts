@@ -54,7 +54,7 @@ export type NodeKind = 'single' | 'multi' | 'text' | 'number' | 'date' | 'days' 
 export interface FlowNode {
   id: string
   kind: NodeKind
-  /** What Clawde says before asking: one entry per bubble. Reflections live here. */
+  /** What Quinn says before asking: one entry per bubble. Reflections live here. */
   coach: (a: FlowAnswers, ctx: FlowContext) => string[]
   options?: ChatOption[] | ((a: FlowAnswers) => ChatOption[])
   /** multi: values pre-selected from earlier answers (one tap to confirm). */

@@ -19,7 +19,7 @@ import { daysPerWeekLabel } from './programOptions'
  * health). Every answer changes the plan, the app's behaviour or safety;
  * anything that can be measured or learned later is deferred.
  *
- * Clawde's replies are templates filled with computed values: reflections and
+ * Quinn's replies are templates filled with computed values: reflections and
  * feasibility checks, never free generation.
  */
 
@@ -247,7 +247,7 @@ const nodes: FlowNode[] = [
     id: 'why',
     kind: 'single',
     coach: () => [
-      "Hey! I'm Clawde, your training partner. 🦀",
+      "Hey! I'm Quinn, your training partner. 🐧",
       'A few quick questions so every plan fits you. Tap an answer to reply, and tap any answer later to change it.',
       'First: what’s the main reason you’re here?',
     ],
@@ -471,7 +471,7 @@ const nodes: FlowNode[] = [
     id: 'trk.intake',
     kind: 'single',
     coach: () => ['How shall we get it in?'],
-    options: [{ value: 'convert', label: 'I’ll paste it and Clawde converts it' }, { value: 'log', label: 'I’ll log sessions as I go' }],
+    options: [{ value: 'convert', label: 'I’ll paste it and Quinn converts it' }, { value: 'log', label: 'I’ll log sessions as I go' }],
     next: () => 'trk.coach',
   },
   {
@@ -552,7 +552,7 @@ const nodes: FlowNode[] = [
       ...(list(a, 'health').some((f) => (MEDICAL as string[]).includes(f))
         ? ['Thanks for telling me. Please check with your GP or physio before starting. I’ll keep things conservative until you’re cleared.']
         : []),
-      'Most aches and niggles are fine to train around: I’ll change the moves that bother them. Get it checked before you start if it came from a recent fall or impact, it’s getting worse, or you have numbness, pins and needles or pain at night. Coach Clawde isn’t medical advice.',
+      'Most aches and niggles are fine to train around: I’ll change the moves that bother them. Get it checked before you start if it came from a recent fall or impact, it’s getting worse, or you have numbness, pins and needles or pain at night. Coach Quinn isn’t medical advice.',
       'Describe the injury and how it behaves day to day, one issue per line. I’ll program around it.',
     ],
     samples: ['Left knee aches on stairs'],
@@ -889,7 +889,7 @@ export function confirmationRows(goal: GoalProfile, ctx: FlowContext): ConfirmRo
       : 'No fixed sport days'
     startTarget = 'sp.fixed'
   } else if (goal.tracker) {
-    start = goal.tracker.intake === 'convert' ? 'You paste your plan; Clawde converts it for the app' : 'You log sessions as you go'
+    start = goal.tracker.intake === 'convert' ? 'You paste your plan; Quinn converts it for the app' : 'You log sessions as you go'
     startTarget = 'trk.intake'
   }
   if (start) rows.push({ icon: '📈', label: 'Starting point', text: start, target: startTarget })

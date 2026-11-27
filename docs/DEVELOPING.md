@@ -1,4 +1,4 @@
-# Developing Coach Clawde (code changes)
+# Developing Coach Quinn (code changes)
 
 This guide is for when you're asked to **change the app's code**. It is kept
 out of `CLAUDE.md` on purpose: most requests to this repo are workout-plan
@@ -202,9 +202,9 @@ things are the way they are.
   worker), fuzzy-matched by name with a YouTube-search fallback. `RoutineCard`
   is the expandable warm-up/cool-down.
 - `src/components/session/` — the live-workout UI (exercise tiles, set rows, rest
-  timer, `ReorderList`, and `WorkoutComplete`: the full-screen finish page in
-  the website's style, using its fonts from `public/fonts` (`font-mono` for
-  labels, `dot-grid`; `font-pixel` only for the title, sparingly).
+  timer, `ReorderList`, and `WorkoutComplete`: the full-screen finish page
+  (`font-mono` for condensed labels, `dot-grid`; `font-pixel` for the
+  ultra-condensed title).
 - **Weights-first (v1.1):** plans never schedule cardio (`promptScope` in
   `lib/promptBuilder`); Run Mode, interval rows and the run engine were removed
   (preserved on the `cardio-archive` branch). `lib/workout` and `lib/zones`
@@ -276,11 +276,27 @@ things are the way they are.
   - a screen sets its title with `useDocumentTitle` (`PageHeader` does it);
   - small icon buttons keep their size and add `relative hit-target`
     (index.css) for a 44px touch area;
-  - text colours: `#a8a29e` secondary, `#949494` muted, `#858585` faint (the
-    lowest that reads at 4.5:1 on the cards); don't go darker for text;
-  - white text or icons on solid orange use `bg-accent-fill` (hover
-    `bg-accent-fill-hover`), not `bg-[#d97756]`, which is too light for
-    white; keep `#d97756` for orange text, icons, borders and tints;
+  - **Coach Quinn look** (the ice rebrand): colours are theme tokens in the
+    `@theme` block of `src/index.css`, never raw hex in classes. `abyss`
+    (page), `floe` (an ice-block surface: translucent), `slush` / `slush-2`
+    (fields, chips, tracks), `rime` / `rime-2` (borders), `snow` (text),
+    `ice` / `ice-bright` (the blue-ice accent), `yolk` (emperor yellow: PBs,
+    today, Quinn's headband). A card is `bg-floe ice` (the `ice` utility
+    adds the sheen, rime edge and backdrop blur; `Card` does this); a page
+    root is `polar-page` (opaque deep water);
+  - text colours: `frost` secondary, `mist` muted, `haze` faint (the lowest
+    that reads at 4.5:1 on the cards); don't go darker for text;
+  - white text or icons on a solid accent use `bg-accent-fill` (hover
+    `bg-accent-fill-hover`, deep glacier blue), not `bg-ice`, which is too
+    light for white; keep `ice` for accent text, icons, borders and tints;
+  - type is one variable font, Saira (`public/fonts/saira.woff2`, wdth
+    50–125), standing in for Antarctica: running text semi-condensed, `h2`
+    and `font-mono` labels condensed, `h1`, `font-pixel` and every size from
+    `text-2xl` up ultra-condensed;
+  - Quinn (the mascot) is drawn from `lib/penguinArt` by
+    `shared/QuinnMark`, the share cards and `scripts/gen-icons.ts` (the app
+    icon is the head close-up: run `npm run gen:icons` after changing it).
+    Home's mountains and ice shelf are `layout/Icescape`;
   - decoration animates only under `prefers-reduced-motion: no-preference`
     (or `motion-safe:`), and nothing loops for more than 5 seconds.
 - `src/lib/` — pure helpers: `promptBuilder` (builds the **self-contained** plan

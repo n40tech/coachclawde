@@ -6,7 +6,7 @@ import type { ReactNode } from 'react'
  * options out with `className`.
  */
 export function ChoiceGroup({
-  legend, legendClassName = 'block text-xs font-medium text-[#a8a29e] mb-2', className, children,
+  legend, legendClassName = 'block text-xs font-medium text-frost mb-2', className, children,
 }: {
   legend: ReactNode
   legendClassName?: string
@@ -46,7 +46,7 @@ export function ChoiceChip({
 }) {
   return (
     <label
-      className={`relative cursor-pointer select-none has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-[#d97756] has-[:disabled]:cursor-not-allowed ${className}`}
+      className={`relative cursor-pointer select-none has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-ice has-[:disabled]:cursor-not-allowed ${className}`}
     >
       <input
         type={type}

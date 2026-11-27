@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="site/assets/icon-512.png" width="112" alt="Coach Clawde app icon: a pixel-art crab wearing a sweatband">
+  <img src="site/assets/icon-512.png" width="112" alt="Coach Quinn app icon: a pixel-art emperor penguin in a striped headband">
 </p>
 
-<h1 align="center">Coach Clawde</h1>
+<h1 align="center">Coach Quinn</h1>
 
 <p align="center">
   <b>Plans your week. Runs your sessions. Learns from both.</b><br>
@@ -18,12 +18,12 @@
 
 <p align="center">
   <a href="https://github.com/n40tech/coachclawde/actions/workflows/ci.yml"><img src="https://github.com/n40tech/coachclawde/actions/workflows/ci.yml/badge.svg" alt="CI status"></a>
-  <img src="https://img.shields.io/badge/status-invite--only%20beta-d97756" alt="Status: invite-only beta">
+  <img src="https://img.shields.io/badge/status-invite--only%20beta-6fd0ff" alt="Status: invite-only beta">
 </p>
 
 <p align="center">
   <img src="site/assets/screens/home.webp" width="160" alt="Home: today's session and the rest of the week">
-  <img src="site/assets/screens/chat.webp" width="160" alt="Onboarding chat with Clawde">
+  <img src="site/assets/screens/chat.webp" width="160" alt="Onboarding chat with Quinn">
   <img src="site/assets/screens/rest.webp" width="160" alt="Rest timer between sets">
   <img src="site/assets/screens/run-mode.webp" width="160" alt="Run Mode timing a 1 km rep">
   <img src="site/assets/screens/progress.webp" width="160" alt="Progress through a 26-week block">
@@ -33,7 +33,7 @@
 
 ## What it does
 
-- **Chat onboarding.** Clawde asks what you're training for (a race, fitness, physique, strength, a sport, or your own plan), then your time, kit and health. Ten questions at most.
+- **Chat onboarding.** Quinn asks what you're training for (a race, fitness, physique, strength, a sport, or your own plan), then your time, kit and health. Ten questions at most.
 - **One-tap weekly plans.** The app builds a prompt from your goal, injuries, working weights and recent sessions and opens it in Claude. Paste the JSON back and the week is set, with warm-ups, cool-downs and progressive overload.
 - **Guided lifting.** Log reps and weight per set; the rest timer starts itself (minimise it to keep logging) and every exercise has a movement guide. Rest alerts notify you when rest is over, even with your phone locked.
 - **Run Mode.** Audio cues for every rep, a LAP button for distance work, pace zones from a recent race time, and a log that fills itself in.
@@ -46,7 +46,7 @@ No server-side AI. The app writes the prompt, you send it to Claude, and the rep
 
 ```mermaid
 flowchart LR
-  A["Coach Clawde<br/>React PWA"] -- "profile, plans, sessions<br/>(row-level security)" --> S[("Supabase<br/>Postgres + Auth")]
+  A["Coach Quinn<br/>React PWA"] -- "profile, plans, sessions<br/>(row-level security)" --> S[("Supabase<br/>Postgres + Auth")]
   A -- "self-contained prompt:<br/>goal, injuries, history, rules, schema" --> C["Claude"]
   C -- "WeekPlan JSON,<br/>pasted back" --> A
 ```
@@ -75,8 +75,8 @@ npm run dev
 ## Credits
 
 - Movement-guide photos and instructions: [free-exercise-db](https://github.com/yuhonas/free-exercise-db).
-- Icons: [Lucide](https://lucide.dev). Fonts: Tiny5, Geist, Space Mono (SIL OFL).
-- Clawde is a nod to the Claude Code mascot, now in a sweatband.
+- Icons: [Lucide](https://lucide.dev). Font: Saira (SIL OFL) in the app; Tiny5, Geist, Space Mono on the website.
+- Quinn is an emperor penguin in a yellow-and-white striped headband.
 
 ## Disclaimer
 

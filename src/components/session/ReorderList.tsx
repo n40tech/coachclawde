@@ -87,8 +87,8 @@ export function ReorderList({ items, onChange }: ReorderListProps) {
             key={item.id}
             ref={(el) => { if (el) rows.current.set(item.id, el); else rows.current.delete(item.id) }}
             style={dragging ? { transform: `translateY(${offset}px)` } : undefined}
-            className={`flex items-center gap-2 rounded-2xl border pl-1 pr-2 py-1.5 bg-[#161616] ${
-              dragging ? 'relative z-10 border-[#d97756]/60 shadow-lg shadow-black/60 scale-[1.02]' : 'border-[#2a2a2a] transition-transform'
+            className={`flex items-center gap-2 rounded-2xl border pl-1 pr-2 py-1.5 bg-floe ice ${
+              dragging ? 'relative z-10 border-ice/60 shadow-lg shadow-black/60 scale-[1.02]' : 'border-rime transition-transform'
             }`}
           >
             <button
@@ -100,13 +100,13 @@ export function ReorderList({ items, onChange }: ReorderListProps) {
               onPointerCancel={onPointerUp}
               // Vertical drags are the reorder, so only horizontal panning is
               // left to the browser.
-              className="w-10 h-10 flex items-center justify-center text-[#949494] cursor-grab active:cursor-grabbing touch-pan-x"
+              className="w-10 h-10 flex items-center justify-center text-mist cursor-grab active:cursor-grabbing touch-pan-x"
             >
               <GripVertical size={18} aria-hidden />
             </button>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-[#f5f5f0] truncate">{item.label}</p>
-              {item.sub && <p className="text-xs text-[#949494]">{item.sub}</p>}
+              <p className="text-sm font-semibold text-snow truncate">{item.label}</p>
+              {item.sub && <p className="text-xs text-mist">{item.sub}</p>}
             </div>
             {/* aria-disabled, not disabled, at the ends: moving a row to the
                 top keeps focus on its (now inactive) up button. */}
@@ -115,7 +115,7 @@ export function ReorderList({ items, onChange }: ReorderListProps) {
               aria-label={`Move ${item.label} up`}
               aria-disabled={i === 0 || undefined}
               onClick={() => { if (i > 0) onChange(move(ids(), i, i - 1)) }}
-              className={`w-9 h-9 rounded-xl flex items-center justify-center text-[#a8a29e] hover:bg-[#1f1f1f] ${i === 0 ? 'opacity-25' : ''}`}
+              className={`w-9 h-9 rounded-xl flex items-center justify-center text-frost hover:bg-slush ${i === 0 ? 'opacity-25' : ''}`}
             >
               <ChevronUp size={18} aria-hidden />
             </button>
@@ -124,7 +124,7 @@ export function ReorderList({ items, onChange }: ReorderListProps) {
               aria-label={`Move ${item.label} down`}
               aria-disabled={i === items.length - 1 || undefined}
               onClick={() => { if (i < items.length - 1) onChange(move(ids(), i, i + 1)) }}
-              className={`w-9 h-9 rounded-xl flex items-center justify-center text-[#a8a29e] hover:bg-[#1f1f1f] ${i === items.length - 1 ? 'opacity-25' : ''}`}
+              className={`w-9 h-9 rounded-xl flex items-center justify-center text-frost hover:bg-slush ${i === items.length - 1 ? 'opacity-25' : ''}`}
             >
               <ChevronDown size={18} aria-hidden />
             </button>

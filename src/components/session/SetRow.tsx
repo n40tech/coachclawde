@@ -48,14 +48,14 @@ function RepSetRow({ setIndex, plannedSet, loggedSet, onUpdate, onComplete, onUn
       {timing ? (
         <SetClock since={inProgressSince} />
       ) : (
-        <span className="text-xs text-[#858585] w-6 shrink-0 font-medium">#{setIndex + 1}</span>
+        <span className="text-xs text-haze w-6 shrink-0 font-medium">#{setIndex + 1}</span>
       )}
 
       {/* Target */}
-      <div className="text-xs text-[#949494] shrink-0 w-16">
+      <div className="text-xs text-mist shrink-0 w-16">
         {plannedSet.reps} reps
         {plannedSet.suggestedWeightKg && (
-          <span className="block text-[#858585]">~{toWeight(plannedSet.suggestedWeightKg, unit)}{unit}</span>
+          <span className="block text-haze">~{toWeight(plannedSet.suggestedWeightKg, unit)}{unit}</span>
         )}
       </div>
       <RowBreak />
@@ -80,7 +80,7 @@ function RepSetRow({ setIndex, plannedSet, loggedSet, onUpdate, onComplete, onUn
           onUpdate({ actualReps: raw === '' || Number.isNaN(n) ? undefined : n })
         }}
         disabled={locked}
-        className="w-14 @max-[17rem]:w-11 @max-[17rem]:px-1 bg-[#111] border border-[#666666] rounded-nested px-2 py-1.5 text-base text-center text-[#f5f5f0] placeholder-[#858585] focus:outline-none focus:border-[#d97756] focus:ring-1 focus:ring-[#d97756] disabled:opacity-40"
+        className="w-14 @max-[17rem]:w-11 @max-[17rem]:px-1 bg-abyss/60 border border-deep rounded-nested px-2 py-1.5 text-base text-center text-snow placeholder-haze focus:outline-none focus:border-ice focus:ring-1 focus:ring-ice disabled:opacity-40"
       />
 
       {/* Actual weight */}
@@ -105,9 +105,9 @@ function RepSetRow({ setIndex, plannedSet, loggedSet, onUpdate, onComplete, onUn
             onUpdate({ weightKg: raw === '' || Number.isNaN(n) ? undefined : fromWeight(n, unit) })
           }}
           disabled={locked}
-          className="w-full bg-[#111] border border-[#666666] rounded-nested px-2 py-1.5 text-base text-center text-[#f5f5f0] placeholder-[#858585] focus:outline-none focus:border-[#d97756] focus:ring-1 focus:ring-[#d97756] disabled:opacity-40"
+          className="w-full bg-abyss/60 border border-deep rounded-nested px-2 py-1.5 text-base text-center text-snow placeholder-haze focus:outline-none focus:border-ice focus:ring-1 focus:ring-ice disabled:opacity-40"
         />
-        <span className="text-xs text-[#858585] shrink-0">{unit}</span>
+        <span className="text-xs text-haze shrink-0">{unit}</span>
       </div>
 
       <CompleteButton
@@ -182,10 +182,10 @@ function TimedSetRow({ setIndex, plannedSet, loggedSet, onComplete, onUncomplete
 
   return (
     <div className={rowClass(completed, skipped)} data-set={setIndex}>
-      <span className="text-xs text-[#858585] w-6 shrink-0 font-medium">#{setIndex + 1}</span>
+      <span className="text-xs text-haze w-6 shrink-0 font-medium">#{setIndex + 1}</span>
 
       {/* Target hold — no reps, no weight */}
-      <div className="text-xs text-[#949494] shrink-0 w-16">
+      <div className="text-xs text-mist shrink-0 w-16">
         {secondsToDisplay(target)} hold
       </div>
       <RowBreak />
@@ -197,9 +197,9 @@ function TimedSetRow({ setIndex, plannedSet, loggedSet, onComplete, onUncomplete
             {secondsToDisplay(loggedSet?.actualSeconds ?? target)}
           </span>
         ) : running ? (
-          <span className="text-base font-bold text-[#d97756] tabular-nums">{secondsToDisplay(elapsed)}</span>
+          <span className="text-base font-bold text-ice tabular-nums">{secondsToDisplay(elapsed)}</span>
         ) : (
-          <span className="text-xs text-[#858585]">Tap start to begin</span>
+          <span className="text-xs text-haze">Tap start to begin</span>
         )}
       </div>
 
@@ -221,7 +221,7 @@ function TimedSetRow({ setIndex, plannedSet, loggedSet, onComplete, onUncomplete
           type="button"
           onClick={start}
           aria-label={`Start set ${setIndex + 1}`}
-          className="relative hit-target flex items-center gap-1.5 h-8 px-3 rounded-nested bg-[#2a2a2a] text-[#d97756] text-xs font-semibold transition-all hover:bg-[#d97756]/20 active:scale-95 shrink-0"
+          className="relative hit-target flex items-center gap-1.5 h-8 px-3 rounded-nested bg-rime text-ice text-xs font-semibold transition-all hover:bg-ice/20 active:scale-95 shrink-0"
         >
           <Play size={13} strokeWidth={2.5} fill="currentColor" aria-hidden />
           Start
@@ -282,12 +282,12 @@ function rowClass(completed: boolean, skipped: boolean, timing = false, unconfir
     completed
       ? 'bg-emerald-500/8 border border-emerald-500/15'
       : skipped
-      ? 'bg-[#1a1a1a] opacity-50'
+      ? 'bg-slush opacity-50'
       : unconfirmed
-      ? 'bg-[#d97756]/8 border border-[#d97756]/35'
+      ? 'bg-ice/8 border border-ice/35'
       : timing
       ? 'bg-[#f59e0b]/8 border border-[#f59e0b]/30'
-      : 'bg-[#1a1a1a] border border-[#2a2a2a]'
+      : 'bg-slush border border-rime'
   }`
 }
 
@@ -302,8 +302,8 @@ function CompleteButton({ setIndex, completed, unconfirmed, onClick }: { setInde
         completed
           ? 'bg-emerald-600 text-white active:scale-90'
           : unconfirmed
-          ? 'bg-accent-fill text-white shadow-md shadow-[#d97756]/30 active:scale-90'
-          : 'bg-[#2a2a2a] text-[#858585] hover:bg-[#d97756]/20 hover:text-[#d97756] active:scale-90'
+          ? 'bg-accent-fill text-white shadow-md shadow-ice/30 active:scale-90'
+          : 'bg-rime text-haze hover:bg-ice/20 hover:text-ice active:scale-90'
       }`}
     >
       <Check size="0.875em" strokeWidth={2.5} aria-hidden />

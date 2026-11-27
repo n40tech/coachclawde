@@ -15,7 +15,7 @@ export function BestEfforts() {
   const empty = weightPRs.length === 0 && cardioPRs.length === 0
 
   return (
-    <div className="flex flex-col min-h-svh bg-[#0a0a0a]">
+    <div className="flex flex-col min-h-svh polar-page">
       <PageHeader
         title="Best efforts"
         subtitle={empty ? undefined : `${weightPRs.length + cardioPRs.length} personal bests`}
@@ -26,10 +26,10 @@ export function BestEfforts() {
         {empty ? (
           <Card>
             <CardSection className="flex items-center gap-3 py-5">
-              <div className="w-10 h-10 rounded-2xl bg-[#d97756]/15 flex items-center justify-center shrink-0">
-                <Trophy size={18} className="text-[#d97756]" aria-hidden />
+              <div className="w-10 h-10 rounded-2xl bg-ice/15 flex items-center justify-center shrink-0">
+                <Trophy size={18} className="text-yolk" aria-hidden />
               </div>
-              <p className="text-sm text-[#949494]">
+              <p className="text-sm text-mist">
                 Log some sessions and your personal bests for each lift and cardio piece will show up here.
               </p>
             </CardSection>

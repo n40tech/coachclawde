@@ -1,4 +1,4 @@
-# Coach Clawde — Workout Tracker
+# Coach Quinn — Workout Tracker
 
 This repo is a workout tracking PWA. Claude generates personalised weekly workout plans from a prompt the app produces.
 
@@ -15,7 +15,7 @@ onboarding prompt to answer here.
 
 ## Weights-first
 
-Coach Clawde is a **weights-first** app. New plans contain only `weights` and
+Coach Quinn is a **weights-first** app. New plans contain only `weights` and
 (when the athlete asked for mobility) `active-recovery` sessions: never
 schedule cardio. Athletes log any run, ride or class by hand in the app. The
 cardio parts of the schema below (`type: "cardio"`, `workout`, `cardioOptions`)

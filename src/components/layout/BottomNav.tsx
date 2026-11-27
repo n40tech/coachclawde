@@ -27,14 +27,14 @@ export function BottomNav() {
       <div className="absolute tabbar-dock @3xl/app:hidden flex gap-2">
       {dock && <WorkoutDockButton dock={dock} />}
       <nav aria-label="Primary" className="flex-1 min-w-0 h-full">
-        <ul className="flex h-full rounded-(--tabbar-radius) p-(--tabbar-pad) bg-[#161616]/85 backdrop-blur-xl ring-1 ring-inset ring-[#2a2a2a] shadow-lg shadow-black/50">
+        <ul className="flex h-full rounded-(--tabbar-radius) p-(--tabbar-pad) bg-floe/85 backdrop-blur-xl ring-1 ring-inset ring-rime shadow-lg shadow-black/50">
           {NAV_ITEMS.map(({ path, icon: Icon, label }) => (
             <li key={path} className="flex-1 flex">
               <NavLink
                 to={path}
                 end
                 className={({ isActive }) => `flex-1 flex flex-col items-center justify-center gap-0.5 rounded-(--tabbar-item-radius) transition-colors duration-150 ${
-                  isActive ? 'bg-[#d97756]/15 text-[#d97756]' : 'text-[#949494] hover:text-[#a8a29e]'
+                  isActive ? 'bg-ice/15 text-ice' : 'text-mist hover:text-frost'
                 }`}
               >
                 {({ isActive }) => (

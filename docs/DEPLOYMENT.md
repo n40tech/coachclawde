@@ -1,6 +1,6 @@
-# Deploying Coach Clawde
+# Deploying Coach Quinn
 
-How to run your own copy of Coach Clawde: a Vite single-page app on Vercel,
+How to run your own copy of Coach Quinn: a Vite single-page app on Vercel,
 with Supabase for the database, sign-in and per-user access control.
 
 > **Architecture in one line:** the SPA deploys to Vercel as static files;

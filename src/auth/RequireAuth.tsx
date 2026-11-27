@@ -4,7 +4,7 @@ import { Navigate } from 'react-router-dom'
 import { useAuth } from './AuthProvider'
 import { useAutoSync } from '../hooks/useAutoSync'
 import { useAppStore } from '../store/useAppStore'
-import { ClawdeMark } from '../components/shared/ClawdeMark'
+import { QuinnMark } from '../components/shared/QuinnMark'
 
 /**
  * Gates the app behind authentication and keeps the local store scoped to the
@@ -54,8 +54,8 @@ export function RequireAuth({ children }: { children: ReactNode }) {
   // once and let the pull refresh it in the background.
   if (loading || (identity && !pulled && !hasLocalData)) {
     return (
-      <main className="flex items-center justify-center min-h-svh bg-[#0a0a0a]">
-        <ClawdeMark size={56} idle />
+      <main className="flex items-center justify-center min-h-svh polar-page">
+        <QuinnMark size={56} idle />
         <p role="status" className="sr-only">Loading your training…</p>
       </main>
     )

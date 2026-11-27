@@ -10,7 +10,7 @@ export function SyncIndicator() {
   // Signed out (or running in local-only mode) — nothing is syncing.
   if (!configured || !user) {
     return (
-      <div className="flex items-center gap-1.5 text-[#858585]">
+      <div className="flex items-center gap-1.5 text-haze">
         <CloudOff size={13} aria-hidden />
         <span className="text-2xs">{configured ? 'Signed out' : 'Local only'}</span>
       </div>
@@ -19,7 +19,7 @@ export function SyncIndicator() {
 
   if (syncStatus === 'syncing') {
     return (
-      <div className="flex items-center gap-1.5 text-[#949494]">
+      <div className="flex items-center gap-1.5 text-mist">
         <Loader size={13} className="motion-safe:animate-spin" aria-hidden />
         <span className="text-2xs">Syncing…</span>
       </div>
@@ -47,7 +47,7 @@ export function SyncIndicator() {
   }
 
   return (
-    <div className="flex items-center gap-1.5 text-[#858585]">
+    <div className="flex items-center gap-1.5 text-haze">
       <Cloud size={13} aria-hidden />
       <span className="text-2xs">Auto-sync on</span>
     </div>

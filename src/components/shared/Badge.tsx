@@ -4,12 +4,12 @@ interface BadgeProps {
 }
 
 const variants = {
-  default: 'bg-[#2a2a2a] text-[#a8a29e]',
-  accent: 'bg-[#d97756]/15 text-[#d97756]',
+  default: 'bg-rime text-frost',
+  accent: 'bg-ice/15 text-ice',
   success: 'bg-emerald-500/15 text-emerald-400',
   warning: 'bg-amber-500/15 text-amber-400',
   easy: 'bg-emerald-500/15 text-emerald-400',
-  moderate: 'bg-[#d97756]/15 text-[#d97756]',
+  moderate: 'bg-ice/15 text-ice',
   hard: 'bg-red-500/15 text-red-400',
 }
 

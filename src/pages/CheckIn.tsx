@@ -18,7 +18,7 @@ import { nanoid } from '../lib/nanoid'
 const TRIGGERS: CheckInTrigger[] = ['week-complete', 'week-end', 'planner', 'milestone', 'reactive', 'migration']
 
 /**
- * A check-in: a ~60-second chat with Clawde on the same engine as onboarding.
+ * A check-in: a ~60-second chat with Quinn on the same engine as onboarding.
  * `?trigger=` says why it was offered and `?week=` which week it reviews.
  * Nothing is saved until the athlete taps through the summary, so backing
  * out is always free.
@@ -135,13 +135,13 @@ export function CheckIn() {
   )
 
   return (
-    <div className="flex flex-col min-h-svh bg-[#0a0a0a]">
-      <div className="sticky top-0 z-10 bg-[#0a0a0a]/95 backdrop-blur-xl px-4 pt-safe pb-2 border-b border-[#1a1a1a] flex items-center justify-between">
+    <div className="flex flex-col min-h-svh polar-page">
+      <div className="sticky top-0 z-10 bg-abyss/95 backdrop-blur-xl px-4 pt-safe pb-2 border-b border-slush flex items-center justify-between">
         <div className="pt-2">
-          <h1 className="text-base font-semibold text-[#f5f5f0]">{heading}</h1>
-          <p className="text-xs text-[#949494]">{migration ? 'Three questions' : 'About a minute · skip any time'}</p>
+          <h1 className="text-base font-semibold text-snow">{heading}</h1>
+          <p className="text-xs text-mist">{migration ? 'Three questions' : 'About a minute · skip any time'}</p>
         </div>
-        <button onClick={() => navigate(-1)} aria-label="Close check-in" className="w-11 h-11 -mr-2 mt-1 flex items-center justify-center rounded-full text-[#949494] hover:text-[#f5f5f0]">
+        <button onClick={() => navigate(-1)} aria-label="Close check-in" className="w-11 h-11 -mr-2 mt-1 flex items-center justify-center rounded-full text-mist hover:text-snow">
           <X size={20} aria-hidden />
         </button>
       </div>
@@ -154,15 +154,15 @@ export function CheckIn() {
         onRewind={(qid) => setAnswers((a) => rewindTo(flow, a, qid))}
         endLines={[migration ? 'Thanks! Here’s what I’ll use from now on:' : trigger === 'reactive' ? 'Got it:' : 'Got it. Here’s what changes next week:']}
         endContent={
-          <div className="ml-10 rounded-3xl bg-[#141414] border border-[#d97756]/40 p-4 flex flex-col gap-2">
+          <div className="ml-10 rounded-3xl bg-floe border border-ice/40 p-4 flex flex-col gap-2">
             {lines.map((l) => (
-              <p key={l} className="text-sm text-[#e5e5e0] leading-snug flex gap-2">
-                <span aria-hidden className="text-[#d97756]">→</span>
+              <p key={l} className="text-sm text-snow leading-snug flex gap-2">
+                <span aria-hidden className="text-ice">→</span>
                 <span>{l}</span>
               </p>
             ))}
             {worse && (
-              <p className="text-xs text-[#a8a29e] leading-snug">
+              <p className="text-xs text-frost leading-snug">
                 If it isn’t settling in a week or two, it’s worth getting it checked by a GP or physio.
               </p>
             )}

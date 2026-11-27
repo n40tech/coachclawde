@@ -38,16 +38,16 @@ export function ConfirmDialog({
           aria-labelledby={`${id}-title`}
           aria-describedby={`${id}-body`}
           tabIndex={-1}
-          className="outline-none w-full max-w-sm bg-[#111] rounded-[2.5rem] border border-[#2a2a2a] p-6 flex flex-col gap-4 fade-in"
+          className="outline-none w-full max-w-sm bg-[#0a2438]/95 ice rounded-[2.5rem] border border-rime p-6 flex flex-col gap-4 fade-in"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${danger ? 'bg-red-500/15 text-red-400' : 'bg-[#d97756]/15 text-[#d97756]'}`}>
+            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${danger ? 'bg-red-500/15 text-red-400' : 'bg-ice/15 text-ice'}`}>
               {icon}
             </div>
-            <h2 id={`${id}-title`} className="text-base font-semibold text-[#f5f5f0]">{title}</h2>
+            <h2 id={`${id}-title`} className="text-base font-semibold text-snow">{title}</h2>
           </div>
-          <div id={`${id}-body`} className="text-sm text-[#a8a29e] leading-relaxed">{children}</div>
+          <div id={`${id}-body`} className="text-sm text-frost leading-relaxed">{children}</div>
           <div className="flex gap-3 pt-1">
             <Button variant="secondary" onClick={onCancel} fullWidth>{cancelLabel}</Button>
             <Button variant={danger ? 'danger' : 'primary'} onClick={onConfirm} fullWidth>{confirmLabel}</Button>

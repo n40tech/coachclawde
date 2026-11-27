@@ -89,7 +89,7 @@ export function RestTimerOverlay() {
           <div
             aria-hidden
             style={{ width: `calc(100% - ${squeezeBy})` }}
-            className={`absolute inset-y-0 left-0 rounded-(--tabbar-radius) bg-[#161616] ring-1 ring-inset ring-[#2a2a2a] shadow-lg shadow-black/50 ${
+            className={`absolute inset-y-0 left-0 rounded-(--tabbar-radius) bg-floe ice ring-1 ring-inset ring-rime shadow-lg shadow-black/50 ${
               ease && `transition-[width] ${ease}`
             }`}
           />
@@ -101,21 +101,21 @@ export function RestTimerOverlay() {
               ref={barRef}
               onClick={() => setMinimised(false)}
               aria-label={`Rest, ${time} left. Show the timer`}
-              className="flex-1 min-w-0 h-full flex items-center gap-3 rounded-(--tabbar-item-radius) pl-2 pr-3 text-left hover:bg-[#1f1f1f] transition-colors"
+              className="flex-1 min-w-0 h-full flex items-center gap-3 rounded-(--tabbar-item-radius) pl-2 pr-3 text-left hover:bg-slush transition-colors"
             >
               <Ring elapsed={elapsed} className="w-9 h-9 shrink-0" strokeWidth={12} />
               <span className="flex-1 min-w-0">
-                <span className={`block text-lg font-bold text-[#f5f5f0] tabular-nums leading-tight ${pulse}`}>{time}</span>
-                <span className="block text-xs text-[#949494] truncate">{label}</span>
+                <span className={`block text-lg font-bold text-snow tabular-nums leading-tight ${pulse}`}>{time}</span>
+                <span className="block text-xs text-mist truncate">{label}</span>
               </span>
-              <ChevronUp size={18} className="text-[#949494] shrink-0" aria-hidden />
+              <ChevronUp size={18} className="text-mist shrink-0" aria-hidden />
             </button>
             <button
               type="button"
               onClick={skipTimer}
               aria-label="Skip rest"
               title="Skip rest"
-              className="h-full aspect-square shrink-0 rounded-(--tabbar-item-radius) flex items-center justify-center text-[#a8a29e] hover:text-[#d97756] hover:bg-[#d97756]/10 transition-colors"
+              className="h-full aspect-square shrink-0 rounded-(--tabbar-item-radius) flex items-center justify-center text-frost hover:text-ice hover:bg-ice/10 transition-colors"
             >
               <SkipForward size={18} aria-hidden />
             </button>
@@ -171,7 +171,7 @@ function RestCard({
           tabIndex={-1}
           {...drag.handlers}
           style={{ transform: drop ? `translateY(${drop}px)` : undefined }}
-          className={`vt-workout-timer relative bg-[#111] rounded-3xl border border-[#2a2a2a] p-8 short:p-5 w-72 flex flex-col items-center gap-5 short:gap-3 slide-up outline-none touch-none select-none ${
+          className={`vt-workout-timer relative bg-[#0a2438]/95 ice rounded-3xl border border-rime p-8 short:p-5 w-72 flex flex-col items-center gap-5 short:gap-3 slide-up outline-none touch-none select-none ${
             drag.dragging ? '' : 'transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]'
           }`}
         >
@@ -180,24 +180,24 @@ function RestCard({
             onClick={onMinimise}
             aria-label="Minimise rest timer"
             title="Minimise"
-            className="absolute hit-target top-3 right-3 w-10 h-10 rounded-xl flex items-center justify-center text-[#949494] hover:text-[#f5f5f0] hover:bg-[#1a1a1a] transition-colors"
+            className="absolute hit-target top-3 right-3 w-10 h-10 rounded-xl flex items-center justify-center text-mist hover:text-snow hover:bg-slush transition-colors"
           >
             <ChevronDown size={20} aria-hidden />
           </button>
-          <p className="text-xs text-[#949494] uppercase tracking-widest font-medium">Rest</p>
-          <p className="text-sm text-[#a8a29e] text-center">{label}</p>
+          <p className="text-xs text-mist uppercase tracking-widest font-medium">Rest</p>
+          <p className="text-sm text-frost text-center">{label}</p>
 
           <div className="relative w-32 h-32 short:w-24 short:h-24">
             <Ring elapsed={elapsed} className="w-full h-full" strokeWidth={8} />
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span role="timer" aria-label="Rest left" className={`text-4xl short:text-3xl font-bold text-[#f5f5f0] tabular-nums ${pulse}`}>{time}</span>
+              <span role="timer" aria-label="Rest left" className={`text-4xl short:text-3xl font-bold text-snow tabular-nums ${pulse}`}>{time}</span>
             </div>
           </div>
 
           <button
             type="button"
             onClick={onSkip}
-            className="flex items-center gap-2 text-sm text-[#949494] hover:text-[#d97756] transition-colors py-2 px-4 rounded-xl hover:bg-[#d97756]/10"
+            className="flex items-center gap-2 text-sm text-mist hover:text-ice transition-colors py-2 px-4 rounded-xl hover:bg-ice/10"
           >
             <SkipForward size={16} aria-hidden />
             Skip rest
@@ -215,11 +215,11 @@ function Ring({ elapsed, className, strokeWidth }: { elapsed: number; className:
   const circumference = 2 * Math.PI * r
   return (
     <svg className={`${className} -rotate-90`} viewBox="0 0 100 100" aria-hidden>
-      <circle cx="50" cy="50" r={r} fill="none" stroke="#1f1f1f" strokeWidth={strokeWidth} />
+      <circle cx="50" cy="50" r={r} fill="none" stroke="#0f2b40" strokeWidth={strokeWidth} />
       <circle
         cx="50" cy="50" r={r}
         fill="none"
-        stroke="#d97756"
+        stroke="#6fd0ff"
         strokeWidth={strokeWidth}
         strokeLinecap="round"
         strokeDasharray={circumference}
@@ -265,10 +265,10 @@ function RestAlertOffer() {
   // The status and alert containers stay in the page while the offer shows,
   // so the outcome of "Turn on" is announced.
   return (
-    <div className="w-full border-t border-[#2a2a2a] pt-4 short:pt-3">
+    <div className="w-full border-t border-rime pt-4 short:pt-3">
       <div role="status">
         {justEnabled && (
-          <div className="flex items-start gap-2 text-xs text-[#a8a29e] leading-relaxed">
+          <div className="flex items-start gap-2 text-xs text-frost leading-relaxed">
             <CheckCircle size={14} className="text-emerald-400 shrink-0 mt-0.5" aria-hidden />
             <p>Rest alerts are on. Lock your phone and you’ll still get a notification when rest is over.</p>
           </div>
@@ -277,7 +277,7 @@ function RestAlertOffer() {
       {!justEnabled && (
         <div className="flex flex-col items-center gap-3 text-center">
           <div>
-            <p className="text-xs text-[#949494] leading-relaxed">
+            <p className="text-xs text-mist leading-relaxed">
               Get a notification when rest is over, even with your phone locked.
             </p>
             <div role="alert">

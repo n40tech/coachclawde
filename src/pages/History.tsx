@@ -6,7 +6,7 @@ import { Badge } from '../components/shared/Badge'
 import { Check, ChevronRight, Dumbbell, Waves, Star, Trash2 } from 'lucide-react'
 import { ConfirmDialog } from '../components/shared/ConfirmDialog'
 import { useAutoSync } from '../hooks/useAutoSync'
-import { ClawdeMark } from '../components/shared/ClawdeMark'
+import { QuinnMark } from '../components/shared/QuinnMark'
 import { formatSessionDate, formatDuration } from '../lib/dateUtils'
 import type { Intensity } from '../types'
 import { useUnits } from '../store/useSettingsStore'
@@ -57,15 +57,15 @@ export function History() {
 
   if (completed.length === 0) {
     return (
-      <div className="flex flex-col min-h-svh bg-[#0a0a0a]">
+      <div className="flex flex-col min-h-svh polar-page">
         <PageHeader title="History" />
         <div className="flex-1 flex flex-col items-center justify-center gap-4 px-4 pb-tabbar">
-          <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-[#241712] to-[#141414] ring-1 ring-[#d97756]/25 flex items-center justify-center">
-            <ClawdeMark size={48} sweat />
+          <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-[#0e3a5a] to-floe ring-1 ring-ice/25 flex items-center justify-center">
+            <QuinnMark size={48} sweat />
           </div>
           <div className="text-center">
-            <h2 className="text-lg font-bold text-[#f5f5f0]">No sessions yet</h2>
-            <p className="text-sm text-[#949494] mt-1">Complete your first session — Clawde's warmed up and waiting.</p>
+            <h2 className="text-lg font-bold text-snow">No sessions yet</h2>
+            <p className="text-sm text-mist mt-1">Complete your first session — Quinn's chilled and ready.</p>
           </div>
         </div>
       </div>
@@ -73,7 +73,7 @@ export function History() {
   }
 
   return (
-    <div className="flex flex-col min-h-svh bg-[#0a0a0a]">
+    <div className="flex flex-col min-h-svh polar-page">
       <PageHeader
         title="History"
         subtitle={`${completed.length} session${completed.length !== 1 ? 's' : ''} completed`}
@@ -82,7 +82,7 @@ export function History() {
             type="button"
             onClick={editing ? stopEditing : () => setEditing(true)}
             className={`relative hit-target h-9 px-3.5 rounded-2xl text-sm font-medium transition-colors ${
-              editing ? 'bg-accent-fill text-white' : 'bg-[#1a1a1a] text-[#a8a29e] hover:text-[#f5f5f0]'
+              editing ? 'bg-accent-fill text-white' : 'bg-slush text-frost hover:text-snow'
             }`}
           >
             {editing ? 'Done' : 'Edit'}
@@ -92,14 +92,14 @@ export function History() {
 
       {/* Selection bar, under the header while editing. */}
       {editing && (
-        <div className="sticky top-[calc(max(0.5rem,var(--safe-top))+3rem)] z-30 mx-4 mt-3 flex items-center gap-2 rounded-2xl bg-[#161616] border border-[#2a2a2a] pl-4 pr-1.5 py-1.5 fade-in">
-          <p role="status" className="flex-1 text-sm text-[#a8a29e]">
+        <div className="sticky top-[calc(max(0.5rem,var(--safe-top))+3rem)] z-30 mx-4 mt-3 flex items-center gap-2 rounded-2xl bg-floe ice border border-rime pl-4 pr-1.5 py-1.5 fade-in">
+          <p role="status" className="flex-1 text-sm text-frost">
             {selected.size ? `${selected.size} selected` : 'Tick sessions to delete'}
           </p>
           <button
             type="button"
             onClick={() => setSelected(allSelected ? new Set() : new Set(completed.map((s) => s.id)))}
-            className="h-9 px-3 rounded-xl text-sm font-medium text-[#a8a29e] hover:text-[#f5f5f0]"
+            className="h-9 px-3 rounded-xl text-sm font-medium text-frost hover:text-snow"
           >
             {allSelected ? 'Select none' : 'Select all'}
           </button>
@@ -118,7 +118,7 @@ export function History() {
       <div className="flex flex-col gap-6 px-4 pt-4 pb-tabbar">
         {grouped.map(({ weekLabel, sessions }) => (
           <div key={weekLabel}>
-            <h2 className="text-xs text-[#858585] uppercase tracking-widest font-medium px-1 mb-3">{weekLabel}</h2>
+            <h2 className="text-xs text-haze uppercase tracking-widest font-medium px-1 mb-3">{weekLabel}</h2>
             <div className="grid grid-cols-1 gap-2 @3xl/app:grid-cols-2">
               {sessions.map((session) => {
                 const planned = getPlanned(session)
@@ -126,43 +126,43 @@ export function History() {
                 const body = (
                   <CardSection className="flex items-center gap-3 py-3">
                     <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${
-                      session.type === 'weights' ? 'bg-[#d97756]/15' : 'bg-blue-500/15'
+                      session.type === 'weights' ? 'bg-ice/15' : 'bg-blue-500/15'
                     }`}>
                       {session.type === 'weights'
-                        ? <Dumbbell size={18} className="text-[#d97756]" aria-hidden />
+                        ? <Dumbbell size={18} className="text-ice" aria-hidden />
                         : <Waves size={18} className="text-blue-400" aria-hidden />
                       }
                     </div>
 
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-[#f5f5f0] truncate">{localize(session.title, units)}</p>
+                      <p className="text-sm font-semibold text-snow truncate">{localize(session.title, units)}</p>
                       <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-xs text-[#949494]">{formatSessionDate(session.date)}</span>
+                        <span className="text-xs text-mist">{formatSessionDate(session.date)}</span>
                         {planned && (
                           <Badge label={planned.intensity} variant={planned.intensity as Intensity} />
                         )}
                         {session.feelings && (
                           <div className="flex items-center gap-0.5">
-                            <Star size={10} className="text-[#d97756] fill-[#d97756]" aria-hidden />
-                            <span className="text-xs text-[#949494]"><span className="sr-only">felt </span>{session.feelings}/5</span>
+                            <Star size={10} className="text-ice fill-ice" aria-hidden />
+                            <span className="text-xs text-mist"><span className="sr-only">felt </span>{session.feelings}/5</span>
                           </div>
                         )}
                       </div>
                     </div>
 
                     <div className="shrink-0 flex items-center gap-2">
-                      {planned && <span className="text-xs text-[#858585]">{formatDuration(planned.estimatedMinutes)}</span>}
+                      {planned && <span className="text-xs text-haze">{formatDuration(planned.estimatedMinutes)}</span>}
                       {editing ? (
                         <span
                           aria-hidden
                           className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors ${
-                            isSelected ? 'bg-accent-fill text-white' : 'border-2 border-[#3a3a3a]'
+                            isSelected ? 'bg-accent-fill text-white' : 'border-2 border-rime-2'
                           }`}
                         >
                           {isSelected && <Check size={14} strokeWidth={3} />}
                         </span>
                       ) : (
-                        <ChevronRight size={14} className="text-[#858585]" aria-hidden />
+                        <ChevronRight size={14} className="text-haze" aria-hidden />
                       )}
                     </div>
                   </CardSection>
@@ -172,8 +172,8 @@ export function History() {
                 return editing ? (
                   <label
                     key={session.id}
-                    className={`block cursor-pointer bg-[#161616] rounded-3xl border overflow-hidden has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-[#d97756] ${
-                      isSelected ? 'border-[#d97756]/30' : 'border-[#2a2a2a]'
+                    className={`block cursor-pointer bg-floe ice rounded-3xl border overflow-hidden has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-ice ${
+                      isSelected ? 'border-ice/30' : 'border-rime'
                     }`}
                   >
                     <input type="checkbox" className="sr-only" checked={isSelected} onChange={() => toggle(session.id)} />

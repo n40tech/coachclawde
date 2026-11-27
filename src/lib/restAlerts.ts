@@ -97,7 +97,7 @@ function post(body: object, opts: { beacon?: boolean } = {}): Promise<Response> 
 export type EnableResult = { ok: true } | { ok: false; message: string }
 
 const BLOCKED =
-  'Notifications are turned off for Coach Clawde. Turn them on in your phone’s Settings → Notifications, then try again.'
+  'Notifications are turned off for Coach Quinn. Turn them on in your phone’s Settings → Notifications, then try again.'
 
 interface Ready {
   reg: ServiceWorkerRegistration

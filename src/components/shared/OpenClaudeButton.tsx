@@ -54,14 +54,14 @@ export function OpenClaudeButton({
         Open Claude app
       </Button>
       {appMissing ? (
-        <p className="text-xs text-center text-[#a8a29e]">
+        <p className="text-xs text-center text-frost">
           Claude app didn't open?{' '}
-          <button type="button" onClick={handleOpenWeb} className="text-[#d97756] font-medium underline underline-offset-2">
+          <button type="button" onClick={handleOpenWeb} className="text-ice font-medium underline underline-offset-2">
             Use claude.ai in your browser
           </button>
         </p>
       ) : (
-        <button type="button" onClick={handleOpenWeb} className="py-2 text-xs text-[#949494] hover:text-[#a8a29e]">
+        <button type="button" onClick={handleOpenWeb} className="py-2 text-xs text-mist hover:text-frost">
           or open claude.ai in your browser
         </button>
       )}

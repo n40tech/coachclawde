@@ -27,7 +27,7 @@ export function Stepper({
       <StepButton label={`${label}: less`} size={btn} off={disabled || value <= min} onPress={() => onChange(clamp(value - step))}>
         <Minus size={14} aria-hidden />
       </StepButton>
-      <span className="min-w-[2.75rem] text-center text-base font-semibold text-[#f5f5f0] tabular-nums" aria-live="polite">
+      <span className="min-w-[2.75rem] text-center text-base font-semibold text-snow tabular-nums" aria-live="polite">
         {format(value)}
       </span>
       <StepButton label={`${label}: more`} size={btn} off={disabled || value >= max} onPress={() => onChange(clamp(value + step))}>
@@ -55,7 +55,7 @@ function StepButton({ label, size, off, onPress, children }: {
       onClick={() => { if (!off) onPress() }}
       aria-disabled={off || undefined}
       aria-label={label}
-      className={`${size} relative hit-target shrink-0 rounded-nested bg-[#2a2a2a] text-[#a8a29e] flex items-center justify-center transition-transform ${off ? 'opacity-30' : 'active:scale-90'}`}
+      className={`${size} relative hit-target shrink-0 rounded-nested bg-rime text-frost flex items-center justify-center transition-transform ${off ? 'opacity-30' : 'active:scale-90'}`}
     >
       {children}
     </button>

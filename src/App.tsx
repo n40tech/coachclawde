@@ -45,12 +45,12 @@ function App() {
         {/* The `app` container drives the phone ↔ iPad layout switch: container
             queries (`@3xl/app:`) rather than media queries, so the shell
             responds to the space it actually has. */}
-        <div className="@container/app w-full min-h-svh relative bg-[#0a0a0a] overflow-x-clip">
+        <div className="@container/app w-full min-h-svh relative bg-abyss overflow-x-clip">
           {/* Backs the translucent iOS status bar so content scrolling up on
               header-less screens (Home) doesn't run under the clock and
               Dynamic Island. Zero-height where there's no top inset. */}
           <FixedLayer>
-            <div aria-hidden className="absolute top-0 inset-x-0 h-(--safe-top) bg-[#0a0a0a]/90 backdrop-blur-xl pointer-events-none" />
+            <div aria-hidden className="absolute top-0 inset-x-0 h-(--safe-top) bg-abyss/90 backdrop-blur-xl pointer-events-none" />
           </FixedLayer>
           <Routes>
             <Route path="/login" element={<PhoneColumn><Login /></PhoneColumn>} />

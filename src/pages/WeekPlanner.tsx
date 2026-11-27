@@ -288,7 +288,7 @@ export function WeekPlanner() {
   const orderedDays = [...selectedDays].sort((a, b) => dayIndex(a) - dayIndex(b))
 
   return (
-    <div className="flex flex-col min-h-svh bg-[#0a0a0a] pb-edge">
+    <div className="flex flex-col min-h-svh polar-page pb-edge">
       <PageHeader
         title="Plan Your Week"
         subtitle={weekLabel}
@@ -297,11 +297,11 @@ export function WeekPlanner() {
 
       <div className="flex flex-col gap-5 px-4 pt-4">
         {checkInWeek && !tracker && (
-          <div className="rounded-3xl bg-[#161616] border border-[#d97756]/30 p-4 flex items-start gap-3 fade-in">
-            <MessageCircle size={18} className="text-[#d97756] mt-0.5 shrink-0" />
+          <div className="rounded-3xl bg-floe ice border border-ice/30 p-4 flex items-start gap-3 fade-in">
+            <MessageCircle size={18} className="text-ice mt-0.5 shrink-0" />
             <div className="flex-1">
-              <p className="text-sm font-semibold text-[#f5f5f0]">Quick check-in first?</p>
-              <p className="text-sm text-[#a8a29e] mt-0.5">About a minute on last week. It shapes this plan.</p>
+              <p className="text-sm font-semibold text-snow">Quick check-in first?</p>
+              <p className="text-sm text-frost mt-0.5">About a minute on last week. It shapes this plan.</p>
               <div className="flex gap-2 mt-3">
                 <Button size="sm" onClick={() => navigate(`/check-in?trigger=planner&week=${checkInWeek}&key=planner:${checkInWeek}`)}>Check in</Button>
                 <Button size="sm" variant="ghost" onClick={() => dismissCheckIn(`planner:${checkInWeek}`)}>Skip to planning</Button>
@@ -311,8 +311,8 @@ export function WeekPlanner() {
         )}
 
         {prefill?.hasChanges && (
-          <div className="flex items-center gap-2 text-xs text-[#a8a29e] px-1">
-            <Sparkles size={14} className="text-[#d97756]" />
+          <div className="flex items-center gap-2 text-xs text-frost px-1">
+            <Sparkles size={14} className="text-ice" />
             Pre-filled from your check-in. Change anything you like.
           </div>
         )}
@@ -328,20 +328,20 @@ export function WeekPlanner() {
         {method === 'repeat' && previous && (
           <Card>
             <CardSection className="flex flex-col gap-3">
-              <p className="text-sm text-[#a8a29e]">
+              <p className="text-sm text-frost">
                 Copies the week of {format(new Date(`${previous.weekStartDate}T00:00:00`), 'dd MMM')} onto the week of{' '}
-                <span className="text-[#f5f5f0] font-medium">{repeatMonday && format(repeatMonday, 'dd MMM')}</span>: same sessions, exercises and weights.
+                <span className="text-snow font-medium">{repeatMonday && format(repeatMonday, 'dd MMM')}</span>: same sessions, exercises and weights.
               </p>
               <ul className="flex flex-col gap-1.5">
                 {repeatPlan(previous, repeatMonday!).sessions.map((s) => (
-                  <li key={s.id} className="flex items-center justify-between gap-3 rounded-2xl bg-[#1a1a1a] border border-[#2a2a2a] px-3.5 py-2.5">
-                    <span className="text-sm text-[#f5f5f0] truncate">{s.title}</span>
-                    <span className="text-xs text-[#949494] shrink-0">{formatSessionDate(s.date)}</span>
+                  <li key={s.id} className="flex items-center justify-between gap-3 rounded-2xl bg-slush border border-rime px-3.5 py-2.5">
+                    <span className="text-sm text-snow truncate">{s.title}</span>
+                    <span className="text-xs text-mist shrink-0">{formatSessionDate(s.date)}</span>
                   </li>
                 ))}
               </ul>
               {repeatReplaces && (
-                <p className="flex items-start gap-2 text-xs text-[#d97756]">
+                <p className="flex items-start gap-2 text-xs text-ice">
                   <AlertCircle size={14} className="shrink-0 mt-0.5" />
                   You already have a plan for that week. Repeating replaces it (sessions you've finished stay).
                 </p>
@@ -358,7 +358,7 @@ export function WeekPlanner() {
         {/* Day selector */}
         <Card>
           <CardSection>
-            <ChoiceGroup legend="Which days can you train?" legendClassName="block text-sm font-medium text-[#a8a29e] mb-4" className="flex justify-between gap-1.5">
+            <ChoiceGroup legend="Which days can you train?" legendClassName="block text-sm font-medium text-frost mb-4" className="flex justify-between gap-1.5">
               {WEEK_DAYS_MON.map((day) => {
                 const selected = selectedDays.includes(day)
                 // Days earlier than today can't be trained this week, so dim
@@ -375,10 +375,10 @@ export function WeekPlanner() {
                     className={`
                       aspect-square flex-1 flex items-center justify-center rounded-full text-sm font-semibold transition-all duration-150
                       ${selected
-                        ? 'bg-accent-fill text-white shadow-lg shadow-[#d97756]/25 scale-105'
+                        ? 'bg-accent-fill text-white shadow-lg shadow-ice/25 scale-105'
                         : past
-                          ? 'bg-[#141414] text-[#858585] border border-[#222] hover:text-[#a8a29e]'
-                          : 'bg-[#1a1a1a] text-[#949494] border border-[#2a2a2a] hover:bg-[#222] hover:text-[#a8a29e]'
+                          ? 'bg-floe text-haze border border-rime hover:text-frost'
+                          : 'bg-slush text-mist border border-rime hover:bg-rime hover:text-frost'
                       }
                     `}
                   >
@@ -390,20 +390,20 @@ export function WeekPlanner() {
               })}
             </ChoiceGroup>
             {orderedDays.length > 0 && (
-              <p className="text-xs text-[#949494] mt-3 text-center">
+              <p className="text-xs text-mist mt-3 text-center">
                 {orderedDays.length} day{orderedDays.length !== 1 ? 's' : ''} selected: {orderedDays.join(', ')}
               </p>
             )}
             {planNextWeek && (
-              <div className="mt-3 flex items-center justify-between gap-3 rounded-2xl bg-[#161616] border border-[#2a2a2a] px-3 py-2.5">
-                <span className="flex items-center gap-2 text-xs text-[#a8a29e]">
-                  <CalendarClock size={14} className="text-[#d97756]" aria-hidden />
+              <div className="mt-3 flex items-center justify-between gap-3 rounded-2xl bg-floe ice border border-rime px-3 py-2.5">
+                <span className="flex items-center gap-2 text-xs text-frost">
+                  <CalendarClock size={14} className="text-ice" aria-hidden />
                   Planning for next week
                 </span>
                 <button
                   type="button"
                   onClick={switchToThisWeek}
-                  className="text-xs font-medium text-[#d97756] hover:underline"
+                  className="text-xs font-medium text-ice hover:underline"
                 >
                   Plan this week
                 </button>
@@ -416,7 +416,7 @@ export function WeekPlanner() {
         {method === 'generate' && <Card>
           <CardSection>
             {/* Equal-width chips that wrap to a second row at large text sizes. */}
-            <ChoiceGroup legend="How long per session?" legendClassName="block text-sm font-medium text-[#a8a29e] mb-3" className="grid grid-cols-[repeat(auto-fit,minmax(3.5rem,1fr))] gap-1.5">
+            <ChoiceGroup legend="How long per session?" legendClassName="block text-sm font-medium text-frost mb-3" className="grid grid-cols-[repeat(auto-fit,minmax(3.5rem,1fr))] gap-1.5">
               {SESSION_LENGTH_OPTIONS.map((mins) => (
                 <ChoiceChip
                   key={mins}
@@ -427,8 +427,8 @@ export function WeekPlanner() {
                   className={`
                     rounded-xl py-2 text-sm font-semibold text-center transition-all duration-150
                     ${sessionMinutes === mins
-                      ? 'bg-accent-fill text-white shadow-lg shadow-[#d97756]/25'
-                      : 'bg-[#1a1a1a] text-[#949494] border border-[#2a2a2a] hover:bg-[#222] hover:text-[#a8a29e]'
+                      ? 'bg-accent-fill text-white shadow-lg shadow-ice/25'
+                      : 'bg-slush text-mist border border-rime hover:bg-rime hover:text-frost'
                     }
                   `}
                 >
@@ -442,8 +442,8 @@ export function WeekPlanner() {
         {/* Notes: context (generate), the changes (modify) or the pasted plan (convert) */}
         <Card>
           <CardSection>
-            <label htmlFor="plan-notes" className="block text-sm font-medium text-[#a8a29e] mb-3">
-              {method === 'convert' ? 'Paste this week of your plan' : method === 'modify' ? 'What should change from last week?' : 'Any extra context for Clawde?'}
+            <label htmlFor="plan-notes" className="block text-sm font-medium text-frost mb-3">
+              {method === 'convert' ? 'Paste this week of your plan' : method === 'modify' ? 'What should change from last week?' : 'Any extra context for Quinn?'}
             </label>
             <textarea
               id="plan-notes"
@@ -455,7 +455,7 @@ export function WeekPlanner() {
                   ? 'e.g. Add 2.5kg to the main lifts, swap leg press for hack squat, make Friday 45 minutes.'
                   : 'e.g. Going out Wednesday night, make Thursday light. Left shoulder feeling tight this week.'}
               rows={method === 'generate' ? 3 : 6}
-              className="w-full bg-[#1a1a1a] border border-[#666666] rounded-2xl px-4 py-3 text-base text-[#f5f5f0] placeholder-[#858585] resize-y field-sizing-content min-h-24 max-h-[50svh] focus:outline-none focus:border-[#d97756] focus:ring-1 focus:ring-[#d97756] transition-colors"
+              className="w-full bg-slush border border-deep rounded-2xl px-4 py-3 text-base text-snow placeholder-haze resize-y field-sizing-content min-h-24 max-h-[50svh] focus:outline-none focus:border-ice focus:ring-1 focus:ring-ice transition-colors"
             />
           </CardSection>
         </Card>
@@ -476,16 +476,16 @@ export function WeekPlanner() {
             <button
               onClick={handleShowPrompt}
               disabled={selectedDays.length === 0}
-              className="self-center text-xs text-[#949494] hover:text-[#a8a29e] py-1.5 px-3 disabled:opacity-40"
+              className="self-center text-xs text-mist hover:text-frost py-1.5 px-3 disabled:opacity-40"
             >
               or just copy the prompt
             </button>
           </div>
 
           {existingPlan && (
-            <div className="bg-[#d97756]/10 rounded-2xl border border-[#d97756]/20 px-4 py-3 flex items-start gap-3">
-              <AlertCircle size={16} className="text-[#d97756] mt-0.5 shrink-0" />
-              <p className="text-xs text-[#d97756]">
+            <div className="bg-ice/10 rounded-2xl border border-ice/20 px-4 py-3 flex items-start gap-3">
+              <AlertCircle size={16} className="text-ice mt-0.5 shrink-0" />
+              <p className="text-xs text-ice">
                 You already have a plan for {planNextWeek ? 'next' : 'this'} week. Importing a new one will replace it.
               </p>
             </div>
@@ -501,8 +501,8 @@ export function WeekPlanner() {
 
         {/* How it works */}
         {method === 'generate' && (
-        <div className="rounded-2xl bg-[#161616] border border-[#2a2a2a] p-4">
-          <h2 className="text-xs font-semibold text-[#949494] uppercase tracking-widest mb-3">How it works</h2>
+        <div className="rounded-2xl bg-floe ice border border-rime p-4">
+          <h2 className="text-xs font-semibold text-mist uppercase tracking-widest mb-3">How it works</h2>
           <ol className="flex flex-col gap-2.5">
             {[
               ['1', 'Select your training days above'],
@@ -512,8 +512,8 @@ export function WeekPlanner() {
               ['5', 'Copy the JSON Claude replies with, come back, and paste it into the import sheet'],
             ].map(([n, text]) => (
               <li key={n} className="flex items-start gap-3">
-                <span aria-hidden className="w-5 h-5 rounded-full bg-[#d97756]/15 text-[#d97756] text-2xs font-bold flex items-center justify-center shrink-0 mt-0.5">{n}</span>
-                <p className="text-sm text-[#949494]">{text}</p>
+                <span aria-hidden className="w-5 h-5 rounded-full bg-ice/15 text-ice text-2xs font-bold flex items-center justify-center shrink-0 mt-0.5">{n}</span>
+                <p className="text-sm text-mist">{text}</p>
               </li>
             ))}
           </ol>
@@ -526,7 +526,7 @@ export function WeekPlanner() {
         <BottomSheet label="Claude prompt" onClose={() => setShowPrompt(false)}>
           <div className="flex items-center justify-between px-5 pt-5 pb-3">
             <div className="flex items-center gap-2">
-              <h2 className="text-base font-semibold text-[#f5f5f0]">
+              <h2 className="text-base font-semibold text-snow">
                 {appMissing ? "Claude app didn't open" : 'Claude Prompt Ready'}
               </h2>
               {/* Always in the page, so "Copied" is announced. */}
@@ -536,7 +536,7 @@ export function WeekPlanner() {
             </div>
             <SheetCloseButton onClose={() => setShowPrompt(false)} />
           </div>
-          <p className="text-xs text-[#949494] px-5 pb-3">
+          <p className="text-xs text-mist px-5 pb-3">
             {appMissing
               ? 'Your prompt is copied. Open Claude in your browser (or try the app again) — it should be filled in; if not, paste it.'
               : copied
@@ -544,7 +544,7 @@ export function WeekPlanner() {
                 : 'Copy this and paste it into Claude.'}
           </p>
           <div className="flex-1 overflow-y-auto mx-4 mb-4">
-            <pre className="bg-[#0a0a0a] rounded-2xl border border-[#2a2a2a] p-4 text-xs text-[#a8a29e] whitespace-pre-wrap font-mono leading-relaxed">
+            <pre className="bg-abyss rounded-2xl border border-rime p-4 text-xs text-frost whitespace-pre-wrap font-mono leading-relaxed">
               {promptText}
             </pre>
           </div>
@@ -567,10 +567,10 @@ export function WeekPlanner() {
       {showImport && (
         <BottomSheet label="Import plan" onClose={() => setShowImport(false)} dismissOnBackdrop={!importJson.trim()}>
           <div className="flex items-center justify-between px-5 pt-5 pb-3">
-            <h2 className="text-base font-semibold text-[#f5f5f0]">Import Plan</h2>
+            <h2 className="text-base font-semibold text-snow">Import Plan</h2>
             <SheetCloseButton onClose={() => setShowImport(false)} />
           </div>
-          <label htmlFor="import-json" className="block text-xs text-[#949494] px-5 pb-3">
+          <label htmlFor="import-json" className="block text-xs text-mist px-5 pb-3">
             Paste the JSON block from Claude's response below.
           </label>
           <div className="flex-1 px-4 overflow-y-auto">
@@ -582,7 +582,7 @@ export function WeekPlanner() {
               onChange={(e) => { setImportJson(e.target.value); setImportError('') }}
               placeholder='Paste the JSON block here... (the content between ```json and ```)'
               rows={10}
-              className="w-full bg-[#0a0a0a] border border-[#666666] rounded-2xl px-4 py-3 text-base text-[#f5f5f0] placeholder-[#858585] resize-y field-sizing-content min-h-24 max-h-[50svh] focus:outline-none focus:border-[#d97756] focus:ring-1 focus:ring-[#d97756] font-mono"
+              className="w-full bg-abyss border border-deep rounded-2xl px-4 py-3 text-base text-snow placeholder-haze resize-y field-sizing-content min-h-24 max-h-[50svh] focus:outline-none focus:border-ice focus:ring-1 focus:ring-ice font-mono"
             />
             {/* Always in the page so a failed import is announced. */}
             <div role="alert">
@@ -632,7 +632,7 @@ const DAY_NAME: Record<DayOfWeek, string> = {
 }
 
 const METHOD_INFO: Record<PlanMethod, { icon: LucideIcon; title: string; text: string }> = {
-  generate: { icon: Wand2, title: 'New plan from Clawde', text: 'Claude writes a fresh week from your profile and history' },
+  generate: { icon: Wand2, title: 'New plan from Quinn', text: 'Claude writes a fresh week from your profile and history' },
   repeat: { icon: Repeat, title: 'Repeat last week', text: 'Same sessions and weights, next week. Instant' },
   modify: { icon: PencilLine, title: 'Modify last week', text: 'Say what to change and Claude edits it' },
   convert: { icon: ClipboardPaste, title: 'Use my own plan', text: 'Paste a plan as text and Claude formats it' },
@@ -663,18 +663,18 @@ function MethodPicker({ methods, last, selected, hasPrevious, onSelect }: {
             onChange={() => onSelect(m)}
             className={`block text-left rounded-3xl p-3.5 border transition-all has-[:disabled]:opacity-40 ${
               on
-                ? 'bg-[#d97756]/12 border-[#d97756]/60 shadow-lg shadow-[#d97756]/10'
-                : 'bg-[#161616] border-[#2a2a2a] hover:border-[#3a3a3a]'
+                ? 'bg-ice/12 border-ice/60 shadow-lg shadow-ice/10'
+                : 'bg-floe ice border-rime hover:border-rime-2'
             }`}
           >
             <span className="flex items-start justify-between gap-2">
-              <Icon size={18} aria-hidden className={on ? 'text-[#d97756]' : 'text-[#a8a29e]'} />
+              <Icon size={18} aria-hidden className={on ? 'text-ice' : 'text-frost'} />
               {m === last && (
-                <span className="text-2xs font-semibold uppercase tracking-wide text-[#d97756] bg-[#d97756]/15 rounded-full px-2 py-0.5">Last used</span>
+                <span className="text-2xs font-semibold uppercase tracking-wide text-ice bg-ice/15 rounded-full px-2 py-0.5">Last used</span>
               )}
             </span>
-            <span className="block text-sm font-semibold text-[#f5f5f0] mt-2 leading-tight">{title}</span>
-            <span className="block text-xs text-[#949494] mt-1 leading-snug">{needsPrevious ? 'Needs a previous plan' : text}</span>
+            <span className="block text-sm font-semibold text-snow mt-2 leading-tight">{title}</span>
+            <span className="block text-xs text-mist mt-1 leading-snug">{needsPrevious ? 'Needs a previous plan' : text}</span>
           </ChoiceChip>
         )
       })}

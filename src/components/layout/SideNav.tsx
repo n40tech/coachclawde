@@ -1,6 +1,6 @@
 import { NavLink, useLocation } from 'react-router-dom'
 import { Settings } from 'lucide-react'
-import { ClawdeMark } from '../shared/ClawdeMark'
+import { QuinnMark } from '../shared/QuinnMark'
 import { NAV_ITEMS, hidesSideNav, type NavItem } from './navItems'
 import { WorkoutDockButton } from './WorkoutDock'
 import { useWorkoutDock } from '../../hooks/useWorkoutDock'
@@ -25,7 +25,7 @@ export function SideNav() {
         to={path}
         end
         className={({ isActive }) => `w-full flex items-center gap-3 h-11 px-3 rounded-2xl text-sm font-medium transition-colors duration-150 ${
-          isActive ? 'bg-[#d97756]/15 text-[#d97756]' : 'text-[#949494] hover:bg-[#161616] hover:text-[#a8a29e]'
+          isActive ? 'bg-ice/15 text-ice' : 'text-mist hover:bg-floe ice hover:text-frost'
         }`}
       >
         {({ isActive }) => (
@@ -41,11 +41,11 @@ export function SideNav() {
   return (
     <nav
       aria-label="Primary"
-      className="hidden @3xl/app:flex sidebar-dock shrink-0 sticky top-0 h-svh flex-col gap-1 pr-3 pt-safe pb-edge border-r border-[#1a1a1a]"
+      className="hidden @3xl/app:flex sidebar-dock shrink-0 sticky top-0 h-svh flex-col gap-1 pr-3 pt-safe pb-edge border-r border-slush"
     >
       <div className="flex items-center gap-2.5 px-3 pt-3 pb-5">
-        <ClawdeMark size={28} idle={false} />
-        <span className="text-sm font-semibold text-[#f5f5f0]">Coach Clawde</span>
+        <QuinnMark size={28} idle={false} />
+        <span className="text-sm font-semibold text-snow">Coach Quinn</span>
       </div>
       <ul className="flex flex-col gap-1">{NAV_ITEMS.map(item)}</ul>
       <div className="mt-auto flex flex-col gap-3">
@@ -53,7 +53,7 @@ export function SideNav() {
         {dock && (
           <div className="flex items-center gap-3 px-1">
             <div className="h-14"><WorkoutDockButton dock={dock} /></div>
-            <span className="text-xs text-[#a8a29e]">Back to workout</span>
+            <span className="text-xs text-frost">Back to workout</span>
           </div>
         )}
         <ul>{item(SETTINGS_ITEM)}</ul>

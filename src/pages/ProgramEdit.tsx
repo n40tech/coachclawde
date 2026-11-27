@@ -58,7 +58,7 @@ export function ProgramEdit() {
   }
 
   return (
-    <div className="flex flex-col min-h-svh bg-[#0a0a0a]">
+    <div className="flex flex-col min-h-svh polar-page">
       <PageHeader
         title="Program setup"
         subtitle="Changes save automatically"
@@ -115,7 +115,7 @@ const LOOK = 'px-2 py-2.5 rounded-2xl text-sm font-medium text-center'
 
 function DaysPerWeekGroup({ value, onChange }: { value: number | undefined; onChange: (v: number) => void }) {
   return (
-    <ChoiceGroup legend="Days per week" legendClassName="block text-xs font-medium text-[#a8a29e] mb-2.5" className="grid grid-cols-5 gap-2">
+    <ChoiceGroup legend="Days per week" legendClassName="block text-xs font-medium text-frost mb-2.5" className="grid grid-cols-5 gap-2">
       {DAYS_PER_WEEK_OPTIONS.map((days) => (
         <ChoiceChip key={days} name="days-per-week" value={String(days)} checked={value === days} onChange={() => onChange(days)} className={chipLook(value === days, LOOK)}>
           {daysPerWeekLabel(days)}
@@ -127,7 +127,7 @@ function DaysPerWeekGroup({ value, onChange }: { value: number | undefined; onCh
 
 function LengthGroup({ value, onChange }: { value: number; onChange: (v: number) => void }) {
   return (
-    <ChoiceGroup legend="Program length" legendClassName="block text-xs font-medium text-[#a8a29e] mb-2.5" className="grid grid-cols-4 gap-2">
+    <ChoiceGroup legend="Program length" legendClassName="block text-xs font-medium text-frost mb-2.5" className="grid grid-cols-4 gap-2">
       {LENGTH_OPTIONS.map((weeks) => (
         <ChoiceChip key={weeks} name="program-length" value={String(weeks)} checked={value === weeks} onChange={() => onChange(weeks)} className={chipLook(value === weeks, LOOK)}>
           {weeks}<span aria-hidden>w</span><span className="sr-only"> weeks</span>
@@ -149,7 +149,7 @@ function ChipGroup<T extends string>({
 }) {
   const name = label.toLowerCase().replace(/\W+/g, '-')
   return (
-    <ChoiceGroup legend={label} legendClassName="block text-xs font-medium text-[#a8a29e] mb-2.5" className="grid grid-cols-3 gap-2">
+    <ChoiceGroup legend={label} legendClassName="block text-xs font-medium text-frost mb-2.5" className="grid grid-cols-3 gap-2">
       {options.map((opt) => {
         const active = selected.includes(opt.value)
         return (

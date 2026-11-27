@@ -104,7 +104,7 @@ export function WorkoutSheet({ title, subtitle, right, onClose, below, children 
               transform: progress ? `translateY(${progress * 100}%)` : undefined,
               transition: ease === 'none' ? 'none' : `transform ${ease}`,
             }}
-            className={`${progress ? '' : 'vt-workout-sheet'} sheet-enter absolute inset-x-0 bottom-0 top-[calc(max(0.5rem,var(--safe-top))+0.5rem)] mx-auto w-full max-w-md @3xl/app:max-w-xl @5xl/app:max-w-2xl flex flex-col overflow-hidden rounded-t-[2rem] bg-[#0a0a0a] ring-1 ring-[#262626] shadow-[0_-12px_40px_rgba(0,0,0,0.6)]`}
+            className={`${progress ? '' : 'vt-workout-sheet'} sheet-enter absolute inset-x-0 bottom-0 top-[calc(max(0.5rem,var(--safe-top))+0.5rem)] mx-auto w-full max-w-md @3xl/app:max-w-xl @5xl/app:max-w-2xl flex flex-col overflow-hidden rounded-t-[2rem] bg-abyss ring-1 ring-slush-2 shadow-[0_-12px_40px_rgba(0,0,0,0.6)]`}
           >
             {/* Header: the handle to pull it down by. */}
             <div
@@ -113,16 +113,16 @@ export function WorkoutSheet({ title, subtitle, right, onClose, below, children 
                 setHeight(panel.current?.offsetHeight ?? 0)
                 drag.handlers.onPointerDown(e)
               }}
-              className="shrink-0 px-4 pt-2 pb-3 border-b border-[#1a1a1a] touch-none select-none cursor-grab active:cursor-grabbing"
+              className="shrink-0 px-4 pt-2 pb-3 border-b border-slush touch-none select-none cursor-grab active:cursor-grabbing"
             >
-              <div aria-hidden className="mx-auto mb-2 h-1.5 w-10 rounded-full bg-[#3a3a3a]" />
+              <div aria-hidden className="mx-auto mb-2 h-1.5 w-10 rounded-full bg-rime-2" />
               <div className="flex items-center gap-3">
                 <button
                   type="button"
                   onClick={() => setClosing(true)}
                   aria-label="Close workout"
                   title="Close (or pull down)"
-                  className="relative hit-target w-9 h-9 flex items-center justify-center rounded-2xl bg-[#1a1a1a] text-[#a8a29e] hover:text-[#f5f5f0] transition-colors shrink-0"
+                  className="relative hit-target w-9 h-9 flex items-center justify-center rounded-2xl bg-slush text-frost hover:text-snow transition-colors shrink-0"
                 >
                   <ChevronDown size="1.125em" aria-hidden />
                 </button>
@@ -131,11 +131,11 @@ export function WorkoutSheet({ title, subtitle, right, onClose, below, children 
                     ref={heading}
                     id="workout-sheet-title"
                     tabIndex={-1}
-                    className="text-lg font-semibold text-[#f5f5f0] leading-tight truncate outline-none"
+                    className="text-lg font-semibold text-snow leading-tight truncate outline-none"
                   >
                     {title}
                   </h1>
-                  {subtitle && <p className="text-xs text-[#949494] mt-0.5">{subtitle}</p>}
+                  {subtitle && <p className="text-xs text-mist mt-0.5">{subtitle}</p>}
                 </div>
                 {right && <div className="shrink-0">{right}</div>}
               </div>

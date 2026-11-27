@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAppStore } from '../store/useAppStore'
 import { useAutoSync } from '../hooks/useAutoSync'
 import { Button } from '../components/shared/Button'
-import { ClawdeMark } from '../components/shared/ClawdeMark'
+import { QuinnMark } from '../components/shared/QuinnMark'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { ChoiceChip, ChoiceGroup } from '../components/shared/Choice'
 import { chipLook } from '../components/shared/chipLook'
@@ -73,12 +73,12 @@ export function Onboarding() {
   if (finishing) return <FlightToHome name={a.name} />
 
   return (
-    <div className="flex flex-col min-h-svh bg-[#0a0a0a]">
+    <div className="flex flex-col min-h-svh polar-page">
       {!returning && (
-        <div className="sticky top-0 z-10 bg-[#0a0a0a] px-5 pt-safe pb-2">
+        <div className="sticky top-0 z-10 bg-abyss px-5 pt-safe pb-2">
           <div className="flex gap-1.5 pt-4">
             {['form', 'finish'].map((s, i) => (
-              <div key={s} className={`h-1 flex-1 rounded-full transition-colors duration-300 ${i <= (step === 'form' ? 0 : 1) ? 'bg-[#d97756]' : 'bg-[#222]'}`} />
+              <div key={s} className={`h-1 flex-1 rounded-full transition-colors duration-300 ${i <= (step === 'form' ? 0 : 1) ? 'bg-ice' : 'bg-rime'}`} />
             ))}
           </div>
         </div>
@@ -111,7 +111,7 @@ export function Onboarding() {
           ) : (
             <Button onClick={handleFinish}>
               <Sparkles size={18} />
-              Enter Coach Clawde
+              Enter Coach Quinn
             </Button>
           )}
         </div>
@@ -125,8 +125,8 @@ export function Onboarding() {
 function StepHeading({ title, subtitle }: { title: string; subtitle?: string }) {
   return (
     <div>
-      <h1 className="text-2xl font-bold text-[#f5f5f0] leading-tight">{title}</h1>
-      {subtitle && <p className="text-sm text-[#949494] mt-2 leading-relaxed">{subtitle}</p>}
+      <h1 className="text-2xl font-bold text-snow leading-tight">{title}</h1>
+      {subtitle && <p className="text-sm text-mist mt-2 leading-relaxed">{subtitle}</p>}
     </div>
   )
 }
@@ -135,14 +135,14 @@ function TextInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
   return (
     <input
       {...props}
-      className="w-full bg-[#1a1a1a] border border-[#666666] rounded-2xl px-4 py-3 text-base text-[#f5f5f0] placeholder-[#858585] focus:outline-none focus:border-[#d97756] focus:ring-1 focus:ring-[#d97756] transition-colors"
+      className="w-full bg-slush border border-deep rounded-2xl px-4 py-3 text-base text-snow placeholder-haze focus:outline-none focus:border-ice focus:ring-1 focus:ring-ice transition-colors"
     />
   )
 }
 
 /** A field's visible label: a real `<label>` when it names one input (`htmlFor`). */
 function FieldLabel({ htmlFor, children }: { htmlFor?: string; children: React.ReactNode }) {
-  const className = 'block text-xs font-medium text-[#a8a29e] mb-2'
+  const className = 'block text-xs font-medium text-frost mb-2'
   return htmlFor ? <label htmlFor={htmlFor} className={className}>{children}</label> : <p className={className}>{children}</p>
 }
 
@@ -162,7 +162,7 @@ function Chip({ type = 'radio', name, value, on, onClick, children }: {
   )
 }
 
-const GROUP_LEGEND = 'block text-xs font-medium text-[#a8a29e] mb-2'
+const GROUP_LEGEND = 'block text-xs font-medium text-frost mb-2'
 
 function BasicsForm({ a, set, activityChosen, onActivity, tried, returning }: {
   a: BasicAnswers
@@ -179,9 +179,9 @@ function BasicsForm({ a, set, activityChosen, onActivity, tried, returning }: {
   return (
     <div>
       <div className="flex items-center gap-3 mb-6">
-        <ClawdeMark size={44} sweat />
+        <QuinnMark size={44} sweat />
         <StepHeading
-          title={returning ? 'Your basics' : 'Hi, I’m Clawde'}
+          title={returning ? 'Your basics' : 'Hi, I’m Quinn'}
           subtitle={returning ? 'Update anything that’s changed.' : 'A few basics and we’re lifting. Everything else I’ll ask when it matters.'}
         />
       </div>
@@ -240,17 +240,17 @@ function BasicsForm({ a, set, activityChosen, onActivity, tried, returning }: {
             onChange={(e) => set({ injuries: e.target.value })}
             placeholder="One per line, e.g. Left knee sore on deep squats"
             rows={2}
-            className="w-full bg-[#1a1a1a] border border-[#666666] rounded-2xl px-4 py-3 text-base text-[#f5f5f0] placeholder-[#858585] resize-y field-sizing-content min-h-24 max-h-[50svh] focus:outline-none focus:border-[#d97756] focus:ring-1 focus:ring-[#d97756]"
+            className="w-full bg-slush border border-deep rounded-2xl px-4 py-3 text-base text-snow placeholder-haze resize-y field-sizing-content min-h-24 max-h-[50svh] focus:outline-none focus:border-ice focus:ring-1 focus:ring-ice"
           />
-          <label className="mt-3 flex items-start gap-3 text-sm text-[#a8a29e]">
-            <input type="checkbox" checked={a.medical} onChange={(e) => set({ medical: e.target.checked, cleared: false })} className="mt-0.5 w-5 h-5 accent-[#d97756] shrink-0" />
+          <label className="mt-3 flex items-start gap-3 text-sm text-frost">
+            <input type="checkbox" checked={a.medical} onChange={(e) => set({ medical: e.target.checked, cleared: false })} className="mt-0.5 w-5 h-5 accent-ice shrink-0" />
             I have a medical or heart condition, or I’m pregnant
           </label>
           {a.medical && (
-            <div className="mt-3 rounded-2xl bg-[#161616] border border-[#2a2a2a] p-3.5 fade-in">
-              <p className="text-xs text-[#a8a29e] leading-relaxed">Thanks for telling me. Please check with your GP or physio before starting. I’ll keep things moderate until you’re cleared. No details needed.</p>
-              <label className="mt-3 flex items-start gap-3 text-sm text-[#a8a29e]">
-                <input type="checkbox" checked={a.cleared} onChange={(e) => set({ cleared: e.target.checked })} className="mt-0.5 w-5 h-5 accent-[#d97756] shrink-0" />
+            <div className="mt-3 rounded-2xl bg-floe ice border border-rime p-3.5 fade-in">
+              <p className="text-xs text-frost leading-relaxed">Thanks for telling me. Please check with your GP or physio before starting. I’ll keep things moderate until you’re cleared. No details needed.</p>
+              <label className="mt-3 flex items-start gap-3 text-sm text-frost">
+                <input type="checkbox" checked={a.cleared} onChange={(e) => set({ cleared: e.target.checked })} className="mt-0.5 w-5 h-5 accent-ice shrink-0" />
                 A GP or physio has cleared me to train
               </label>
             </div>
@@ -262,18 +262,18 @@ function BasicsForm({ a, set, activityChosen, onActivity, tried, returning }: {
             type="button"
             onClick={() => setMore((m) => !m)}
             aria-expanded={more}
-            className="flex items-center gap-2 text-sm text-[#a8a29e] py-1"
+            className="flex items-center gap-2 text-sm text-frost py-1"
           >
-            Anything else Clawde should know? {more ? <ChevronUp size={16} aria-hidden /> : <ChevronDown size={16} aria-hidden />}
+            Anything else Quinn should know? {more ? <ChevronUp size={16} aria-hidden /> : <ChevronDown size={16} aria-hidden />}
           </button>
           {more && (
             <textarea
-              aria-label="Anything else Clawde should know"
+              aria-label="Anything else Quinn should know"
               value={a.notes}
               onChange={(e) => set({ notes: e.target.value })}
               placeholder="Goals, sports you play, lifts you love or hate…"
               rows={3}
-              className="mt-2 w-full bg-[#1a1a1a] border border-[#666666] rounded-2xl px-4 py-3 text-base text-[#f5f5f0] placeholder-[#858585] resize-y field-sizing-content min-h-24 max-h-[50svh] focus:outline-none focus:border-[#d97756] focus:ring-1 focus:ring-[#d97756] fade-in"
+              className="mt-2 w-full bg-slush border border-deep rounded-2xl px-4 py-3 text-base text-snow placeholder-haze resize-y field-sizing-content min-h-24 max-h-[50svh] focus:outline-none focus:border-ice focus:ring-1 focus:ring-ice fade-in"
             />
           )}
         </div>
@@ -288,13 +288,13 @@ function FinishStep({ name }: { name: string }) {
     <div className="flex-1 flex flex-col">
       <div className="flex-1 flex flex-col items-center justify-center text-center gap-5 py-6">
         <div className="relative">
-          <div className="absolute inset-0 -m-4 rounded-full bg-[#d97756]/15 blur-2xl" aria-hidden />
-          <ClawdeMark size={104} cheer sweat className="relative" />
+          <div className="absolute inset-0 -m-4 rounded-full bg-ice/15 blur-2xl" aria-hidden />
+          <QuinnMark size={104} cheer sweat className="relative" />
         </div>
-        <h1 className="text-3xl font-bold text-[#f5f5f0]">
+        <h1 className="text-3xl font-bold text-snow">
           You're all set{first ? `, ${first}` : ''}!
         </h1>
-        <p className="text-sm text-[#949494] leading-relaxed max-w-xs">
+        <p className="text-sm text-mist leading-relaxed max-w-xs">
           Your profile's ready. Head to the home screen and plan your first week.
           I'll have a personalised plan waiting.
         </p>
@@ -327,26 +327,26 @@ function InstallTips() {
   }
 
   return (
-    <div className="rounded-2xl bg-[#161616] border border-[#2a2a2a]">
+    <div className="rounded-2xl bg-floe ice border border-rime">
       <button
         onClick={() => setOpen((o) => !o)}
         className="w-full flex items-center gap-3 px-4 py-3.5 text-left"
         aria-expanded={open}
       >
-        <div className="w-8 h-8 rounded-xl bg-[#1a1a1a] flex items-center justify-center shrink-0">
-          <Smartphone size={16} className="text-[#d97756]" />
+        <div className="w-8 h-8 rounded-xl bg-slush flex items-center justify-center shrink-0">
+          <Smartphone size={16} className="text-ice" />
         </div>
         <div className="flex-1">
-          <p className="text-sm font-semibold text-[#f5f5f0]">Add Coach Clawde to your home screen</p>
-          <p className="text-xs text-[#949494]">Full-screen and offline-ready. No app store needed.</p>
+          <p className="text-sm font-semibold text-snow">Add Coach Quinn to your home screen</p>
+          <p className="text-xs text-mist">Full-screen and offline-ready. No app store needed.</p>
         </div>
-        {open ? <ChevronUp size={16} className="text-[#858585]" /> : <ChevronDown size={16} className="text-[#858585]" />}
+        {open ? <ChevronUp size={16} className="text-haze" /> : <ChevronDown size={16} className="text-haze" />}
       </button>
       {open && (
         <div className="px-4 pb-4 flex flex-col gap-3 fade-in">
           {!isAndroid && (
             <InstallCard
-              icon={<Share size={18} className="text-[#d97756]" />}
+              icon={<Share size={18} className="text-ice" />}
               platform="iPhone & iPad (Safari)"
               highlight={isIOS}
               steps={[
@@ -358,7 +358,7 @@ function InstallTips() {
           )}
           {!isIOS && (
             <InstallCard
-              icon={<MoreVertical size={18} className="text-[#d97756]" />}
+              icon={<MoreVertical size={18} className="text-ice" />}
               platform="Android (Chrome)"
               highlight={isAndroid}
               steps={[
@@ -369,7 +369,7 @@ function InstallTips() {
             />
           )}
           {!isIOS && !isAndroid && (
-            <p className="text-xs text-[#949494] px-1">
+            <p className="text-xs text-mist px-1">
               On desktop, look for the <Smartphone size={12} className="inline -mt-0.5" /> install
               icon in your browser's address bar.
             </p>
@@ -385,19 +385,19 @@ function InstallCard({
 }: { icon: React.ReactNode; platform: string; steps: string[]; highlight: boolean }) {
   return (
     <div className={`rounded-2xl border p-4 ${
-      highlight ? 'bg-[#d97756]/8 border-[#d97756]/30' : 'bg-[#111] border-[#2a2a2a]'
+      highlight ? 'bg-ice/8 border-ice/30' : 'bg-floe border-rime'
     }`}>
       <div className="flex items-center gap-2 mb-3">
-        <div className="w-8 h-8 rounded-xl bg-[#1a1a1a] flex items-center justify-center">{icon}</div>
-        <p className="text-sm font-semibold text-[#f5f5f0]">{platform}</p>
+        <div className="w-8 h-8 rounded-xl bg-slush flex items-center justify-center">{icon}</div>
+        <p className="text-sm font-semibold text-snow">{platform}</p>
       </div>
       <ol className="flex flex-col gap-2">
         {steps.map((s, i) => (
           <li key={i} className="flex items-start gap-2.5">
-            <span className="w-5 h-5 rounded-full bg-[#d97756]/15 text-[#d97756] text-2xs font-bold flex items-center justify-center shrink-0 mt-0.5">
+            <span className="w-5 h-5 rounded-full bg-ice/15 text-ice text-2xs font-bold flex items-center justify-center shrink-0 mt-0.5">
               {i + 1}
             </span>
-            <span className="text-sm text-[#a8a29e] leading-snug">{s}</span>
+            <span className="text-sm text-frost leading-snug">{s}</span>
           </li>
         ))}
       </ol>
@@ -406,7 +406,7 @@ function InstallCard({
 }
 
 /**
- * The closing flourish — Clawde flies from the centre of the finish screen up to
+ * The closing flourish — Quinn flies from the centre of the finish screen up to
  * the spot it lives in on the home header, then we navigate home.
  */
 function FlightToHome({ name }: { name: string }) {
@@ -417,15 +417,15 @@ function FlightToHome({ name }: { name: string }) {
   }, [])
   return (
     <FixedLayer>
-      <div className="absolute inset-0 z-50 bg-[#0a0a0a] overflow-hidden">
+      <div className="absolute inset-0 z-50 bg-abyss overflow-hidden">
         <p
-          className="absolute left-0 right-0 text-center text-sm text-[#949494] transition-opacity duration-300"
+          className="absolute left-0 right-0 text-center text-sm text-mist transition-opacity duration-300"
           style={{ top: '58%', opacity: landed ? 0 : 1 }}
         >
           See you in there{name.trim() ? `, ${name.trim().split(' ')[0]}` : ''}…
         </p>
         <div
-          className="clawde-flight absolute"
+          className="quinn-flight absolute"
           style={{
             // Landing point tracks Home's mascot: below the status bar, and
             // centred in the content column (offset by the sidebar on iPad).
@@ -435,7 +435,7 @@ function FlightToHome({ name }: { name: string }) {
             opacity: landed ? 0 : 1,
           }}
         >
-          <ClawdeMark size={96} sweat />
+          <QuinnMark size={96} sweat />
         </div>
       </div>
     </FixedLayer>

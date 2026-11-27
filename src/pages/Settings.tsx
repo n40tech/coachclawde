@@ -81,21 +81,21 @@ export function Settings() {
   }
 
   return (
-    <div className="flex flex-col min-h-svh bg-[#0a0a0a] pb-edge">
+    <div className="flex flex-col min-h-svh polar-page pb-edge">
       <PageHeader title="Settings" backTo="/progress" />
 
       <div className="flex flex-col gap-5 px-4 pt-4">
         {/* Account & Sync */}
         <div>
-          <h2 className="text-xs text-[#858585] uppercase tracking-widest font-medium px-1 mb-3">
+          <h2 className="text-xs text-haze uppercase tracking-widest font-medium px-1 mb-3">
             Account &amp; Sync
           </h2>
           <Card accent={!!user}>
             <CardSection>
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2 min-w-0">
-                  <UserCircle size={18} className="text-[#f5f5f0] shrink-0" />
-                  <span className="text-sm font-semibold text-[#f5f5f0] truncate">
+                  <UserCircle size={18} className="text-snow shrink-0" />
+                  <span className="text-sm font-semibold text-snow truncate">
                     {user?.email ?? (configured ? 'Signed out' : 'Local mode')}
                   </span>
                 </div>
@@ -104,8 +104,8 @@ export function Settings() {
 
               {user ? (
                 <div className="flex flex-col gap-3">
-                  <div className="text-xs text-[#949494] leading-relaxed bg-[#1a1a1a] rounded-2xl px-4 py-3">
-                    <p className="font-medium text-[#a8a29e] mb-1">✓ Syncing to your account</p>
+                  <div className="text-xs text-mist leading-relaxed bg-slush rounded-2xl px-4 py-3">
+                    <p className="font-medium text-frost mb-1">✓ Syncing to your account</p>
                     <p>Workouts and plans save to the cloud automatically, and load each time you open the app. Sign in on any device to pick up where you left off.</p>
                   </div>
                   <div className="flex gap-2">
@@ -129,7 +129,7 @@ export function Settings() {
                   </div>
                 </div>
               ) : (
-                <p className="text-xs text-[#949494] leading-relaxed">
+                <p className="text-xs text-mist leading-relaxed">
                   {configured
                     ? 'You are signed out. Data is stored only on this device until you sign in.'
                     : 'Running in local-only mode — no backend is configured, so data stays on this device.'}
@@ -141,11 +141,11 @@ export function Settings() {
 
         {/* Profile */}
         <div>
-          <h2 className="text-xs text-[#858585] uppercase tracking-widest font-medium px-1 mb-3">Profile</h2>
+          <h2 className="text-xs text-haze uppercase tracking-widest font-medium px-1 mb-3">Profile</h2>
           <Card>
             <CardSection className="flex flex-col gap-3">
-              <p className="text-xs text-[#949494] leading-relaxed">
-                Saved to your account and included in the plan prompt so Clawde can program around your details.
+              <p className="text-xs text-mist leading-relaxed">
+                Saved to your account and included in the plan prompt so Quinn can program around your details.
               </p>
               <Field label="Name" htmlFor="settings-name">
                 <input
@@ -182,7 +182,7 @@ export function Settings() {
               <Field
                 label="Date of birth"
                 htmlFor="settings-birth-date"
-                hint={age !== undefined ? `${age} years old. Clawde uses this to pitch your training.` : 'Optional. Clawde uses your age to pitch your training.'}
+                hint={age !== undefined ? `${age} years old. Quinn uses this to pitch your training.` : 'Optional. Quinn uses your age to pitch your training.'}
               >
                 <input
                   id="settings-birth-date"
@@ -197,7 +197,7 @@ export function Settings() {
                   className={inputClass}
                 />
               </Field>
-              <ChoiceGroup legend="Gender" legendClassName="block text-xs font-medium text-[#a8a29e] mb-1.5" className="grid grid-cols-2 gap-2">
+              <ChoiceGroup legend="Gender" legendClassName="block text-xs font-medium text-frost mb-1.5" className="grid grid-cols-2 gap-2">
                 {(['male', 'female'] as const).map((g) => (
                   <ChoiceChip key={g} name="settings-gender" value={g} checked={sex === g} onChange={() => setSex(g)} className={toggleLook(sex === g)}>
                     <span className="capitalize">{g}</span>
@@ -216,11 +216,11 @@ export function Settings() {
 
         {/* Units */}
         <div>
-          <h2 className="text-xs text-[#858585] uppercase tracking-widest font-medium px-1 mb-3">Units</h2>
+          <h2 className="text-xs text-haze uppercase tracking-widest font-medium px-1 mb-3">Units</h2>
           <Card>
             <CardSection className="flex flex-col gap-3">
-              <p className="text-xs text-[#949494] leading-relaxed">
-                How weights and distances are shown on this device. Clawde always plans in metric; the app converts.
+              <p className="text-xs text-mist leading-relaxed">
+                How weights and distances are shown on this device. Quinn always plans in metric; the app converts.
               </p>
               <UnitToggle legend="Weight" name="unit-weight" options={['kg', 'lb'] as WeightUnit[]} value={units.weight} onChange={setWeightUnit} />
               <UnitToggle legend="Distance" name="unit-distance" options={['km', 'mi'] as DistanceUnit[]} value={units.distance} onChange={(d) => setUnits({ distance: d })} />
@@ -234,26 +234,26 @@ export function Settings() {
 
         {/* Check-ins & health */}
         <div>
-          <h2 className="text-xs text-[#858585] uppercase tracking-widest font-medium px-1 mb-3">Check-ins & privacy</h2>
+          <h2 className="text-xs text-haze uppercase tracking-widest font-medium px-1 mb-3">Check-ins & privacy</h2>
           <Card>
             <CardSection className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-[#d97756]/15 flex items-center justify-center shrink-0">
-                <MessageCircle size={18} className="text-[#d97756]" />
+              <div className="w-10 h-10 rounded-2xl bg-ice/15 flex items-center justify-center shrink-0">
+                <MessageCircle size={18} className="text-ice" />
               </div>
               <div className="flex-1 min-w-0">
-                <p id="checkins-title" className="text-sm font-semibold text-[#f5f5f0]">Suggest weekly check-ins</p>
-                <p id="checkins-desc" className="text-xs text-[#949494] mt-0.5">A one-minute chat at the end of the week. Never required.</p>
+                <p id="checkins-title" className="text-sm font-semibold text-snow">Suggest weekly check-ins</p>
+                <p id="checkins-desc" className="text-xs text-mist mt-0.5">A one-minute chat at the end of the week. Never required.</p>
               </div>
               <Switch checked={checkInsOn} onChange={setCheckIns} labelledBy="checkins-title" describedBy="checkins-desc" />
             </CardSection>
-            <div className="border-t border-[#2a2a2a]" />
+            <div className="border-t border-rime" />
             <CardSection className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-[#d97756]/15 flex items-center justify-center shrink-0">
-                <ShieldCheck size={18} className="text-[#d97756]" />
+              <div className="w-10 h-10 rounded-2xl bg-ice/15 flex items-center justify-center shrink-0">
+                <ShieldCheck size={18} className="text-ice" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-[#f5f5f0]">Health screen</p>
-                <p className="text-xs text-[#949494] mt-0.5 leading-relaxed">
+                <p className="text-sm font-semibold text-snow">Health screen</p>
+                <p className="text-xs text-mist mt-0.5 leading-relaxed">
                   {healthFlags.some((f) => f !== 'injury')
                     ? 'We keep only which boxes you ticked (never any details) so plans stay safe. You can delete them.'
                     : 'Nothing stored beyond your injury list. We only ever keep which boxes you tick, never details.'}
@@ -270,20 +270,20 @@ export function Settings() {
 
         {/* Onboarding */}
         <div>
-          <h2 className="text-xs text-[#858585] uppercase tracking-widest font-medium px-1 mb-3">Onboarding</h2>
+          <h2 className="text-xs text-haze uppercase tracking-widest font-medium px-1 mb-3">Onboarding</h2>
           <Card>
             <Link to="/onboarding" className="block w-full text-left">
               <CardSection className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-[#d97756]/15 flex items-center justify-center shrink-0">
-                  <Sparkles size={18} className="text-[#d97756]" />
+                <div className="w-10 h-10 rounded-2xl bg-ice/15 flex items-center justify-center shrink-0">
+                  <Sparkles size={18} className="text-ice" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-[#f5f5f0]">Redo onboarding</p>
-                  <p className="text-xs text-[#949494] mt-0.5">
+                  <p className="text-sm font-semibold text-snow">Redo onboarding</p>
+                  <p className="text-xs text-mist mt-0.5">
                     Start over with a new goal. Your history stays.
                   </p>
                 </div>
-                <ChevronRight size={16} className="text-[#858585] shrink-0" aria-hidden />
+                <ChevronRight size={16} className="text-haze shrink-0" aria-hidden />
               </CardSection>
             </Link>
           </Card>
@@ -291,15 +291,15 @@ export function Settings() {
 
         {/* About */}
         <div>
-          <h2 className="text-xs text-[#858585] uppercase tracking-widest font-medium px-1 mb-3">About</h2>
+          <h2 className="text-xs text-haze uppercase tracking-widest font-medium px-1 mb-3">About</h2>
           <Card>
             <CardSection className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-[#d97756]/15 flex items-center justify-center shrink-0">
-                <Info size={18} className="text-[#d97756]" aria-hidden />
+              <div className="w-10 h-10 rounded-2xl bg-ice/15 flex items-center justify-center shrink-0">
+                <Info size={18} className="text-ice" aria-hidden />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-[#f5f5f0]">Coach Clawde</p>
-                <p className="text-xs text-[#949494] mt-0.5">Version {APP_VERSION}</p>
+                <p className="text-sm font-semibold text-snow">Coach Quinn</p>
+                <p className="text-xs text-mist mt-0.5">Version {APP_VERSION}</p>
               </div>
             </CardSection>
           </Card>
@@ -345,7 +345,7 @@ function DisplayInfo() {
     shape.screenRadius ? `corners ${shape.screenRadius}pt` : 'corners —',
     shape.standalone ? `app${shape.viewportGap ? ` +${shape.viewportGap}` : ''}` : 'browser',
   ]
-  return <p className="text-2xs text-[#858585] text-center mt-3 tabular-nums">Display: {parts.join(' · ')}</p>
+  return <p className="text-2xs text-haze text-center mt-3 tabular-nums">Display: {parts.join(' · ')}</p>
 }
 
 /** Rest alerts: push notifications when a rest ends with the app in the background. */
@@ -392,33 +392,33 @@ function RestAlertsSetting() {
 
   return (
     <div>
-      <h2 className="text-xs text-[#858585] uppercase tracking-widest font-medium px-1 mb-3">Notifications</h2>
+      <h2 className="text-xs text-haze uppercase tracking-widest font-medium px-1 mb-3">Notifications</h2>
       <Card>
         <CardSection className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-[#d97756]/15 flex items-center justify-center shrink-0">
-            <Bell size={18} className="text-[#d97756]" />
+          <div className="w-10 h-10 rounded-2xl bg-ice/15 flex items-center justify-center shrink-0">
+            <Bell size={18} className="text-ice" />
           </div>
           <div className="flex-1 min-w-0">
-            <p id="rest-alerts-title" className="text-sm font-semibold text-[#f5f5f0]">Rest alerts</p>
-            <p id="rest-alerts-desc" className="text-xs text-[#949494] mt-0.5">A notification when rest is over, even with your phone locked.</p>
+            <p id="rest-alerts-title" className="text-sm font-semibold text-snow">Rest alerts</p>
+            <p id="rest-alerts-desc" className="text-xs text-mist mt-0.5">A notification when rest is over, even with your phone locked.</p>
           </div>
           {support === 'available' && (
             <Switch checked={restAlerts} onChange={() => void toggle()} busy={busy} labelledBy="rest-alerts-title" describedBy="rest-alerts-desc" />
           )}
         </CardSection>
-        {(showInfo || message) && <div className="border-t border-[#2a2a2a]" />}
+        {(showInfo || message) && <div className="border-t border-rime" />}
         {showInfo && (
           <CardSection className="flex flex-col gap-3">
             {support === 'install' && (
-              <p className="text-xs text-[#949494] leading-relaxed">
-                On iPhone and iPad, add Coach Clawde to your Home Screen first (Share → Add to Home Screen), then open it
+              <p className="text-xs text-mist leading-relaxed">
+                On iPhone and iPad, add Coach Quinn to your Home Screen first (Share → Add to Home Screen), then open it
                 from there and turn this on.
               </p>
             )}
             {support === 'blocked' && (
-              <p className="text-xs text-[#949494] leading-relaxed">
-                Notifications are turned off for Coach Clawde. Turn them on in your phone’s Settings → Notifications →
-                Coach Clawde, then come back here.
+              <p className="text-xs text-mist leading-relaxed">
+                Notifications are turned off for Coach Quinn. Turn them on in your phone’s Settings → Notifications →
+                Coach Quinn, then come back here.
               </p>
             )}
             {support === 'available' && restAlerts && (
@@ -430,7 +430,7 @@ function RestAlertsSetting() {
         )}
         {/* Always in the page, so a new message is announced (errors interrupt). */}
         <div role="status">
-          {message && !message.error && <p className={`${messageClass} text-[#a8a29e]`}>{message.text}</p>}
+          {message && !message.error && <p className={`${messageClass} text-frost`}>{message.text}</p>}
         </div>
         <div role="alert">
           {message?.error && <p className={`${messageClass} text-red-400`}>{message.text}</p>}
@@ -444,28 +444,28 @@ function RestAlertsSetting() {
 function Field({ label, hint, htmlFor, children }: { label: string; hint?: string; htmlFor: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={htmlFor} className="text-xs font-medium text-[#a8a29e]">{label}</label>
+      <label htmlFor={htmlFor} className="text-xs font-medium text-frost">{label}</label>
       {/* The input names this hint with aria-describedby={`${htmlFor}-hint`}. */}
-      {hint && <p id={`${htmlFor}-hint`} className="text-2xs text-[#858585]">{hint}</p>}
+      {hint && <p id={`${htmlFor}-hint`} className="text-2xs text-haze">{hint}</p>}
       {children}
     </div>
   )
 }
 
-const inputClass = 'w-full bg-[#1a1a1a] border border-[#666666] rounded-2xl px-4 py-3 text-base text-[#f5f5f0] placeholder-[#858585] focus:outline-none focus:border-[#d97756] focus:ring-1 focus:ring-[#d97756] transition-colors'
+const inputClass = 'w-full bg-slush border border-deep rounded-2xl px-4 py-3 text-base text-snow placeholder-haze focus:outline-none focus:border-ice focus:ring-1 focus:ring-ice transition-colors'
 
 function toggleLook(on: boolean): string {
   return `px-4 py-3 rounded-2xl text-sm font-medium text-center transition-all duration-150 ${
     on
-      ? 'bg-accent-fill text-white shadow-lg shadow-[#d97756]/20'
-      : 'bg-[#1a1a1a] text-[#949494] border border-[#2a2a2a] hover:text-[#a8a29e]'
+      ? 'bg-accent-fill text-white shadow-lg shadow-ice/20'
+      : 'bg-slush text-mist border border-rime hover:text-frost'
   }`
 }
 
 /** Two units as a radio group (one of them is always picked). */
 function UnitToggle<T extends string>({ legend, name, options, value, onChange }: { legend: string; name: string; options: T[]; value: T; onChange: (v: T) => void }) {
   return (
-    <ChoiceGroup legend={legend} legendClassName="block text-xs font-medium text-[#a8a29e] mb-1.5" className="grid grid-cols-2 gap-2">
+    <ChoiceGroup legend={legend} legendClassName="block text-xs font-medium text-frost mb-1.5" className="grid grid-cols-2 gap-2">
       {options.map((o) => (
         <ChoiceChip key={o} name={name} value={o} checked={value === o} onChange={() => onChange(o)} className={toggleLook(value === o)}>
           {o}
@@ -481,15 +481,15 @@ function BetaFeatures() {
   const setAutoSetTimer = useSettingsStore((s) => s.setAutoSetTimer)
   return (
     <div>
-      <h2 className="text-xs text-[#858585] uppercase tracking-widest font-medium px-1 mb-3">Beta features</h2>
+      <h2 className="text-xs text-haze uppercase tracking-widest font-medium px-1 mb-3">Beta features</h2>
       <Card>
         <CardSection className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-[#d97756]/15 flex items-center justify-center shrink-0">
-            <Timer size={18} className="text-[#d97756]" />
+          <div className="w-10 h-10 rounded-2xl bg-ice/15 flex items-center justify-center shrink-0">
+            <Timer size={18} className="text-ice" />
           </div>
           <div className="flex-1 min-w-0">
-            <p id="auto-finish-title" className="text-sm font-semibold text-[#f5f5f0]">Auto-finish sets</p>
-            <p id="auto-finish-desc" className="text-xs text-[#949494] mt-0.5">After a rest and a 15-second grace period, your next tap finishes the set (orange tick) and starts the next rest. Fix reps or weight, then tap the tick to confirm.</p>
+            <p id="auto-finish-title" className="text-sm font-semibold text-snow">Auto-finish sets</p>
+            <p id="auto-finish-desc" className="text-xs text-mist mt-0.5">After a rest and a 15-second grace period, your next tap finishes the set (orange tick) and starts the next rest. Fix reps or weight, then tap the tick to confirm.</p>
           </div>
           <Switch checked={autoSetTimer} onChange={setAutoSetTimer} labelledBy="auto-finish-title" describedBy="auto-finish-desc" />
         </CardSection>

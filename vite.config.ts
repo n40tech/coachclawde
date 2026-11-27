@@ -44,7 +44,7 @@ export default defineConfig(({ mode }) => {
   // Surfaced in the Vercel build log so it's easy to confirm whether credentials
   // were present at build time (never prints the values themselves).
   console.log(
-    `[coach-clawde] ${
+    `[coach-quinn] ${
       DEMO_DATA
         ? 'Preview build — local mode with demo data, no database'
         : SUPABASE_URL && SUPABASE_ANON_KEY
@@ -90,11 +90,11 @@ export default defineConfig(({ mode }) => {
         // The install's identity. Equal to the id browsers computed from
         // start_url before it was set, so existing installs are unaffected.
         id: '/',
-        name: 'Coach Clawde',
+        name: 'Coach Quinn',
         short_name: 'Coach',
         description: 'AI-powered personal workout tracker',
-        theme_color: '#0a0a0a',
-        background_color: '#0a0a0a',
+        theme_color: '#04131f',
+        background_color: '#04131f',
         display: 'standalone',
         start_url: '/',
         icons: [

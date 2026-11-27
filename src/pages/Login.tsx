@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthProvider'
 import { Button } from '../components/shared/Button'
-import { ClawdeMark } from '../components/shared/ClawdeMark'
+import { QuinnMark } from '../components/shared/QuinnMark'
 import { useDocumentTitle } from '../hooks/useDocumentTitle'
 import { Mail, AlertCircle, CheckCircle, LogIn } from 'lucide-react'
 
@@ -97,8 +97,8 @@ export function Login() {
   // doesn't see the form flash before being redirected.
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-svh bg-[#0a0a0a]">
-        <ClawdeMark size={56} idle />
+      <div className="flex items-center justify-center min-h-svh polar-page">
+        <QuinnMark size={56} idle />
         <p role="status" className="sr-only">Loading…</p>
       </div>
     )
@@ -108,25 +108,25 @@ export function Login() {
   if (user) return <Navigate to="/" replace />
 
   return (
-    <div className="flex flex-col items-center min-h-svh bg-[#0a0a0a] px-6 pt-safe pb-edge">
+    <div className="flex flex-col items-center min-h-svh polar-page px-6 pt-safe pb-edge">
       {/* my-auto (not justify-center) so a short landscape screen scrolls
           instead of pushing the top of the form under the status bar. */}
       <div className="my-auto w-full max-w-sm flex flex-col items-center gap-8 py-6">
         <div className="flex flex-col items-center gap-3 text-center">
-          <ClawdeMark size={72} sweat />
-          <h1 className="text-2xl font-bold text-[#f5f5f0]">Coach Clawde</h1>
-          <p className="text-sm text-[#949494] leading-relaxed">
+          <QuinnMark size={72} sweat />
+          <h1 className="text-2xl font-bold text-snow">Coach Quinn</h1>
+          <p className="text-sm text-mist leading-relaxed">
             Sign in to sync your training across devices and generate personalised weekly plans.
           </p>
         </div>
 
         {sent ? (
-          <div className="w-full flex flex-col items-center gap-3 bg-[#161616] border border-[#2a2a2a] rounded-2xl p-6 text-center">
+          <div className="w-full flex flex-col items-center gap-3 bg-floe ice border border-rime rounded-2xl p-6 text-center">
             <CheckCircle size={28} className="text-emerald-500" aria-hidden />
             {/* The form it replaces had focus: move it here so it isn't lost. */}
-            <h2 tabIndex={-1} autoFocus className="text-sm font-medium text-[#f5f5f0] outline-none">Check your inbox</h2>
-            <p className="text-xs text-[#949494]">
-              We sent a sign-in link to <span className="text-[#a8a29e]">{email.trim()}</span>. Open it on this device to finish signing in.
+            <h2 tabIndex={-1} autoFocus className="text-sm font-medium text-snow outline-none">Check your inbox</h2>
+            <p className="text-xs text-mist">
+              We sent a sign-in link to <span className="text-frost">{email.trim()}</span>. Open it on this device to finish signing in.
             </p>
             <Button variant="ghost" size="sm" onClick={() => setSent(false)}>Use a different email</Button>
           </div>
@@ -134,7 +134,7 @@ export function Login() {
           // A real form so Enter submits and password managers and iOS
           // autofill recognise the sign-in (see docs/WEB-AUDIT.md).
           <form className="w-full flex flex-col gap-2" onSubmit={submit} aria-label="Sign in">
-            <label htmlFor="email" className="text-xs font-medium text-[#a8a29e] px-1">Email</label>
+            <label htmlFor="email" className="text-xs font-medium text-frost px-1">Email</label>
             <input
               id="email"
               name="email"
@@ -152,7 +152,7 @@ export function Login() {
 
             {mode === 'password' ? (
               <>
-                <label htmlFor="current-password" className="text-xs font-medium text-[#a8a29e] px-1 mt-2">Password</label>
+                <label htmlFor="current-password" className="text-xs font-medium text-frost px-1 mt-2">Password</label>
                 <input
                   id="current-password"
                   name="password"
@@ -202,7 +202,7 @@ export function Login() {
               <button
                 type="button"
                 onClick={() => switchMode(mode === 'password' ? 'magic-link' : 'password')}
-                className="text-xs text-[#949494] hover:text-[#a8a29e] transition-colors mt-2 py-1"
+                className="text-xs text-mist hover:text-frost transition-colors mt-2 py-1"
               >
                 {mode === 'password' ? 'Email me a sign-in link instead' : 'Sign in with a password instead'}
               </button>
@@ -210,7 +210,7 @@ export function Login() {
           </form>
         )}
 
-        <p className="text-2xs text-[#858585] text-center leading-relaxed">
+        <p className="text-2xs text-haze text-center leading-relaxed">
           Your data is private to your account and never shared.
         </p>
       </div>
@@ -219,4 +219,4 @@ export function Login() {
 }
 
 const inputClass =
-  'w-full bg-[#1a1a1a] border border-[#666666] rounded-2xl px-4 py-3 text-base text-[#f5f5f0] placeholder-[#858585] focus:outline-none focus:border-[#d97756] focus:ring-1 focus:ring-[#d97756] transition-colors'
+  'w-full bg-slush border border-deep rounded-2xl px-4 py-3 text-base text-snow placeholder-haze focus:outline-none focus:border-ice focus:ring-1 focus:ring-ice transition-colors'

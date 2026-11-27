@@ -1,11 +1,11 @@
 import { useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 
-const APP = 'Coach Clawde'
+const APP = 'Coach Quinn'
 
 /**
  * Sets the tab / window title for the screen on show, front-loaded with
- * what's unique to it ("Upper Body · Coach Clawde"), so screens can be told
+ * what's unique to it ("Upper Body · Coach Quinn"), so screens can be told
  * apart in the app switcher and screen readers announce where you are after
  * a navigation. App.tsx resets it to the app's name on each route change, so
  * a screen that doesn't set one never keeps the previous screen's.

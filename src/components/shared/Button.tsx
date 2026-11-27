@@ -14,9 +14,9 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variants = {
-  primary: 'bg-accent-fill hover:bg-accent-fill-hover text-white font-semibold shadow-lg shadow-[#d97756]/20 active:scale-95',
-  secondary: 'bg-[#1f1f1f] hover:bg-[#2a2a2a] text-[#f5f5f0] border border-[#2e2e2e] active:scale-95',
-  ghost: 'bg-transparent hover:bg-[#1a1a1a] text-[#a8a29e] active:scale-95',
+  primary: 'bg-accent-fill hover:bg-accent-fill-hover text-white font-semibold shadow-lg shadow-ice/20 active:scale-95',
+  secondary: 'bg-slush hover:bg-rime text-snow border border-rime active:scale-95',
+  ghost: 'bg-transparent hover:bg-slush text-frost active:scale-95',
   danger: 'bg-[#ef4444]/10 hover:bg-[#ef4444]/20 text-[#ef4444] border border-[#ef4444]/20 active:scale-95',
 }
 

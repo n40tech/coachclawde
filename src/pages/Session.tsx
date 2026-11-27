@@ -144,8 +144,8 @@ export function Session() {
     return (
       <WorkoutSheet title="Session not found" onClose={goBack}>
         <div className="flex-1 flex flex-col items-center justify-center gap-4 px-4 pb-edge">
-          <AlertTriangle size={40} className="text-[#858585]" aria-hidden />
-          <p className="text-[#949494] text-center">It may belong to a different week's plan.</p>
+          <AlertTriangle size={40} className="text-haze" aria-hidden />
+          <p className="text-mist text-center">It may belong to a different week's plan.</p>
           <Button variant="secondary" onClick={() => navigate('/', { replace: true })}>Back to home</Button>
         </div>
       </WorkoutSheet>
@@ -409,18 +409,18 @@ export function Session() {
       >
         {/* Session meta */}
         <div className="px-4 py-4 flex items-center gap-4">
-          <div className="flex items-center gap-1.5 text-xs text-[#949494]">
+          <div className="flex items-center gap-1.5 text-xs text-mist">
             <Clock size={13} aria-hidden />
             {formatDuration(planned.estimatedMinutes)}
           </div>
           {!!planned.exercises?.length && (
-            <div className="flex items-center gap-1.5 text-xs text-[#949494]">
+            <div className="flex items-center gap-1.5 text-xs text-mist">
               <Dumbbell size={13} aria-hidden />
               {planned.exercises.length} exercises
             </div>
           )}
           {loggedSession && !legacyCardio && (
-            <span className="ml-auto text-xs font-medium text-[#d97756]">
+            <span className="ml-auto text-xs font-medium text-ice">
               {progressPercent}% done
             </span>
           )}
@@ -439,9 +439,9 @@ export function Session() {
               <Waves size={28} className="text-blue-400" />
             </div>
             <div>
-              <p className="text-lg font-bold text-[#f5f5f0]">Cardio session</p>
-              <p className="text-sm text-[#949494] mt-1 max-w-xs">
-                Coach Clawde is weights-first now, so cardio is logged by hand. Log what you did and it still counts towards your week.
+              <p className="text-lg font-bold text-snow">Cardio session</p>
+              <p className="text-sm text-mist mt-1 max-w-xs">
+                Coach Quinn is weights-first now, so cardio is logged by hand. Log what you did and it still counts towards your week.
               </p>
             </div>
             <Button onClick={() => setShowQuickLog(true)} size="lg">
@@ -452,12 +452,12 @@ export function Session() {
 
         {!legacyCardio && !loggedSession && !isAlreadyComplete && (
           <div className="px-4 py-8 flex flex-col items-center gap-4">
-            <div className="w-16 h-16 rounded-3xl bg-[#d97756]/15 flex items-center justify-center">
-              <Dumbbell size={28} className="text-[#d97756]" />
+            <div className="w-16 h-16 rounded-3xl bg-ice/15 flex items-center justify-center">
+              <Dumbbell size={28} className="text-ice" />
             </div>
             <div className="text-center">
-              <p className="text-lg font-bold text-[#f5f5f0]">Ready to train?</p>
-              <p className="text-sm text-[#949494] mt-1">This will start logging your session.</p>
+              <p className="text-lg font-bold text-snow">Ready to train?</p>
+              <p className="text-sm text-mist mt-1">This will start logging your session.</p>
             </div>
             <Button onClick={startSession} size="lg">
               Start Session
@@ -482,8 +482,8 @@ export function Session() {
             <CheckCircle2 size={18} className="text-emerald-400 shrink-0" aria-hidden />
             <div>
               <p className="text-sm font-semibold text-emerald-400">Session complete</p>
-              {existingLog?.feelings && <p className="text-xs text-[#949494] mt-0.5">Felt {['', 'terrible', 'poor', 'ok', 'good', 'great'][existingLog.feelings]}</p>}
-              {existingLog?.substitute && <p className="text-xs text-[#a8a29e] mt-0.5">Did something else: {describeSubstitute(existingLog.substitute)}</p>}
+              {existingLog?.feelings && <p className="text-xs text-mist mt-0.5">Felt {['', 'terrible', 'poor', 'ok', 'good', 'great'][existingLog.feelings]}</p>}
+              {existingLog?.substitute && <p className="text-xs text-frost mt-0.5">Did something else: {describeSubstitute(existingLog.substitute)}</p>}
             </div>
           </div>
         )}
@@ -492,13 +492,13 @@ export function Session() {
         {!legacyCardio && logged.length > 0 && (
           <div className="px-4 flex flex-col gap-3">
             <div className="flex items-center justify-between px-1">
-              <h2 className="text-xs text-[#858585] uppercase tracking-widest font-medium">Exercises</h2>
+              <h2 className="text-xs text-haze uppercase tracking-widest font-medium">Exercises</h2>
               {logged.length > 1 && (
                 <button
                   type="button"
                   onClick={() => setReordering((r) => !r)}
                   className={`relative hit-target flex items-center gap-1.5 h-8 px-3 rounded-xl text-xs font-medium transition-colors ${
-                    reordering ? 'bg-accent-fill text-white' : 'bg-[#1a1a1a] text-[#a8a29e] hover:text-[#f5f5f0]'
+                    reordering ? 'bg-accent-fill text-white' : 'bg-slush text-frost hover:text-snow'
                   }`}
                 >
                   {reordering ? <Check size={14} aria-hidden /> : <ArrowUpDown size={14} aria-hidden />}
@@ -627,38 +627,38 @@ function PeekList({ id, planned, units }: { id: string; planned: PlannedSession;
   }, [])
   return (
     <section id={id} aria-labelledby={`${id}-title`} className="px-4 flex flex-col gap-3 fade-in">
-      <h2 ref={heading} id={`${id}-title`} className="px-1 text-xs text-[#858585] uppercase tracking-widest font-medium">Exercises</h2>
+      <h2 ref={heading} id={`${id}-title`} className="px-1 text-xs text-haze uppercase tracking-widest font-medium">Exercises</h2>
       {(planned.exercises ?? []).map((ex) => (
-        <div key={ex.id} className="rounded-[2rem] border border-[#2a2a2a] bg-[#161616] px-4 py-3 [--nest-radius:2rem] [--nest-inset:1rem]">
+        <div key={ex.id} className="rounded-[2rem] border border-rime bg-floe ice px-4 py-3 [--nest-radius:2rem] [--nest-inset:1rem]">
           <div className="flex items-center gap-2">
-            <h3 className="flex-1 min-w-0 font-semibold text-sm text-[#f5f5f0] leading-tight">{ex.name}</h3>
+            <h3 className="flex-1 min-w-0 font-semibold text-sm text-snow leading-tight">{ex.name}</h3>
             <button
               type="button"
               onClick={() => setGuide(ex)}
               aria-label={`How to do ${ex.name}`}
-              className="relative hit-target -mr-2 w-9 h-9 rounded-xl flex items-center justify-center text-[#949494] hover:text-[#d97756] hover:bg-[#d97756]/10 transition-colors shrink-0"
+              className="relative hit-target -mr-2 w-9 h-9 rounded-xl flex items-center justify-center text-mist hover:text-ice hover:bg-ice/10 transition-colors shrink-0"
             >
               <CircleQuestionMark size={18} aria-hidden />
             </button>
           </div>
           {ex.coachNotes && (
-            <div className="flex items-start gap-2 bg-[#d97756]/8 rounded-nested px-3 py-2.5 mt-2">
-              <Info size={13} className="text-[#d97756] mt-0.5 shrink-0" aria-hidden />
-              <p className="text-xs text-[#d97756]/90">{localize(ex.coachNotes, units)}</p>
+            <div className="flex items-start gap-2 bg-ice/8 rounded-nested px-3 py-2.5 mt-2">
+              <Info size={13} className="text-ice mt-0.5 shrink-0" aria-hidden />
+              <p className="text-xs text-ice/90">{localize(ex.coachNotes, units)}</p>
             </div>
           )}
           <ol className="mt-2 flex flex-col gap-1">
             {ex.sets.map((set, i) => (
               <li key={i} className="flex items-baseline gap-3 text-xs">
-                <span className="w-10 shrink-0 text-[#858585]">Set {i + 1}</span>
-                <span className="flex-1 min-w-0 text-[#a8a29e] tabular-nums">
+                <span className="w-10 shrink-0 text-haze">Set {i + 1}</span>
+                <span className="flex-1 min-w-0 text-frost tabular-nums">
                   {[
                     set.durationSeconds != null ? `${set.durationSeconds}s hold` : `${set.reps} reps`,
                     set.durationSeconds == null && set.suggestedWeightKg ? `${toWeight(set.suggestedWeightKg, units.weight)} ${units.weight}` : null,
                     set.rpe ? `RPE ${set.rpe}` : null,
                   ].filter(Boolean).join(' · ')}
                 </span>
-                <span className="shrink-0 text-[#858585]">rest {formatRestTime(set.restSeconds)}</span>
+                <span className="shrink-0 text-haze">rest {formatRestTime(set.restSeconds)}</span>
               </li>
             ))}
           </ol>
@@ -673,7 +673,7 @@ function DidSomethingElse({ onClick }: { onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className="flex items-center gap-1.5 text-sm text-[#949494] hover:text-[#a8a29e] py-2 px-3 rounded-xl"
+      className="flex items-center gap-1.5 text-sm text-mist hover:text-frost py-2 px-3 rounded-xl"
     >
       <Shuffle size={14} aria-hidden />
       Did something else?
@@ -690,12 +690,12 @@ function LoggedActivityView({ log, onBack }: { log: LoggedSession; onBack: () =>
           <CheckCircle2 size={18} className="text-emerald-400 shrink-0" />
           <div>
             <p className="text-sm font-semibold text-emerald-400">Logged</p>
-            <p className="text-xs text-[#a8a29e] mt-0.5">
+            <p className="text-xs text-frost mt-0.5">
               {describeSubstitute(log.substitute!)}{log.rpe ? ` · effort ${log.rpe}/10` : ''}
             </p>
           </div>
         </div>
-        {log.generalNotes && <p className="text-sm text-[#a8a29e] px-1">{log.generalNotes}</p>}
+        {log.generalNotes && <p className="text-sm text-frost px-1">{log.generalNotes}</p>}
       </div>
     </WorkoutSheet>
   )

@@ -35,8 +35,8 @@ class PageErrorBoundary extends Component<{ resetKey: string; children: ReactNod
     if (!this.state.failed) return this.props.children
     return (
       <div role="alert" className="min-h-svh flex flex-col items-center justify-center gap-4 px-6 text-center">
-        <p className="text-base font-semibold text-[#f5f5f0]">This screen didn’t load</p>
-        <p className="text-sm text-[#a8a29e] leading-relaxed">Check your connection, then reload.</p>
+        <p className="text-base font-semibold text-snow">This screen didn’t load</p>
+        <p className="text-sm text-frost leading-relaxed">Check your connection, then reload.</p>
         <Button variant="secondary" onClick={() => window.location.reload()}>
           <RefreshCw size={16} />
           Reload

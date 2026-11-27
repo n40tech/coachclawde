@@ -48,7 +48,7 @@ export function Progress() {
   const program = getProgramProgress(profile)
 
   return (
-    <div className="flex flex-col min-h-svh bg-[#0a0a0a]">
+    <div className="flex flex-col min-h-svh polar-page">
       <PageHeader
         title="Progress"
         subtitle={program.isComplete ? 'Program complete' : `Week ${program.week} of ${program.length}`}
@@ -67,26 +67,26 @@ export function Progress() {
         <Card accent to="/program">
           <CardSection>
             <div className="flex items-center justify-between mb-3">
-              <p className="text-sm font-semibold text-[#f5f5f0]">{program.length}-Week Program</p>
+              <p className="text-sm font-semibold text-snow">{program.length}-Week Program</p>
               <div className="flex items-center gap-1.5">
-                <span className="text-xs text-[#d97756]">
+                <span className="text-xs text-ice">
                   {program.isComplete ? 'Complete' : `Week ${program.week}`}
                 </span>
-                <ChevronRight size={15} className="text-[#858585]" aria-hidden />
+                <ChevronRight size={15} className="text-haze" aria-hidden />
               </div>
             </div>
             <div className="h-2 rounded-full overflow-hidden">
               <progress
-                className="meter [--meter-fill:linear-gradient(to_right,#d97756,#f5a07a)]"
+                className="meter [--meter-fill:linear-gradient(to_right,#6fd0ff,#a8e6ff)]"
                 value={program.percent}
                 max={100}
                 aria-hidden
               />
             </div>
             <div className="flex justify-between mt-1.5">
-              <span className="text-xs text-[#858585]">Start</span>
-              <span className="text-xs text-[#858585]">{program.percent}% complete</span>
-              <span className="text-xs text-[#858585]">Week {program.length}</span>
+              <span className="text-xs text-haze">Start</span>
+              <span className="text-xs text-haze">{program.percent}% complete</span>
+              <span className="text-xs text-haze">Week {program.length}</span>
             </div>
           </CardSection>
         </Card>
@@ -94,7 +94,7 @@ export function Progress() {
         {/* This week */}
         <Section title="This week">
           <div className="grid grid-cols-3 gap-3">
-            <StatCard icon={<Zap size={18} className="text-[#d97756]" />} value={thisWeekSessions.length} label="Sessions" />
+            <StatCard icon={<Zap size={18} className="text-ice" />} value={thisWeekSessions.length} label="Sessions" />
             <StatCard icon={<Dumbbell size={18} className="text-blue-400" />} value={thisWeekSessions.filter((s) => s.type === 'weights').length} label="Weights" />
             <StatCard icon={<Layers size={18} className="text-emerald-400" />} value={setsIn(thisWeekSessions)} label="Sets" />
           </div>
@@ -108,7 +108,7 @@ export function Progress() {
         {/* All time */}
         <Section title="All time">
           <div className="grid grid-cols-2 @3xl/app:grid-cols-4 gap-3">
-            <StatCard icon={<Zap size={18} className="text-[#d97756]" />} value={completed.length} label="Total sessions" />
+            <StatCard icon={<Zap size={18} className="text-ice" />} value={completed.length} label="Total sessions" />
             <StatCard icon={<TrendingUp size={18} className="text-emerald-400" />} value={`${avgFeeling}/5`} label="Avg feeling" />
             <StatCard icon={<Dumbbell size={18} className="text-blue-400" />} value={weightSessions.length} label="Weights sessions" />
             <StatCard icon={<Layers size={18} className="text-purple-400" />} value={setsIn(weightSessions)} label="Sets completed" />
@@ -116,12 +116,12 @@ export function Progress() {
           {totalVolume > 0 && (
             <Card className="mt-3">
               <CardSection className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-[#d97756]/15 flex items-center justify-center shrink-0">
-                  <TrendingUp size={18} className="text-[#d97756]" />
+                <div className="w-10 h-10 rounded-2xl bg-ice/15 flex items-center justify-center shrink-0">
+                  <TrendingUp size={18} className="text-ice" />
                 </div>
                 <div>
-                  <p className="text-lg font-bold text-[#f5f5f0]">{formatVolume(totalVolume, weightUnit)}</p>
-                  <p className="text-xs text-[#949494]">Total volume lifted</p>
+                  <p className="text-lg font-bold text-snow">{formatVolume(totalVolume, weightUnit)}</p>
+                  <p className="text-xs text-mist">Total volume lifted</p>
                 </div>
               </CardSection>
             </Card>
@@ -133,10 +133,10 @@ export function Progress() {
           {!hasPRs ? (
             <Card>
               <CardSection className="flex items-center gap-3 py-5">
-                <div className="w-10 h-10 rounded-2xl bg-[#d97756]/15 flex items-center justify-center shrink-0">
-                  <Trophy size={18} className="text-[#d97756]" />
+                <div className="w-10 h-10 rounded-2xl bg-ice/15 flex items-center justify-center shrink-0">
+                  <Trophy size={18} className="text-yolk" />
                 </div>
-                <p className="text-sm text-[#949494]">
+                <p className="text-sm text-mist">
                   Log some sessions and your personal bests for each lift will show up here.
                 </p>
               </CardSection>
@@ -146,7 +146,7 @@ export function Progress() {
               {weightPRs.length > 0 && <WeightPRCard prs={weightPRs} limit={3} />}
               <Link
                 to="/progress/best-efforts"
-                className="flex items-center justify-center gap-1 py-2 text-sm font-medium text-[#d97756] hover:underline"
+                className="flex items-center justify-center gap-1 py-2 text-sm font-medium text-ice hover:underline"
               >
                 View all<span className="sr-only"> best efforts</span>
                 <ChevronRight size={15} aria-hidden />
@@ -188,7 +188,7 @@ function ActivityCalendar({ sessions }: { sessions: LoggedSession[] }) {
         <div role="img" aria-label={summary} className="flex flex-col gap-2">
         <div className="grid grid-cols-7 gap-1.5 mb-0.5">
           {WEEK_DAYS_MON.map((d, i) => (
-            <span key={i} className="text-2xs text-[#858585] text-center">{d[0]}</span>
+            <span key={i} className="text-2xs text-haze text-center">{d[0]}</span>
           ))}
         </div>
         {weeks.map((week, wi) => (
@@ -202,7 +202,7 @@ function ActivityCalendar({ sessions }: { sessions: LoggedSession[] }) {
                   key={key}
                   title={`${key}: ${count} session${count !== 1 ? 's' : ''}`}
                   className={`aspect-square rounded-md ${heatClass(count, future)} ${
-                    key === todayKey ? 'ring-1 ring-[#d97756] ring-offset-1 ring-offset-[#161616]' : ''
+                    key === todayKey ? 'ring-1 ring-ice ring-offset-1 ring-offset-floe' : ''
                   }`}
                 />
               )
@@ -211,11 +211,11 @@ function ActivityCalendar({ sessions }: { sessions: LoggedSession[] }) {
         ))}
         </div>
         <div aria-hidden className="flex items-center justify-end gap-1.5 mt-1">
-          <span className="text-2xs text-[#858585]">Less</span>
+          <span className="text-2xs text-haze">Less</span>
           {[0, 1, 2, 3].map((n) => (
             <div key={n} className={`w-2.5 h-2.5 rounded-sm ${heatClass(n, false)}`} />
           ))}
-          <span className="text-2xs text-[#858585]">More</span>
+          <span className="text-2xs text-haze">More</span>
         </div>
       </CardSection>
     </Card>
@@ -223,17 +223,17 @@ function ActivityCalendar({ sessions }: { sessions: LoggedSession[] }) {
 }
 
 function heatClass(count: number, future: boolean): string {
-  if (future) return 'bg-[#101010] border border-[#1a1a1a]'
-  if (count <= 0) return 'bg-[#161616] border border-[#242424]'
-  if (count === 1) return 'bg-[#d97756]/30'
-  if (count === 2) return 'bg-[#d97756]/60'
-  return 'bg-[#d97756]'
+  if (future) return 'bg-abyss border border-slush'
+  if (count <= 0) return 'bg-floe ice border border-slush-2'
+  if (count === 1) return 'bg-ice/30'
+  if (count === 2) return 'bg-ice/60'
+  return 'bg-ice'
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="w-full">
-      <h2 className="text-xs text-[#858585] uppercase tracking-widest font-medium px-1 mb-3">{title}</h2>
+      <h2 className="text-xs text-haze uppercase tracking-widest font-medium px-1 mb-3">{title}</h2>
       {children}
     </div>
   )
@@ -243,12 +243,12 @@ function StatCard({ icon, value, label }: { icon: React.ReactNode; value: string
   return (
     <Card>
       <CardSection className="aspect-square flex flex-col justify-between py-4">
-        <div className="w-9 h-9 rounded-xl bg-[#1a1a1a] flex items-center justify-center">
+        <div className="w-9 h-9 rounded-xl bg-slush flex items-center justify-center">
           {icon}
         </div>
         <div>
-          <p className="text-xl font-bold text-[#f5f5f0] leading-tight">{value}</p>
-          <p className="text-xs text-[#949494] mt-0.5">{label}</p>
+          <p className="text-xl font-bold text-snow leading-tight">{value}</p>
+          <p className="text-xs text-mist mt-0.5">{label}</p>
         </div>
       </CardSection>
     </Card>

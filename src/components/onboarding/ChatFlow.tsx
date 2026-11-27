@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { Check, Send } from 'lucide-react'
-import { ClawdeMark } from '../shared/ClawdeMark'
+import { QuinnMark } from '../shared/QuinnMark'
 import { Button } from '../shared/Button'
 import { ChoiceChip, ChoiceGroup } from '../shared/Choice'
 import { TimeInput } from '../shared/TimeInput'
@@ -18,7 +18,7 @@ interface ChatFlowProps {
   onAnswer: (id: string, answer: FlowValue) => void
   /** Clear the answer to `id` (and everything after it) so it can be re-answered. */
   onRewind: (id: string) => void
-  /** Bubbles Clawde says once the flow is finished. */
+  /** Bubbles Quinn says once the flow is finished. */
   endLines: string[]
   /** Shown under the closing bubbles (e.g. the confirmation card). */
   endContent?: ReactNode
@@ -30,15 +30,15 @@ interface ChatFlowProps {
 
 const DONE_ID = '__done'
 
-/** How long Clawde "types" before a bubble appears, scaled to its length. */
+/** How long Quinn "types" before a bubble appears, scaled to its length. */
 function typingDelay(line: string, isFirst: boolean): number {
   if (isFirst) return 450
   return Math.min(1300, 350 + line.length * 9)
 }
 
 /**
- * A chat with Clawde, driven by a flow-as-data graph (lib/flow): onboarding's
- * goal tree, a check-in, or the migration check-in. Clawde asks one node at a
+ * A chat with Quinn, driven by a flow-as-data graph (lib/flow): onboarding's
+ * goal tree, a check-in, or the migration check-in. Quinn asks one node at a
  * time; the athlete answers with chips or a short reply. Tapping an earlier
  * answer rewinds the chat to that question.
  */
@@ -85,9 +85,9 @@ export function ChatFlow({ flow, answers, ctx, onAnswer, onRewind, endLines, end
 
   return (
     <div className="flex-1 flex flex-col">
-      {/* A chat log: each new bubble Clawde adds is read out (role="log" is a
+      {/* A chat log: each new bubble Quinn adds is read out (role="log" is a
           polite live region for content appended at the end). */}
-      <div role="log" aria-label="Chat with Clawde" className="flex-1 flex flex-col gap-2 px-4 pt-4 pb-4">
+      <div role="log" aria-label="Chat with Quinn" className="flex-1 flex flex-col gap-2 px-4 pt-4 pb-4">
         {path.map((id) => {
           const node = flow.nodes[id]
           return (
@@ -115,12 +115,12 @@ export function ChatFlow({ flow, answers, ctx, onAnswer, onRewind, endLines, end
         </div>
 
         {path.length > 0 && !typing && current && (
-          <p className="text-2xs text-[#858585] text-center mt-1">Tap any of your answers to change it</p>
+          <p className="text-2xs text-haze text-center mt-1">Tap any of your answers to change it</p>
         )}
       </div>
 
       {/* Composer: rides on top of the keyboard (`--kb`) so the reply box stays in view. */}
-      <div className="kb-dock sticky bottom-(--kb) bg-[#0a0a0a]/95 backdrop-blur-xl border-t border-[#1a1a1a] px-4 pt-3 pb-safe">
+      <div className="kb-dock sticky bottom-(--kb) bg-abyss/95 backdrop-blur-xl border-t border-slush px-4 pt-3 pb-safe">
         {typing ? (
           <div className="h-12" aria-hidden />
         ) : current ? (
@@ -139,7 +139,7 @@ export function ChatFlow({ flow, answers, ctx, onAnswer, onRewind, endLines, end
 function Avatar({ visible }: { visible: boolean }) {
   return (
     <div className="w-8 shrink-0 flex items-end">
-      {visible && <ClawdeMark size={30} idle={false} />}
+      {visible && <QuinnMark size={30} idle={false} />}
     </div>
   )
 }
@@ -148,8 +148,8 @@ function CoachBubble({ id, text, showAvatar, animate }: { id?: string; text: str
   return (
     <div className={`flex items-end gap-2 pr-10 ${animate ? 'fade-in' : ''}`}>
       <Avatar visible={showAvatar} />
-      <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl rounded-bl-md px-3.5 py-2.5">
-        <p id={id} className="text-sm text-[#e5e5e0] leading-relaxed">{text}</p>
+      <div className="bg-slush border border-rime rounded-2xl rounded-bl-md px-3.5 py-2.5">
+        <p id={id} className="text-sm text-snow leading-relaxed">{text}</p>
       </div>
     </div>
   )
@@ -160,9 +160,9 @@ function TypingBubble() {
     <div className="flex items-end gap-2">
       <Avatar visible />
       {/* Visual only: announcing "typing" before every line would be noise. */}
-      <div aria-hidden className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl rounded-bl-md px-4 py-3.5 flex gap-1">
+      <div aria-hidden className="bg-slush border border-rime rounded-2xl rounded-bl-md px-4 py-3.5 flex gap-1">
         {[0, 1, 2].map((i) => (
-          <span key={i} className="typing-dot w-1.5 h-1.5 rounded-full bg-[#6a6a6a]" style={{ animationDelay: `${i * 0.15}s` }} />
+          <span key={i} className="typing-dot w-1.5 h-1.5 rounded-full bg-deep" style={{ animationDelay: `${i * 0.15}s` }} />
         ))}
       </div>
     </div>
@@ -188,17 +188,17 @@ function UserBubble({ text, onClick }: { text: string; onClick: () => void }) {
 function chipClass(active: boolean): string {
   return `px-3.5 py-2.5 rounded-2xl text-sm font-medium transition-all duration-150 active:scale-95 ${
     active
-      ? 'bg-accent-fill text-white shadow-lg shadow-[#d97756]/20'
-      : 'bg-[#1a1a1a] text-[#a8a29e] border border-[#2a2a2a] hover:text-[#f5f5f0]'
+      ? 'bg-accent-fill text-white shadow-lg shadow-ice/20'
+      : 'bg-slush text-frost border border-rime hover:text-snow'
   }`
 }
 
 const inputClass =
-  'flex-1 min-w-0 bg-[#1a1a1a] border border-[#666666] rounded-2xl px-4 py-3 text-base text-[#f5f5f0] placeholder-[#858585] focus:outline-none focus:border-[#d97756] focus:ring-1 focus:ring-[#d97756] transition-colors'
+  'flex-1 min-w-0 bg-slush border border-deep rounded-2xl px-4 py-3 text-base text-snow placeholder-haze focus:outline-none focus:border-ice focus:ring-1 focus:ring-ice transition-colors'
 
 function SkipChip({ label, onClick }: { label: string; onClick: () => void }) {
   return (
-    <button type="button" onClick={onClick} className="self-center text-xs text-[#a8a29e] hover:text-[#f5f5f0] py-2 px-3 rounded-xl border border-[#2a2a2a] bg-[#161616]">
+    <button type="button" onClick={onClick} className="self-center text-xs text-frost hover:text-snow py-2 px-3 rounded-xl border border-rime bg-floe ice">
       {label}
     </button>
   )
@@ -234,7 +234,7 @@ function Composer({
 
 /**
  * Tapping an option answers straight away, so these are buttons (actions),
- * grouped and named by Clawde's question.
+ * grouped and named by Quinn's question.
  */
 function SingleChoice({
   options, selected, questionId, onSubmit,
@@ -258,11 +258,11 @@ function SingleChoice({
             type="button"
             onClick={click}
             className={`flex items-center justify-between gap-3 text-left px-4 py-2.5 rounded-2xl border transition-all duration-150 active:scale-[0.98] ${
-              active ? 'bg-[#d97756]/12 border-[#d97756]/50' : 'bg-[#161616] border-[#2a2a2a] hover:border-[#3a3a3a]'
+              active ? 'bg-ice/12 border-ice/50' : 'bg-floe ice border-rime hover:border-rime-2'
             }`}
           >
-            <span className="text-sm font-semibold text-[#f5f5f0]">{o.label}</span>
-            {o.hint && <span className="text-xs text-[#949494] text-right">{o.hint}</span>}
+            <span className="text-sm font-semibold text-snow">{o.label}</span>
+            {o.hint && <span className="text-xs text-mist text-right">{o.hint}</span>}
           </button>
         ) : (
           <button key={o.value} type="button" onClick={click} className={chipClass(active)}>
@@ -285,7 +285,7 @@ function InlineInput({
   const payload = option.input === 'duration' ? String(seconds) : text.trim()
   return (
     <div className="fade-in flex flex-col gap-3 pb-2">
-      <p className="text-xs text-[#a8a29e]">{option.label}</p>
+      <p className="text-xs text-frost">{option.label}</p>
       {option.input === 'duration' && <TimeInput seconds={seconds} showHours={option.hours} onChange={setSeconds} label={option.label} />}
       {option.input === 'date' && (
         <input type="date" value={text} min={today} onChange={(e) => setText(e.target.value)} className={inputClass} style={{ colorScheme: 'dark' }} aria-label={option.label} autoFocus />
@@ -319,7 +319,7 @@ function MultiChoice({
 
   return (
     <div className="fade-in flex flex-col gap-3 pb-2">
-      {/* Checkboxes, named as a group by Clawde's question. */}
+      {/* Checkboxes, named as a group by Quinn's question. */}
       <div role="group" aria-labelledby={questionId} className="flex flex-wrap gap-2">
         {options.map((o) => {
           const active = selected.includes(o.value)
@@ -429,7 +429,7 @@ function DaysReply({ initial, questionId, onSubmit }: { initial: Record<string, 
               onClick={() => cycle(d)}
               aria-label={`${d}: ${kind ?? 'free'}`}
               className={`flex-1 aspect-square max-w-12 rounded-full text-xs font-semibold flex flex-col items-center justify-center ${
-                kind === 'match' ? 'bg-accent-fill text-white' : kind === 'training' ? 'bg-[#d97756]/25 text-[#f5f5f0] border border-[#d97756]/50' : 'bg-[#1a1a1a] text-[#949494] border border-[#2a2a2a]'
+                kind === 'match' ? 'bg-accent-fill text-white' : kind === 'training' ? 'bg-ice/25 text-snow border border-ice/50' : 'bg-slush text-mist border border-rime'
               }`}
             >
               <span aria-hidden>{d[0]}</span>
@@ -459,7 +459,7 @@ function CompoundReply({
       {fields.map((f) => (
         <div key={f.key} className="flex flex-col gap-1.5">
           {f.kind === 'chips' ? (
-            <ChoiceGroup legend={f.label} legendClassName="block text-2xs uppercase tracking-widest text-[#949494] mb-1.5" className="flex flex-wrap gap-2">
+            <ChoiceGroup legend={f.label} legendClassName="block text-2xs uppercase tracking-widest text-mist mb-1.5" className="flex flex-wrap gap-2">
               {(f.options ?? []).map((o) => (
                 <ChoiceChip key={o.value} name={`${node.id}-${f.key}`} value={o.value} checked={values[f.key] === o.value} onChange={() => set(f.key, o.value)} className={chipClass(values[f.key] === o.value)}>
                   {o.label}
@@ -467,7 +467,7 @@ function CompoundReply({
               ))}
             </ChoiceGroup>
           ) : (
-            <span aria-hidden className="text-2xs uppercase tracking-widest text-[#949494]">{f.label}</span>
+            <span aria-hidden className="text-2xs uppercase tracking-widest text-mist">{f.label}</span>
           )}
           {f.kind === 'duration' && (
             <TimeInput
@@ -490,12 +490,12 @@ function CompoundReply({
 /** kg × reps, stored as "100x5". */
 function LiftInput({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
   const [kg, reps] = value.split('x')
-  const box = 'w-20 bg-[#1a1a1a] border border-[#666666] rounded-xl px-2 py-2 text-base text-center text-[#f5f5f0] placeholder-[#858585] focus:outline-none focus:border-[#d97756] focus:ring-1 focus:ring-[#d97756]'
+  const box = 'w-20 bg-slush border border-deep rounded-xl px-2 py-2 text-base text-center text-snow placeholder-haze focus:outline-none focus:border-ice focus:ring-1 focus:ring-ice'
   const emit = (k: string, r: string) => onChange(k && r ? `${k}x${r}` : k || r ? `${k}x${r}` : '')
   return (
     <div role="group" aria-label={label} className="flex items-center gap-2">
       <input className={box} inputMode="decimal" placeholder="kg" aria-label="Weight in kg" value={kg ?? ''} onChange={(e) => emit(e.target.value.replace(/[^0-9.]/g, ''), reps ?? '')} />
-      <span aria-hidden className="text-[#858585]">×</span>
+      <span aria-hidden className="text-haze">×</span>
       <input className={box} inputMode="numeric" placeholder="reps" aria-label="Reps" value={reps ?? ''} onChange={(e) => emit(kg ?? '', e.target.value.replace(/[^0-9]/g, ''))} />
     </div>
   )

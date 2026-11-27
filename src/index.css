@@ -5,33 +5,107 @@
 @theme {
   --text-2xs: 0.6875rem;
   --text-2xs--line-height: 1rem;
-  /* The website's type (site/): pixel lettering for big numbers and
-     headings, Space Mono for small uppercase labels. */
-  --font-pixel: "Tiny5", "Space Mono", ui-monospace, monospace;
-  --font-mono: "Space Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  /* Coach Quinn type: one variable family (Saira, wdth 50–125) standing in
+     for Antarctica. Ultra-condensed semibold for headings and big numbers
+     (`font-pixel`, kept as the class name), condensed for small uppercase
+     labels (`font-mono`), semi-condensed for running text. */
+  --font-pixel: "Saira", "Arial Narrow", system-ui, sans-serif;
+  --font-mono: "Saira", "Arial Narrow", system-ui, sans-serif;
+
+  /* --- Coach Quinn palette: Antarctic ocean, blue ice, emperor yellow ---
+     Surfaces are translucent so they read as blocks of ice over the deep
+     water of the page. */
+  --color-abyss: #04131f;          /* Antarctic ocean blue: the page */
+  --color-floe: rgb(36 96 140 / 0.26);   /* an ice block (card) */
+  --color-slush: rgb(64 140 190 / 0.18); /* fields, chips, tracks */
+  --color-slush-2: rgb(90 165 210 / 0.24);
+  --color-rime: rgb(160 220 255 / 0.17); /* hairline borders */
+  --color-rime-2: rgb(170 225 255 / 0.3);
+  --color-snow: #f2faff;           /* Antarctic white: text */
+  --color-polar: #fbf8ef;          /* polar-bear white: warm highlights */
+  --color-frost: #a9c9dd;          /* secondary text */
+  --color-mist: #92b3c9;           /* muted text */
+  --color-haze: #81a5bd;           /* faint text: lowest that reads 4.5:1 */
+  --color-deep: #56798f;
+  --color-ice: #6fd0ff;            /* blue ice: the accent */
+  --color-ice-bright: #b3ebff;
+  --color-ice-dim: #2f7fae;
+  --color-yolk: #f7c948;           /* emperor penguin yellow */
+  --color-yolk-deep: #f0a93b;
   /* Solid accent behind white text or icons (buttons, picked chips, the
-     orange tick): a deeper shade of the brand orange, since white on #d97756
-     is only 3.1:1. 4.6:1, and 5.5:1 on hover. Orange text, icons, borders and
-     tints keep #d97756. */
-  --color-accent-fill: #b85a3a;
-  --color-accent-fill-hover: #a94f30;
+     tick): deep glacier blue, 5:1 with white. Light ice text, icons, borders
+     and tints use `ice`. */
+  --color-accent-fill: #0a6fa6;
+  --color-accent-fill-hover: #0b7fbd;
 }
 
-@font-face { font-family: "Tiny5"; src: url("/fonts/tiny5.woff2") format("woff2"); font-weight: 400; font-display: swap; }
-@font-face { font-family: "Space Mono"; src: url("/fonts/space-mono-400.woff2") format("woff2"); font-weight: 400; font-display: swap; }
-@font-face { font-family: "Space Mono"; src: url("/fonts/space-mono-700.woff2") format("woff2"); font-weight: 700; font-display: swap; }
+@font-face {
+  font-family: "Saira";
+  src: url("/fonts/saira.woff2") format("woff2-variations"), url("/fonts/saira.woff2") format("woff2");
+  font-weight: 100 900;
+  font-stretch: 50% 125%;
+  font-display: swap;
+}
 
-/* While a web font loads (or if it fails), scale the fallback to the web
-   font's proportions so the swap doesn't resize or reflow the text. Tiny5 is
-   only used in capitals, so match cap height; Space Mono is matched on
-   x-height. Ignored where unsupported. */
-.font-pixel { font-size-adjust: cap-height from-font; }
-.font-mono { font-size-adjust: from-font; }
+/* Ultra-condensed semibold display: headings, big numbers, titles. */
+.font-pixel {
+  font-stretch: 50%;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+/* Condensed labels (small, uppercase, tracked). */
+.font-mono {
+  font-stretch: 75%;
+  font-weight: 500;
+}
+/* Page titles: ultra-condensed capitals. Section headings: condensed. */
+h1 {
+  font-stretch: 50%;
+  letter-spacing: 0.015em;
+  text-transform: uppercase;
+}
+h2 {
+  font-stretch: 75%;
+  letter-spacing: 0.02em;
+}
+/* Anything set large (big numbers, the rest timer, titles) goes
+   ultra-condensed too, the way Antarctica sets its display sizes. */
+.text-2xl, .text-3xl, .text-4xl, .text-5xl, .text-6xl, .text-7xl, .text-8xl {
+  font-stretch: 50%;
+  letter-spacing: 0.01em;
+}
 
 /* Dot grid, as on the website's panels. */
 @utility dot-grid {
-  background-image: radial-gradient(rgba(245, 245, 240, 0.08) 1.1px, transparent 1.4px);
+  background-image: radial-gradient(rgba(190, 235, 255, 0.09) 1.1px, transparent 1.4px);
   background-size: 16px 16px;
+}
+
+/* An ice block: translucent, lit from the top-left, a bright rime edge
+   along the top, a cold glow at the bottom and a little blur of whatever
+   is behind it. Goes with `bg-floe` (or any translucent surface). */
+@utility ice {
+  background-image:
+    linear-gradient(160deg, rgb(205 240 255 / 0.14) 0%, rgb(160 220 255 / 0.035) 38%, rgb(160 220 255 / 0) 60%, rgb(80 170 230 / 0.09) 100%);
+  box-shadow:
+    inset 0 1px 0 0 rgb(225 247 255 / 0.22),
+    inset 1px 0 0 0 rgb(225 247 255 / 0.06),
+    inset 0 -18px 28px -22px rgb(120 210 255 / 0.35),
+    0 12px 32px -18px rgb(0 8 20 / 0.8);
+  -webkit-backdrop-filter: blur(14px) saturate(150%);
+  backdrop-filter: blur(14px) saturate(150%);
+}
+
+/* The page: still deep water, a cold glow from the surface above and a
+   faint caustic shimmer. Opaque, so screens sliding over each other (edge
+   swipe back) never show through. */
+@utility polar-page {
+  background-color: var(--color-abyss);
+  background-image:
+    radial-gradient(120% 60% at 50% -10%, rgb(56 150 210 / 0.32), transparent 60%),
+    radial-gradient(80% 50% at 110% 40%, rgb(40 120 190 / 0.18), transparent 70%),
+    radial-gradient(70% 45% at -10% 75%, rgb(30 110 170 / 0.16), transparent 70%),
+    linear-gradient(180deg, #072238 0%, #04131f 45%, #030d16 100%);
 }
 
 /* Short viewports — phone landscape, split-screen. */
@@ -41,8 +115,10 @@
   /* Dark-only app: tell the browser, so native controls, autofill, carets and
      scrollbars render dark too. */
   color-scheme: dark;
-  --sans: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
+  --sans: "Saira", -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   font-family: var(--sans);
+  /* Running text: semi-condensed, so the long words still read easily. */
+  font-stretch: 87.5%;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -50,8 +126,8 @@
 html,
 body {
   margin: 0;
-  background: #0a0a0a;
-  color: #f5f5f0;
+  background: #04131f;
+  color: #f2faff;
   overscroll-behavior: none;
   /* No overflow-x clip here: nothing is wider than the screen (checked down to
      320px), and clipping the page would hide anything that ever was. The app
@@ -276,7 +352,7 @@ h1[tabindex="-1"]:focus {
    transparent track. Older WebKit/Blink without scrollbar-color get the same
    colours through the legacy pseudo-elements. */
 :root {
-  --scrollbar-thumb: #5a5a5a;
+  --scrollbar-thumb: #2f6a92;
   --scrollbar-track: transparent;
   scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
 }
@@ -307,7 +383,7 @@ h1[tabindex="-1"]:focus {
   margin: 0;
   border-radius: 9999px;
   cursor: pointer;
-  background-color: #2a2a2a;
+  background-color: rgb(90 165 210 / 0.28);
   background-image: radial-gradient(circle closest-side, #fff 92%, transparent 100%);
   background-repeat: no-repeat;
   background-size: 1.5rem 1.5rem;
@@ -318,11 +394,11 @@ h1[tabindex="-1"]:focus {
   }
 }
 .switch:checked {
-  background-color: #d97756;
+  background-color: #0a6fa6;
   background-position: calc(100% - 0.125rem) center;
 }
 .switch:focus-visible {
-  outline: 2px solid #d97756;
+  outline: 2px solid #6fd0ff;
   outline-offset: 3px;
 }
 @media (forced-colors: active) {
@@ -346,20 +422,20 @@ h1[tabindex="-1"]:focus {
   width: 100%;
   height: 100%;
   border: 0;
-  background: var(--meter-track, #1a1a1a);
-  color: #d97756;
+  background: var(--meter-track, #0e2c44);
+  color: #6fd0ff;
   border-radius: inherit;
   overflow: hidden;
 }
 .meter::-webkit-progress-bar {
-  background: var(--meter-track, #1a1a1a);
+  background: var(--meter-track, #0e2c44);
 }
 .meter::-webkit-progress-value {
-  background: var(--meter-fill, #d97756);
+  background: var(--meter-fill, #6fd0ff);
   border-radius: inherit;
 }
 .meter::-moz-progress-bar {
-  background: var(--meter-fill, #d97756);
+  background: var(--meter-fill, #6fd0ff);
   border-radius: inherit;
 }
 @media (prefers-reduced-motion: no-preference) {
@@ -475,19 +551,19 @@ h1[tabindex="-1"]:focus {
   }
 }
 
-/* --- Clawde mark micro-animations ---
+/* --- Quinn mark micro-animations ---
    Decoration, so none of it runs under reduced motion. The looping ones stop
    within five seconds (a breath and a drip), so nothing moves for long
    beside content without a way to stop it (WCAG 2.2.2). */
 
-/* Breathing bob as Clawde appears */
-@keyframes clawde-bob {
+/* Breathing bob as Quinn appears */
+@keyframes quinn-bob {
   0%, 100% { transform: translateY(0) rotate(0deg); }
   50%      { transform: translateY(-1.4px) rotate(-1.4deg); }
 }
 
 /* One-shot cheer/squash when the user scrolls up */
-@keyframes clawde-cheer {
+@keyframes quinn-cheer {
   0%   { transform: translateY(0) scale(1, 1) rotate(0deg); }
   25%  { transform: translateY(-4px) scale(0.96, 1.06) rotate(4deg); }
   55%  { transform: translateY(1px) scale(1.05, 0.95) rotate(-4deg); }
@@ -496,7 +572,7 @@ h1[tabindex="-1"]:focus {
 }
 
 /* Sweat bead forming then dripping away. It rests hidden at the end. */
-@keyframes clawde-sweat {
+@keyframes quinn-sweat {
   0%       { transform: translateY(-2px) scale(0.4); opacity: 0; }
   8%       { transform: translateY(0) scale(1); opacity: 1; }
   22%      { transform: translateY(10px) scale(0.9); opacity: 1; }
@@ -505,43 +581,43 @@ h1[tabindex="-1"]:focus {
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .clawde-bob {
-    animation: clawde-bob 2.4s ease-in-out 2;
+  .quinn-bob {
+    animation: quinn-bob 2.4s ease-in-out 2;
   }
-  .clawde-cheer {
-    animation: clawde-cheer 0.62s cubic-bezier(0.32, 0.72, 0, 1);
+  .quinn-cheer {
+    animation: quinn-cheer 0.62s cubic-bezier(0.32, 0.72, 0, 1);
   }
-  .clawde-sweat {
-    animation: clawde-sweat 3s ease-in 1 both;
+  .quinn-sweat {
+    animation: quinn-sweat 3s ease-in 1 both;
   }
 }
 /* Without the animation the bead isn't shown at all (it only ever shows
    mid-drip). */
 @media (prefers-reduced-motion: reduce) {
-  .clawde-sweat {
+  .quinn-sweat {
     opacity: 0;
   }
 }
 
-/* Clawde "flying" from the finish screen up to where it lives on the home
+/* Quinn "flying" from the finish screen up to where it lives on the home
    header — a one-shot transition driven by inline top/left/scale. The landing
    point follows Home's layout: pushed down by the status bar, and centred on
    the content column, which the sidebar offsets at 48rem+. */
-.clawde-flight {
+.quinn-flight {
   --flight-x: 50%;
-  --flight-landing-y: calc(64px + max(0.5rem, var(--safe-top)) - 0.5rem);
+  --flight-landing-y: calc(88px + max(0.5rem, var(--safe-top)) - 0.5rem);
   transition: top 0.8s cubic-bezier(0.5, 0, 0.2, 1),
     left 0.8s cubic-bezier(0.5, 0, 0.2, 1),
     transform 0.8s cubic-bezier(0.5, 0, 0.2, 1),
     opacity 0.3s ease-out 0.6s;
 }
 @container app (width >= 48rem) {
-  .clawde-flight {
+  .quinn-flight {
     --flight-x: calc(50% + (var(--sidebar-w) + var(--safe-left) - var(--safe-right)) / 2);
   }
 }
 
-/* Onboarding chat — Clawde's "typing…" dots */
+/* Onboarding chat — Quinn's "typing…" dots */
 @keyframes typing-dot {
   0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
   30%           { transform: translateY(-3px); opacity: 1; }
@@ -554,5 +630,5 @@ h1[tabindex="-1"]:focus {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .clawde-flight { transition: opacity 0.3s ease-out; }
+  .quinn-flight { transition: opacity 0.3s ease-out; }
 }

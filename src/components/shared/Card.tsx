@@ -17,9 +17,9 @@ interface CardProps {
 
 export function Card({ children, className = '', to, accent, glow }: CardProps) {
   const look = `
-    bg-[#161616] rounded-3xl border border-[#2a2a2a] overflow-hidden
-    ${accent ? 'border-[#d97756]/30' : ''}
-    ${glow ? 'shadow-lg shadow-[#d97756]/10' : ''}
+    bg-floe ice rounded-3xl border border-rime overflow-hidden
+    ${accent ? 'border-ice/30' : ''}
+    ${glow ? 'shadow-lg shadow-ice/10' : ''}
     ${className}
   `
   if (to) {

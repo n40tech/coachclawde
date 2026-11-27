@@ -1,12 +1,9 @@
-Fonts bundled with the website, each licensed under the SIL Open Font License 1.1 (full text below).
+Fonts bundled with the app, licensed under the SIL Open Font License 1.1.
 
-tiny5.woff2           Tiny5          Copyright 2022-2024 The Tiny5 Project Authors (https://github.com/Gissio/font_tiny5)
-geist.woff2           Geist          Copyright 2024 The Geist Project Authors (https://github.com/vercel/geist-font)
-space-mono-*.woff2    Space Mono     Copyright 2016 The Space Mono Project Authors (https://github.com/googlefonts/spacemono)
+saira.woff2           Saira (variable: wdth 50–125, wght 100–900)
+                      Copyright 2020 The Saira Project Authors (https://github.com/Omnibus-Type/Saira)
 
-Files are the Latin subsets published by Fontsource (https://fontsource.org).
-
------------------------------------------------------------
+The file is the Latin subset published by Fontsource (https://fontsource.org).
 
 This Font Software is licensed under the SIL Open Font License, Version 1.1.
 This license is copied below, and is also available with a FAQ at:

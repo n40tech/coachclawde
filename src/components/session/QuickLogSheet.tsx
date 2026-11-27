@@ -28,14 +28,14 @@ export function RpePicker({
             checked={value === n}
             onChange={() => onChange(n)}
             className={`py-2.5 rounded-xl text-sm font-bold text-center transition-all ${
-              value === n ? 'bg-accent-fill text-white shadow-lg shadow-[#d97756]/20' : 'bg-[#1a1a1a] text-[#949494] hover:bg-[#2a2a2a]'
+              value === n ? 'bg-accent-fill text-white shadow-lg shadow-ice/20' : 'bg-slush text-mist hover:bg-rime'
             }`}
           >
             {n}<span className="sr-only">, {RPE_HINTS[n]}</span>
           </ChoiceChip>
         ))}
       </ChoiceGroup>
-      <p aria-hidden className="text-xs text-[#949494] text-center mt-2 h-4">{value ? RPE_HINTS[value] : 'How hard was it overall?'}</p>
+      <p aria-hidden className="text-xs text-mist text-center mt-2 h-4">{value ? RPE_HINTS[value] : 'How hard was it overall?'}</p>
     </div>
   )
 }
@@ -79,22 +79,22 @@ export function QuickLogSheet({
     })
   }
 
-  const field = 'w-full bg-[#1a1a1a] border border-[#666666] rounded-2xl px-4 py-3 text-base text-[#f5f5f0] placeholder-[#858585] focus:outline-none focus:border-[#d97756] focus:ring-1 focus:ring-[#d97756]'
+  const field = 'w-full bg-slush border border-deep rounded-2xl px-4 py-3 text-base text-snow placeholder-haze focus:outline-none focus:border-ice focus:ring-1 focus:ring-ice'
 
   return (
     <BottomSheet label={plannedTitle ? 'Did something else' : 'Log a session'} onClose={onClose} dismissOnBackdrop={false}>
       <div className="flex items-center justify-between px-5 pt-5 pb-2">
         <div>
-          <h2 className="text-lg font-bold text-[#f5f5f0]">{plannedTitle ? 'Did something else?' : 'Log a session'}</h2>
-          <p className="text-sm text-[#949494] mt-0.5">
-            {plannedTitle ? `Instead of ${plannedTitle}. It counts, and Clawde will see it.` : 'Anything you did outside the plan.'}
+          <h2 className="text-lg font-bold text-snow">{plannedTitle ? 'Did something else?' : 'Log a session'}</h2>
+          <p className="text-sm text-mist mt-0.5">
+            {plannedTitle ? `Instead of ${plannedTitle}. It counts, and Quinn will see it.` : 'Anything you did outside the plan.'}
           </p>
         </div>
         <SheetCloseButton onClose={onClose} />
       </div>
       <div className="flex-1 min-h-0 overflow-y-auto px-5 pt-3 flex flex-col gap-5">
         <div>
-          <ChoiceGroup legend="What did you do?" legendClassName="block text-sm font-medium text-[#a8a29e] mb-2" className="flex flex-wrap gap-2">
+          <ChoiceGroup legend="What did you do?" legendClassName="block text-sm font-medium text-frost mb-2" className="flex flex-wrap gap-2">
             {[...QUICK_ACTIVITIES, { value: '__other', label: 'Other' }].map((a) => (
               <ChoiceChip
                 key={a.value}
@@ -103,7 +103,7 @@ export function QuickLogSheet({
                 checked={activity === a.value}
                 onChange={() => setActivity(a.value)}
                 className={`px-3.5 py-2 rounded-2xl text-sm font-medium transition-all ${
-                  activity === a.value ? 'bg-accent-fill text-white' : 'bg-[#1a1a1a] text-[#a8a29e] border border-[#2a2a2a]'
+                  activity === a.value ? 'bg-accent-fill text-white' : 'bg-slush text-frost border border-rime'
                 }`}
               >
                 {a.label}
@@ -116,13 +116,13 @@ export function QuickLogSheet({
         </div>
 
         <div className="flex items-center justify-between gap-3 flex-wrap">
-          <p aria-hidden className="text-sm font-medium text-[#a8a29e]">How long?</p>
+          <p aria-hidden className="text-sm font-medium text-frost">How long?</p>
           <Stepper label="How long, in minutes" value={minutes} step={5} min={5} max={600} onChange={setMinutes} format={(v) => `${v} min`} />
         </div>
 
         {showDistance && (
           <div className="flex items-center justify-between gap-3">
-            <label htmlFor="quicklog-distance" className="text-sm font-medium text-[#a8a29e]">Distance <span className="text-[#858585]">(optional)</span></label>
+            <label htmlFor="quicklog-distance" className="text-sm font-medium text-frost">Distance <span className="text-haze">(optional)</span></label>
             <div className="flex items-center gap-1.5 w-32">
               <input
                 id="quicklog-distance"
@@ -130,18 +130,18 @@ export function QuickLogSheet({
                 onChange={(e) => setDistance(e.target.value.replace(/[^0-9.]/g, ''))}
                 inputMode="decimal"
                 placeholder="0"
-                className="w-full bg-[#1a1a1a] border border-[#666666] rounded-xl px-3 py-2 text-base text-center text-[#f5f5f0] placeholder-[#858585] focus:outline-none focus:border-[#d97756] focus:ring-1 focus:ring-[#d97756]"
+                className="w-full bg-slush border border-deep rounded-xl px-3 py-2 text-base text-center text-snow placeholder-haze focus:outline-none focus:border-ice focus:ring-1 focus:ring-ice"
               />
-              <span className="text-xs text-[#949494]">{distanceUnit}</span>
+              <span className="text-xs text-mist">{distanceUnit}</span>
             </div>
           </div>
         )}
 
-        <RpePicker value={rpe} onChange={setRpe} legend="Effort" legendClassName="block text-sm font-medium text-[#a8a29e] mb-2" />
+        <RpePicker value={rpe} onChange={setRpe} legend="Effort" legendClassName="block text-sm font-medium text-frost mb-2" />
 
         {!plannedTitle && (
           <div>
-            <label htmlFor="quicklog-date" className="block text-sm font-medium text-[#a8a29e] mb-2">When?</label>
+            <label htmlFor="quicklog-date" className="block text-sm font-medium text-frost mb-2">When?</label>
             <input
               id="quicklog-date"
               type="date"
@@ -155,7 +155,7 @@ export function QuickLogSheet({
         )}
 
         <div>
-          <label htmlFor="quicklog-note" className="block text-sm font-medium text-[#a8a29e] mb-2">Note <span className="text-[#858585]">(optional)</span></label>
+          <label htmlFor="quicklog-note" className="block text-sm font-medium text-frost mb-2">Note <span className="text-haze">(optional)</span></label>
           <textarea id="quicklog-note" value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} placeholder="e.g. Gym was packed, went for a ride instead" className={`${field} resize-y field-sizing-content min-h-24 max-h-[50svh]`} />
         </div>
       </div>

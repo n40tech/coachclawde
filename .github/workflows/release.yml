@@ -2,12 +2,11 @@
 #
 # Ships everything merged to main since the last release:
 #   1. works out the version from the merged PRs' labels (scripts/release)
-#   2. applies new database migrations to production
-#   3. redeploys the rest-alarm Edge Function if its code changed
-#   4. commits "Release vX.Y.Z" (the version stamp) on top of main, tags it,
+#   2. commits "Release vX.Y.Z" (the version stamp) on top of main, tags it,
 #      and points the `production` branch at it; Vercel deploys production
-# A failed step stops everything after it. "Dry run" (the default) only
-# reports what would ship.
+# It holds no database credentials: a release with database or Edge Function
+# changes stops until they're applied (ask Claude) and the box is ticked.
+# "Dry run" (the default) only reports what would ship.
 name: Release
 
 on:
@@ -17,6 +16,10 @@ on:
         description: Only show what would ship
         type: boolean
         default: true
+      applied:
+        description: Database and Edge Function changes applied
+        type: boolean
+        default: false
 
 concurrency: release
 
@@ -28,11 +31,6 @@ jobs:
     name: Release
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    env:
-      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
-      PROJECT_REF: ${{ vars.SUPABASE_PROJECT_REF }}
-      DRY_RUN: ${{ inputs.dry_run }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -46,21 +44,8 @@ jobs:
         run: node scripts/release/run-plan.mjs
         env:
           GH_TOKEN: ${{ github.token }}
-
-      - uses: supabase/setup-cli@v1
-        if: steps.plan.outputs.version && (steps.plan.outputs.migrations == 'true' || steps.plan.outputs.functions == 'true')
-        with:
-          version: 3.4.0
-
-      - name: Database migrations
-        if: steps.plan.outputs.version && steps.plan.outputs.migrations == 'true'
-        run: |
-          [ "$DRY_RUN" = true ] && dry=--dry-run || dry=
-          supabase db push --remote="$PROJECT_REF" --password "$SUPABASE_DB_PASSWORD" --yes $dry
-
-      - name: Edge Function
-        if: steps.plan.outputs.version && steps.plan.outputs.functions == 'true' && !inputs.dry_run
-        run: supabase functions deploy rest-alarm --project-ref "$PROJECT_REF" --no-verify-jwt --use-api --yes
+          DRY_RUN: ${{ inputs.dry_run }}
+          APPLIED: ${{ inputs.applied }}
 
       - name: Stamp, tag and ship
         if: steps.plan.outputs.version && !inputs.dry_run

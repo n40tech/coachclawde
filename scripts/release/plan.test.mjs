@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { changedAreas, latestRelease, nextVersion } from './plan.mjs'
+import { changedAreas, latestRelease, nextVersion, releaseBlocker } from './plan.mjs'
 
 const pr = (...labels) => ({ number: 1, title: 'x', labels })
 
@@ -47,5 +47,22 @@ describe('latestRelease', () => {
 
   it('returns null before the first release', () => {
     expect(latestRelease([])).toBeNull()
+  })
+})
+
+describe('releaseBlocker', () => {
+  const none = { migrations: false, functions: false }
+
+  it('lets an app-only release through', () => {
+    expect(releaseBlocker(none, false)).toBeNull()
+  })
+
+  it('stops a release with a database change until it is marked applied', () => {
+    expect(releaseBlocker({ migrations: true, functions: false }, false)).toMatch(/database/i)
+    expect(releaseBlocker({ migrations: true, functions: false }, true)).toBeNull()
+  })
+
+  it('stops a release with an Edge Function change until it is marked applied', () => {
+    expect(releaseBlocker({ migrations: false, functions: true }, false)).toMatch(/Edge Function/)
   })
 })

@@ -108,8 +108,13 @@ only the **Release** workflow moves (Actions → Release → Run workflow, on
    minor (0.3.0 → 0.4.0); otherwise patch (0.3.0 → 0.3.1). The app is in
    beta, so versions are `0.x.y`; `1.0.0` is the maintainer's call at public
    launch. Rules: `scripts/release/plan.mjs`.
-2. Applies new `supabase/migrations/` to the production database, then
-   redeploys the `rest-alarm` Edge Function if `supabase/functions/` changed.
+2. Stops if the release includes database changes (`supabase/migrations/`)
+   or Edge Function changes (`supabase/functions/`) not yet marked applied.
+   The workflow holds no Supabase credentials: Claude applies them to
+   production through the Supabase connector when the maintainer asks
+   (`apply_migration` with the file's SQL; `deploy_edge_function` for
+   `rest-alarm`, JWT verification off), then the maintainer re-runs Release
+   with "Database and Edge Function changes applied" ticked.
 3. Commits "Release vX.Y.Z" (the version stamp) on top of `main`, tags it
    `vX.Y.Z`, and force-moves `production` there; Vercel deploys it.
 
@@ -118,9 +123,7 @@ previews); only release commits carry a real version. There are no release
 notes: the merged PRs are the history. **Migrations only add** (new tables,
 columns, policies): rename or drop something only in a later release than
 the one that stops using it, since installed apps run the old code for a
-while. Setup (Vercel production branch, `SUPABASE_ACCESS_TOKEN` and
-`SUPABASE_DB_PASSWORD` secrets, `SUPABASE_PROJECT_REF` variable):
-`DEPLOYMENT.md` §8.
+while. One-time setup: `DEPLOYMENT.md` §8.
 
 **How updates reach installed apps.** The service worker is registered in
 code (`lib/appUpdate`, with `injectRegister: false`), not by the plugin's

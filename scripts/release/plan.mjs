@@ -32,3 +32,22 @@ export function latestRelease(tags) {
   })
   return versions.at(-1) ?? null
 }
+
+/**
+ * Why a real release must wait, or null. The button holds no database
+ * credentials: database and Edge Function changes are applied separately
+ * (ask Claude, who uses the Supabase connector), then the release is run
+ * again with "applied" ticked.
+ */
+export function releaseBlocker(areas, applied) {
+  if (applied) return null
+  const pending = [
+    areas.migrations && 'a database change (supabase/migrations)',
+    areas.functions && 'an Edge Function change (supabase/functions)',
+  ].filter(Boolean)
+  if (pending.length === 0) return null
+  return (
+    `This release includes ${pending.join(' and ')}. Apply it to production first ` +
+    '(ask Claude), then run Release again with "Database and Edge Function changes applied" ticked.'
+  )
+}

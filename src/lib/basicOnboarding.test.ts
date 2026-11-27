@@ -98,3 +98,14 @@ describe('athletes from older builds', () => {
     expect(needsBasicsForm(after.profile)).toBe(false)
   })
 })
+
+describe('gender Other', () => {
+  it('reads back a returning athlete who picked Other before it was saved, and saves them as other', () => {
+    // How an athlete who tapped Other was saved until now: no answer, so the default male.
+    const before = { ...DEFAULT_PROFILE, ...profileFromBasics({ ...basics, sex: undefined }, now, DEFAULT_PROFILE) } as UserProfile
+    expect(before.sex).toBe('male')
+    const again = basicsFromProfile(before, now)
+    expect(again.sex).toBe('other')
+    expect(profileFromBasics(again, now, before).sex).toBe('other')
+  })
+})

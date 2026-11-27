@@ -473,7 +473,7 @@ ${goalSection}
 ` : ''}
 ## Athlete profile
 - **Name:** ${profile.name.trim() || 'Athlete'}
-- **Sex / age / height / weight:** ${profile.sex}, ${age !== undefined ? `${age}y` : 'age —'}, ${profile.heightCm}cm, ${profile.weightKg}kg
+- **${profile.sex === 'other' ? 'Age' : 'Sex / age'} / height / weight:** ${profile.sex === 'other' ? '' : `${profile.sex}, `}${age !== undefined ? `${age}y` : 'age —'}, ${profile.heightCm}cm, ${profile.weightKg}kg
 - **Program block:** ${blockLine}
 - **Experience level:** ${profile.experienceLevel ?? '—'}
 - **Goals:** ${profile.goals.length ? profile.goals.join('; ') : '—'}${niggles.length ? `

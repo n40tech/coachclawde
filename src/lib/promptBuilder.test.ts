@@ -24,6 +24,14 @@ describe('buildWeekPlanPrompt', () => {
     expect(p).not.toMatch(/Training types:.*cardio/)
   })
 
+  it('gives an athlete who picked Other their age, height and weight but no gender', () => {
+    const p = prompt({ ...DEFAULT_PROFILE, sex: 'other', birthDate: '1990-06-01', heightCm: 175, weightKg: 80 })
+    expect(p).toMatch(/- \*\*Age \/ height \/ weight:\*\* \d+y, 175cm, 80kg/)
+    expect(p).not.toMatch(/\*\* other,/)
+    expect(p).not.toMatch(/\bSex\b/)
+    expect(prompt({ ...DEFAULT_PROFILE, sex: 'female', birthDate: '1990-06-01' })).toMatch(/- \*\*Sex \/ age \/ height \/ weight:\*\* female, \d+y,/)
+  })
+
   it('has no check-in section and no rule about applying a check-in', () => {
     const p = prompt(DEFAULT_PROFILE)
     expect(p).not.toMatch(/check-in/i)

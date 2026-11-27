@@ -33,12 +33,14 @@ PRs merge themselves when their checks pass, and the maintainer looks at
    something new or a changed way of doing things), `fix` (something that
    should have worked now does) or `internal` (nothing visible changed); the
    Release workflow picks the version from them. Add `manual-test` when the
-   PR adds no tests because it only changes the UI. Add the labels straight
-   after opening the PR. Fill in `.github/pull_request_template.md`.
-6. **Auto-merge.** Open the PR ready for review (not draft) and turn on
-   auto-merge (`gh pr merge <n> --auto --merge`); GitHub merges it once these
-   are green (branch protection on `main`, admins included), then deletes the
-   branch:
+   PR adds no tests because it only changes the UI. Fill in
+   `.github/pull_request_template.md`.
+6. **Auto-merge.** Open the PR as a draft with its labels
+   (`gh pr create --draft --label fix`), mark it ready (`gh pr ready`), then
+   turn on auto-merge (`gh pr merge <n> --auto --merge`). The label checks
+   skip drafts, so they first run with the labels on. GitHub merges the PR
+   once these are green (branch protection on `main`, admins included), then
+   deletes the branch:
    - **check** (`ci.yml`): lint, tests, build.
    - **New tests fail on main** (`tests-fail-on-main.yml`): the PR's new and
      changed tests run against `main`'s code. At least one must fail there,
@@ -47,9 +49,10 @@ PRs merge themselves when their checks pass, and the maintainer looks at
    - **Release label** (`pr-body.yml`): exactly one release label.
 
    Their rules live in `scripts/ci/prChecks.mjs`, tested in
-   `prChecks.test.mjs`. A newer run of a check cancels the older one, so a
-   check that's red only because the labels weren't on yet leaves no failure
-   behind. If a check fails for real, Claude fixes it on the branch.
+   `prChecks.test.mjs`. A failed or cancelled run of a required check blocks
+   the merge even after a later run passes, so never cancel these runs; if a
+   check fails for real, fix it with a new commit on the branch (its checks
+   start clean).
    **Hold** (no auto-merge; the maintainer reads it and merges by hand) when
    the maintainer asks, and for database migrations.
 7. **Report.** After the merge, tell the maintainer in plain words what

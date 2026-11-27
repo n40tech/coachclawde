@@ -5,7 +5,6 @@ import App from './App.tsx'
 import { watchDynamicType } from './lib/dynamicType'
 import { watchDeviceShape } from './lib/deviceShape'
 import { startUpdateChecks } from './lib/appUpdate'
-import { markVersionSeen } from './lib/appVersion'
 import { useAppStore } from './store/useAppStore'
 
 // Follow the iOS text-size setting, and measure the installed iPhone app's
@@ -32,7 +31,6 @@ if (import.meta.env.VITE_DEMO_DATA === 'true') {
       if (action) {
         store.reset()
         store.restoreFromRemote({ ...buildDemoData(new Date()), checkIns: [] })
-        markVersionSeen()
       }
       if (action === 'reset') history.replaceState(null, '', location.pathname)
     })

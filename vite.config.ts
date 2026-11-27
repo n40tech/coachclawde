@@ -3,11 +3,10 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 import { readFileSync } from 'node:fs'
-import { RELEASES } from './src/lib/releaseNotes'
 
 const APP_VERSION: string = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')).version
 
-export default defineConfig(({ mode, command }) => {
+export default defineConfig(({ mode }) => {
   // Vite only inlines VITE_-prefixed env vars into the client bundle. The
   // Supabase Vercel Marketplace integration injects its credentials under
   // non-prefixed names (e.g. SUPABASE_URL) — and Next-flavoured ones too — so the
@@ -53,16 +52,6 @@ export default defineConfig(({ mode, command }) => {
           : 'Supabase credentials MISSING — app will run in local mode'
     }`,
   )
-
-  // Every shipped version must come with release notes for testers — fail the
-  // build if package.json was bumped without a matching entry.
-  if (command === 'build' && RELEASES[0]?.version !== APP_VERSION) {
-    throw new Error(
-      `[coach-clawde] package.json is v${APP_VERSION} but the newest release note is ` +
-        `v${RELEASES[0]?.version ?? '(none)'}. Add a v${APP_VERSION} entry at the top of ` +
-        'RELEASES in src/lib/releaseNotes.ts.',
-    )
-  }
 
   return {
   build: {

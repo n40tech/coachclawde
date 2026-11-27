@@ -13,7 +13,6 @@ import { PageSuspense } from './components/layout/PageSuspense'
 import { useAppStore } from './store/useAppStore'
 import { Home } from './pages/Home'
 import { Session } from './pages/Session'
-import { ReleaseNotesGate } from './components/shared/WhatsNew'
 import { useKeyboardInset } from './hooks/useKeyboardInset'
 import { lazyPage } from './lib/lazyPage'
 import { focusNewScreen } from './lib/viewTransition'
@@ -212,7 +211,6 @@ function MainApp() {
       )}
       <BottomNav />
       <EdgeSwipeBack target={page} />
-      <ReleaseNotesGate />
     </div>
   )
 }

@@ -95,21 +95,13 @@ runs the same three on every PR, alongside the merge checks above. On Claude Cod
 `.claude/hooks/session-start.sh` installs dependencies at session start, so these
 work out of the box.
 
-## Shipping a beta update (versions & release notes)
+## Versions
 
 The app version lives in `package.json` (currently **0.2.4**) and is injected
 into the bundle as `__APP_VERSION__` (read it via `APP_VERSION` in
-`src/lib/appVersion.ts`). The first time a tester opens a new version, a
-"What's new" sheet lists the changes; it's also reachable from Settings →
-What's new. For every beta release:
-
-1. Bump `version` in `package.json`. The app is in beta, so versions are
-   `0.x.y` (renumbered from 1.0.x/1.1.x, see `fromLegacyVersion`); `1.0.0`
-   is kept for the public launch.
-2. Add an entry for that version at the **top** of `RELEASES` in
-   `src/lib/releaseNotes.ts`. List everything that came from tester feedback
-   under `fromFeedback` (plain language, the tester's point of view), and
-   anything else under `alsoNew`.
+`src/lib/appVersion.ts`); Settings shows it. The app is in beta, so versions
+are `0.x.y`; `1.0.0` is kept for the public launch. There are no release
+notes: the merged PRs are the history.
 
 **How updates reach installed apps.** The service worker is registered in
 code (`lib/appUpdate`, with `injectRegister: false`), not by the plugin's
@@ -122,12 +114,6 @@ or `/check-in`, or while a text field has focus. There it waits for the next
 navigation or for the app going into the background. `vercel.json` sends
 `no-cache` for `/`, `/index.html`, `/sw.js` and the manifest so a deploy is
 always seen, and caches the hashed `/assets/*` forever.
-
-`npm run build` fails if the newest `RELEASES` entry doesn't match
-`package.json`, so an update can't ship without notes. Which version a device
-has seen is kept in `localStorage` (`coach-clawde-seen-version`), outside the
-Zustand store so signing out and back in doesn't replay it; brand-new athletes
-are marked as seen when they finish onboarding.
 
 ## Where things live
 

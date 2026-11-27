@@ -177,8 +177,6 @@ function BasicsForm({ a, set, activityChosen, onActivity, tried, returning }: {
   returning: boolean
 }) {
   const [more, setMore] = useState(!!a.notes)
-  // "Other" is a choice of its own: an unanswered gender shows nothing picked.
-  const [other, setOther] = useState(returning && !a.sex)
   return (
     <div>
       <div className="flex items-center gap-3 mb-6">
@@ -196,9 +194,9 @@ function BasicsForm({ a, set, activityChosen, onActivity, tried, returning }: {
 
         <div className="grid grid-cols-[1fr_6rem] gap-3">
           <ChoiceGroup legend="Gender" legendClassName={GROUP_LEGEND} className="grid grid-cols-3 gap-1.5">
-            <Chip name="ob-gender" value="male" on={a.sex === 'male'} onClick={() => { set({ sex: 'male' }); setOther(false) }}>Male</Chip>
-            <Chip name="ob-gender" value="female" on={a.sex === 'female'} onClick={() => { set({ sex: 'female' }); setOther(false) }}>Female</Chip>
-            <Chip name="ob-gender" value="other" on={other} onClick={() => { set({ sex: undefined }); setOther(true) }}>Other</Chip>
+            <Chip name="ob-gender" value="male" on={a.sex === 'male'} onClick={() => set({ sex: 'male' })}>Male</Chip>
+            <Chip name="ob-gender" value="female" on={a.sex === 'female'} onClick={() => set({ sex: 'female' })}>Female</Chip>
+            <Chip name="ob-gender" value="other" on={a.sex === 'other'} onClick={() => set({ sex: 'other' })}>Other</Chip>
           </ChoiceGroup>
           <div>
             <FieldLabel htmlFor="ob-age">Age</FieldLabel>

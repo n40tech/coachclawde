@@ -137,7 +137,8 @@ export interface GoalProfile {
 
 export interface UserProfile {
   name: string;
-  sex: 'male' | 'female';
+  /** 'other' is left out of the plan prompt. */
+  sex: 'male' | 'female' | 'other';
   heightCm: number;
   weightKg: number;
   /**

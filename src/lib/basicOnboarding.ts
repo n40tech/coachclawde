@@ -14,7 +14,7 @@ export type TrainWhere = 'gym' | 'home' | 'bodyweight'
 
 export interface BasicAnswers {
   name: string
-  sex?: 'male' | 'female'
+  sex?: 'male' | 'female' | 'other'
   age?: number
   activity: ActivityLevel
   where: TrainWhere[]
@@ -66,7 +66,9 @@ export const injuryLines = (text: string) => text.split(/\n+/).map((l) => l.trim
 /** The answers a returning athlete starts from, read back from their profile. */
 export function basicsFromProfile(p: UserProfile, now: Date): BasicAnswers {
   const stored = (p.goal?.answers as { basic?: BasicAnswers } | undefined)?.basic
-  if (stored) return { ...stored, name: p.name, injuries: p.injuries.join('\n') }
+  // Before Other was saved as 'other' it was saved as no answer, and the form
+  // has always shown no answer to a returning athlete as Other.
+  if (stored) return { ...stored, sex: stored.sex ?? 'other', name: p.name, injuries: p.injuries.join('\n') }
   const born = p.birthDate ? Number(p.birthDate.slice(0, 4)) : undefined
   const f = p.program?.facilities ?? []
   return {

@@ -18,6 +18,7 @@ import { ageFromBirthDate, isValidBirthDate } from '../lib/dateUtils'
 import { toLocalISODate } from '../lib/weekUtils'
 import { fromWeight, toWeight, type DistanceUnit, type WeightUnit } from '../lib/units'
 import { checkRestAlerts, disableRestAlerts, enableRestAlerts, prepareRestAlerts, restAlertSupport, sendTestAlert } from '../lib/restAlerts'
+import type { UserProfile } from '../types'
 
 export function Settings() {
   const { user, configured, signOut } = useAuth()
@@ -28,7 +29,7 @@ export function Settings() {
   const [name, setName] = useState(profile.name ?? '')
   const [weight, setWeight] = useState(String(toWeight(profile.weightKg, units.weight)))
   const [height, setHeight] = useState(String(profile.heightCm))
-  const [sex, setSex] = useState<'male' | 'female'>(profile.sex)
+  const [sex, setSex] = useState<UserProfile['sex']>(profile.sex)
   const [birthDate, setBirthDate] = useState(profile.birthDate ?? '')
   const age = ageFromBirthDate(birthDate)
   const [profileSaved, setProfileSaved] = useState(false)
@@ -189,8 +190,8 @@ export function Settings() {
                   className={inputClass}
                 />
               </Field>
-              <ChoiceGroup legend="Gender" legendClassName="block text-xs font-medium text-[#a8a29e] mb-1.5" className="grid grid-cols-2 gap-2">
-                {(['male', 'female'] as const).map((g) => (
+              <ChoiceGroup legend="Gender" legendClassName="block text-xs font-medium text-[#a8a29e] mb-1.5" className="grid grid-cols-3 gap-2">
+                {(['male', 'female', 'other'] as const).map((g) => (
                   <ChoiceChip key={g} name="settings-gender" value={g} checked={sex === g} onChange={() => setSex(g)} className={toggleLook(sex === g)}>
                     <span className="capitalize">{g}</span>
                   </ChoiceChip>

@@ -11,7 +11,7 @@ function client() {
 // --- profile ----------------------------------------------------------------
 
 /** The columns mapped 1:1 from a `profiles` row. */
-interface ProfileRow {
+export interface ProfileRow {
   name: string
   sex: string
   height_cm: number
@@ -31,10 +31,11 @@ interface ProfileRow {
   updated_at: string
 }
 
-function rowToProfile(row: ProfileRow): UserProfile {
+/** A `profiles` row as the app's profile. */
+export function rowToProfile(row: ProfileRow): UserProfile {
   return {
     name: row.name,
-    sex: row.sex === 'female' ? 'female' : 'male',
+    sex: row.sex === 'female' || row.sex === 'other' ? row.sex : 'male',
     heightCm: Number(row.height_cm),
     weightKg: Number(row.weight_kg),
     birthDate: row.birth_date ?? undefined,
@@ -54,28 +55,33 @@ function rowToProfile(row: ProfileRow): UserProfile {
   }
 }
 
+/** The app's profile as a `profiles` row. */
+export function profileToRow(userId: string, profile: UserProfile): ProfileRow & { id: string } {
+  return {
+    id: userId,
+    name: profile.name,
+    sex: profile.sex,
+    height_cm: profile.heightCm,
+    weight_kg: profile.weightKg,
+    birth_date: profile.birthDate ?? null,
+    program_week: profile.programWeek,
+    injuries: profile.injuries,
+    goals: profile.goals,
+    fitness_background: profile.fitnessBackground,
+    gym_access: profile.gymAccess,
+    dietary_notes: profile.dietaryNotes,
+    program: profile.program ?? null,
+    experience_level: profile.experienceLevel ?? null,
+    onboarded: profile.onboarded ?? false,
+    goal_profile: profile.goal ?? null,
+    updated_at: profile.updatedAt,
+  }
+}
+
 export async function pushProfile(userId: string, profile: UserProfile) {
   const { error } = await client()
     .from('profiles')
-    .upsert({
-      id: userId,
-      name: profile.name,
-      sex: profile.sex,
-      height_cm: profile.heightCm,
-      weight_kg: profile.weightKg,
-      birth_date: profile.birthDate ?? null,
-      program_week: profile.programWeek,
-      injuries: profile.injuries,
-      goals: profile.goals,
-      fitness_background: profile.fitnessBackground,
-      gym_access: profile.gymAccess,
-      dietary_notes: profile.dietaryNotes,
-      program: profile.program ?? null,
-      experience_level: profile.experienceLevel ?? null,
-      onboarded: profile.onboarded ?? false,
-      goal_profile: profile.goal ?? null,
-      updated_at: profile.updatedAt,
-    })
+    .upsert(profileToRow(userId, profile))
   if (error) throw new Error(`Failed to save profile: ${error.message}`)
 }
 

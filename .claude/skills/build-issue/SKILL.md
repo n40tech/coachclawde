@@ -28,7 +28,7 @@ file before starting.
    phone steps that start from the screen the app opens on and say what the
    user should see, and each test with the assertion it failed on. Add exactly
    one of `feature`, `fix` or `internal`, plus `manual-test` if there are no
-   new tests.
+   new tests. Leave the review checklist unticked: it is the user's.
 8. **Add the preview link**: once `gh pr checks <pr>` shows Vercel passing,
    read the bot's comment
    (`gh pr view <pr> --json comments --jq '.comments[] | select(.author.login=="vercel") | .body'`)
@@ -36,6 +36,7 @@ file before starting.
    alias that follows every push to the branch. Put it in the PR body under
    "Try it on your phone".
 
-Done when the draft PR is open with CI green, every template section filled,
+Done when the draft PR is open with every check green except the review
+checklist (the user's to tick), every template section filled,
 and the preview link in place. End with the PR link, the preview link and the
 phone steps, so the user can test from their phone straight away.

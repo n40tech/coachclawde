@@ -23,6 +23,46 @@ export function parseTimeToSeconds(t: string): number | null {
   return null
 }
 
+// --- the set rules -----------------------------------------------------------
+// One definition of "a set's reps", "the same lift" and "a better set", used by
+// Progress, Best efforts, Workout complete and the plan prompt's history.
+
+/** Reps for a completed set: what was typed, else the target when it's a number. */
+export function setReps(set: { actualReps?: number; targetReps: string }): number {
+  if (set.actualReps != null) return set.actualReps
+  const n = Number(set.targetReps)
+  return Number.isNaN(n) ? 0 : n
+}
+
+/** A timed hold (a plank): it has a time and no reps, so no volume. */
+export function isTimedSet<T extends { actualSeconds?: number; actualReps?: number }>(set: T): set is T & { actualSeconds: number } {
+  return set.actualSeconds != null && set.actualReps == null
+}
+
+/** Lifts are the same lift whatever their case or stray spaces. */
+export function liftKey(name: string): string {
+  return name.trim().toLowerCase()
+}
+
+/** A better set: heavier, or as heavy with more reps. */
+export function isBetterSet(a: { weightKg: number; reps: number }, b: { weightKg: number; reps: number } | null | undefined): boolean {
+  return !b || a.weightKg > b.weightKg || (a.weightKg === b.weightKg && a.reps > b.reps)
+}
+
+/** Weight × reps over every completed, loaded rep set, in kg. */
+export function totalVolumeKg(sessions: LoggedSession[]): number {
+  let total = 0
+  for (const s of sessions) {
+    for (const ex of s.loggedExercises ?? []) {
+      for (const set of ex.sets) {
+        if (!set.completed || !set.weightKg || isTimedSet(set)) continue
+        total += set.weightKg * setReps(set)
+      }
+    }
+  }
+  return total
+}
+
 /** Heaviest set logged per weights exercise, best first. */
 export function computeWeightPRs(sessions: LoggedSession[]): WeightPR[] {
   const best = new Map<string, WeightPR>()
@@ -30,13 +70,8 @@ export function computeWeightPRs(sessions: LoggedSession[]): WeightPR[] {
     for (const ex of s.loggedExercises ?? []) {
       for (const set of ex.sets) {
         if (!set.completed || !set.weightKg) continue
-        const targetReps = Number(set.targetReps)
-        const reps = set.actualReps ?? (Number.isNaN(targetReps) ? 0 : targetReps)
-        const current = best.get(ex.name)
-        if (!current || set.weightKg > current.weightKg ||
-          (set.weightKg === current.weightKg && reps > current.reps)) {
-          best.set(ex.name, { name: ex.name, weightKg: set.weightKg, reps, date: s.date })
-        }
+        const candidate = { name: ex.name.trim(), weightKg: set.weightKg, reps: setReps(set), date: s.date }
+        if (isBetterSet(candidate, best.get(liftKey(ex.name)))) best.set(liftKey(ex.name), candidate)
       }
     }
   }

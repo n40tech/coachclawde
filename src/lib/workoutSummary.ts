@@ -1,5 +1,6 @@
 import type { LoggedSession } from '../types'
 import { toWeight, type WeightUnit } from './units'
+import { isBetterSet, isTimedSet, liftKey, setReps } from './prComputations'
 
 /** A lift that beat everything logged for that exercise before this session. */
 export interface NewPB {
@@ -30,14 +31,6 @@ export interface WorkoutSummary {
   lines: { name: string; sets: number; bestKg?: number; bestReps: number; seconds?: number }[]
 }
 
-const key = (name: string) => name.trim().toLowerCase()
-
-/** Reps for a completed set: what was typed, else the target when it's a number. */
-function repsOf(set: { actualReps?: number; targetReps: string }): number {
-  if (set.actualReps != null) return set.actualReps
-  const n = Number(set.targetReps)
-  return Number.isNaN(n) ? 0 : n
-}
 
 /**
  * The "workout complete" breakdown. A PB is the heaviest completed set of an
@@ -59,13 +52,13 @@ export function summarizeWorkout(session: LoggedSession, history: LoggedSession[
       // Best set: heaviest, then most reps; a hold's longest time.
       const line: WorkoutSummary['lines'][number] = { name: ex.name, sets: done.length, bestReps: 0 }
       for (const set of done) {
-        if (set.actualSeconds != null && set.actualReps == null) {
+        if (isTimedSet(set)) {
           line.seconds = Math.max(line.seconds ?? 0, set.actualSeconds)
           continue
         }
-        const r = repsOf(set)
+        const r = setReps(set)
         const kg = set.weightKg ?? 0
-        if (kg > (line.bestKg ?? 0) || (kg === (line.bestKg ?? 0) && r > line.bestReps)) {
+        if (isBetterSet({ weightKg: kg, reps: r }, { weightKg: line.bestKg ?? 0, reps: line.bestReps })) {
           line.bestKg = kg || undefined
           line.bestReps = r
         }
@@ -74,15 +67,13 @@ export function summarizeWorkout(session: LoggedSession, history: LoggedSession[
     }
     for (const set of done) {
       sets++
-      if (set.actualSeconds != null && set.actualReps == null) continue // timed hold
-      const r = repsOf(set)
+      if (isTimedSet(set)) continue
+      const r = setReps(set)
       reps += r
       if (set.weightKg) {
         totalVolumeKg += set.weightKg * r
-        const cur = bestHere.get(key(ex.name))
-        if (!cur || set.weightKg > cur.weightKg || (set.weightKg === cur.weightKg && r > cur.reps)) {
-          bestHere.set(key(ex.name), { name: ex.name, weightKg: set.weightKg, reps: r })
-        }
+        const candidate = { name: ex.name, weightKg: set.weightKg, reps: r }
+        if (isBetterSet(candidate, bestHere.get(liftKey(ex.name)))) bestHere.set(liftKey(ex.name), candidate)
       }
     }
   }
@@ -93,7 +84,7 @@ export function summarizeWorkout(session: LoggedSession, history: LoggedSession[
     for (const ex of s.loggedExercises ?? []) {
       for (const set of ex.sets) {
         if (!set.completed || !set.weightKg) continue
-        const k = key(ex.name)
+        const k = liftKey(ex.name)
         bestBefore.set(k, Math.max(bestBefore.get(k) ?? 0, set.weightKg))
       }
     }

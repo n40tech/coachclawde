@@ -1,5 +1,5 @@
 import type { CardioType, LoggedSession, LoggedSet } from '../types'
-import { computeWeightPRs, computeCardioPRs } from './prComputations'
+import { computeWeightPRs, computeCardioPRs, isBetterSet, setReps } from './prComputations'
 import { computeSplit, inferCardioType, parseDurationToSeconds } from './cardioUtils'
 import { format, parseISO } from 'date-fns'
 
@@ -55,11 +55,8 @@ function topSet(sets: LoggedSet[]): TopSet | null {
   let best: TopSet | null = null
   for (const set of sets) {
     if (!set.completed || set.weightKg == null) continue
-    const targetReps = Number(set.targetReps)
-    const reps = set.actualReps ?? (Number.isNaN(targetReps) ? 0 : targetReps)
-    if (!best || set.weightKg > best.weightKg || (set.weightKg === best.weightKg && reps > best.reps)) {
-      best = { weightKg: set.weightKg, reps }
-    }
+    const candidate = { weightKg: set.weightKg, reps: setReps(set) }
+    if (isBetterSet(candidate, best)) best = candidate
   }
   return best
 }

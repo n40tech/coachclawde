@@ -1,0 +1,40 @@
+# Checks the PR description and labels. Re-runs when the body is edited (a box
+# ticked) or a label changes. Kept apart from tests-fail-on-main.yml so an edit
+# never re-runs, or skips, the test checks.
+name: PR body
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened, labeled, unlabeled]
+
+permissions:
+  contents: read
+
+jobs:
+  checklist:
+    name: Review checklist
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: scripts/ci
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - run: node scripts/ci/check-pr-body.mjs checklist
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+
+  label:
+    name: Release label
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: scripts/ci
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - run: node scripts/ci/check-pr-body.mjs label
+        env:
+          PR_LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}

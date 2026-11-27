@@ -31,7 +31,20 @@ merges every PR by hand on GitHub; Claude opens PRs and never merges them.
    something new or a changed way of doing things), `fix` (something that
    should have worked now does) or `internal` (nothing visible changed). Add
    `manual-test` when the PR adds no tests because it only changes the UI.
-   Fill in every section of `.github/pull_request_template.md`.
+   Fill in every section of `.github/pull_request_template.md`. The review
+   checklist is the maintainer's sign-off: leave its boxes unticked.
+6. **Merge checks.** A PR merges only when these are green (branch protection
+   on `main`, admins included):
+   - **check** (`ci.yml`): lint, tests, build.
+   - **New tests fail on main** (`tests-fail-on-main.yml`): the PR's new and
+     changed tests run against `main`'s code. At least one must fail there,
+     and no newly named test may already pass there. Skipped for
+     `manual-test` and `internal`.
+   - **Review checklist** and **Release label** (`pr-body.yml`): every box
+     ticked, exactly one release label.
+
+   Their rules live in `scripts/ci/prChecks.mjs`, tested in
+   `prChecks.test.mjs`.
 
 Issues use the conventions in `docs/agents/` (`issue-tracker.md`,
 `triage-labels.md`); `domain.md` covers `GLOSSARY.md` and `docs/adr/` once
@@ -75,7 +88,7 @@ of the bundle.
 
 **Before pushing any code change, run `npm run lint`, `npm run build` and
 `npm test` and make sure all three are green.** CI (`.github/workflows/ci.yml`)
-runs the same three on every PR. On Claude Code on the web,
+runs the same three on every PR, alongside the merge checks above. On Claude Code on the web,
 `.claude/hooks/session-start.sh` installs dependencies at session start, so these
 work out of the box.
 

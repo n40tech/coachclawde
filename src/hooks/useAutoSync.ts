@@ -2,8 +2,8 @@ import { useCallback } from 'react'
 import { useAppStore } from '../store/useAppStore'
 import { useSettingsStore } from '../store/useSettingsStore'
 import { useAuth } from '../auth/AuthProvider'
-import { pushAll, pushWeekPlans, pushLoggedSessions, pushLoggedSession, pushProfile, pullAll, deleteLoggedSession } from '../lib/supabaseSync'
-import type { UserProfile, WeekPlan, LoggedSession } from '../types'
+import { pushWeekPlans, pushLoggedSession, pushProfile, pullAll, deleteLoggedSession } from '../lib/supabaseSync'
+import { flushOutbox, mergeRemote, seedOutbox, type Pusher } from '../lib/outbox'
 
 export type SyncTarget = 'sessions' | 'plans' | 'profile' | 'all'
 
@@ -13,12 +13,14 @@ export type SyncTarget = 'sessions' | 'plans' | 'profile' | 'all'
  * this layer keeps the database in sync. No-ops when signed out (e.g. local
  * single-user mode), so callers don't need to guard.
  *
- * State is read via `getState()` at call time rather than closed over, so a
- * `sync('plans')` fired right after `addWeekPlan` sees the fresh data.
+ * Every push goes through the outbox (lib/outbox): the store records each
+ * change it makes, and `sync()` / `syncSession()` push whatever is pending,
+ * reading the records at call time. An entry leaves the outbox only once its
+ * push succeeds, so a change made offline goes up on the next sync, and a pull
+ * never undoes it: a change made here and not yet pushed beats the database.
  */
 export function useAutoSync() {
   const { user } = useAuth()
-  const restoreFromRemote = useAppStore((s) => s.restoreFromRemote)
   const { setSyncStatus, markSynced } = useSettingsStore()
 
   const fail = useCallback(
@@ -27,102 +29,84 @@ export function useAutoSync() {
     [setSyncStatus]
   )
 
-  /**
-   * Merges a freshly-pulled snapshot into the store, preserving any
-   * locally-logged session the database doesn't have yet. The active workout is
-   * pushed as sets/intervals complete, but anything logged since the last push
-   * (or while offline) lives only in localStorage — without this merge a
-   * reload, which pulls and overwrites, could wipe an in-progress workout.
-   * Remote wins for any session it does have; local-only sessions are kept.
-   */
-  const applyRemote = useCallback(
-    (remote: { profile: UserProfile | null; weekPlans: WeekPlan[]; loggedSessions: LoggedSession[] }) => {
-      const local = useAppStore.getState().loggedSessions
-      const remoteIds = new Set(remote.loggedSessions.map((s) => s.id))
-      const localOnly = local.filter((s) => !remoteIds.has(s.id))
-      // A workout still in progress on this device is newer here than in the
-      // database (reps typed since the last ticked set), and the pull now runs
-      // in the background while the app is already open: keep the local copy.
-      const liveHere = new Map(local.filter((s) => s.status === 'in-progress').map((s) => [s.id, s]))
-      const merged = remote.loggedSessions.map((s) => (s.status === 'in-progress' && liveHere.get(s.id)) || s)
-      restoreFromRemote({
-        // Keep the local profile if the database has none yet (first sign-in).
-        profile: remote.profile ?? useAppStore.getState().profile,
-        weekPlans: remote.weekPlans,
-        loggedSessions: [...merged, ...localOnly],
-      })
-    },
-    [restoreFromRemote]
-  )
+  /** Pushes every pending change; true when nothing is left pending. */
+  const flush = useCallback(async (): Promise<boolean> => {
+    if (!user) return true
+    const state = useAppStore.getState()
+    const outbox = state.outbox
+    if (!outbox.length) return true
+    const push: Pusher = {
+      profile: (p) => pushProfile(user.id, p),
+      plan: (p) => pushWeekPlans(user.id, [p]),
+      session: (s) => pushLoggedSession(user.id, s),
+      deleteSession: (id) => deleteLoggedSession(user.id, id),
+    }
+    const left = await flushOutbox(outbox, state, push)
+    state.clearPushed(outbox.filter((e) => !left.includes(e)))
+    return left.length === 0
+  }, [user])
 
+  const pushPending = useCallback(async () => {
+    if (!user) return
+    setSyncStatus('syncing')
+    try {
+      if (await flush()) markSynced()
+      else setSyncStatus('error', "Some changes haven't reached your account yet")
+    } catch (e: unknown) {
+      fail(e, 'Sync failed')
+    }
+  }, [user, flush, setSyncStatus, markSynced, fail])
+
+  /** Pushes pending changes. The target is kept for callers; everything pending goes. */
   const sync = useCallback(
     async (target: SyncTarget = 'sessions') => {
-      if (!user) return
-      const { loggedSessions, weekPlans, profile } = useAppStore.getState()
-      setSyncStatus('syncing')
-      try {
-        if (target === 'sessions') await pushLoggedSessions(user.id, loggedSessions)
-        else if (target === 'plans') await pushWeekPlans(user.id, weekPlans)
-        else if (target === 'profile') await pushProfile(user.id, profile)
-        else await pushAll(user.id, { profile, weekPlans, loggedSessions })
-        markSynced()
-      } catch (e: unknown) {
-        fail(e, 'Sync failed')
-      }
+      void target
+      await pushPending()
     },
-    [user, setSyncStatus, markSynced, fail]
+    [pushPending]
   )
 
-  /**
-   * Pushes a single logged session — the in-workout autosave on each completed
-   * set/interval. One row per session, so this stays a single upsert.
-   * No-ops when signed out.
-   */
+  /** The in-workout autosave on each completed set: pushes pending changes. */
   const syncSession = useCallback(
     async (sessionId: string) => {
-      if (!user) return
-      const session = useAppStore.getState().loggedSessions.find((s) => s.id === sessionId)
-      if (!session) return
-      setSyncStatus('syncing')
-      try {
-        await pushLoggedSession(user.id, session)
-        markSynced()
-      } catch (e: unknown) {
-        fail(e, 'Sync failed')
-      }
+      void sessionId
+      await pushPending()
     },
-    [user, setSyncStatus, markSynced, fail]
+    [pushPending]
   )
 
   /**
-   * Deletes a logged session locally and from the database. Local goes first
-   * so it disappears at once (and still goes when signed out).
+   * Deletes a logged session locally (at once, signed in or not) and queues the
+   * delete, which is pushed now or, offline, on a later sync.
    */
   const removeSession = useCallback(
     async (sessionId: string) => {
       useAppStore.getState().removeLoggedSession(sessionId)
-      if (!user) return
-      setSyncStatus('syncing')
-      try {
-        await deleteLoggedSession(user.id, sessionId)
-        markSynced()
-      } catch (e: unknown) {
-        fail(e, 'Delete failed')
-      }
+      await pushPending()
     },
-    [user, setSyncStatus, markSynced, fail]
+    [pushPending]
   )
 
+  /**
+   * Pulls the account's data and merges it through the outbox. The first pull
+   * after the outbox shipped seeds it with every local record the database
+   * doesn't have, so nothing unpushed at upgrade time is lost.
+   */
   const pull = useCallback(async () => {
     if (!user) return
     setSyncStatus('syncing')
     try {
-      applyRemote(await pullAll(user.id))
-      markSynced()
+      const remote = await pullAll(user.id)
+      const state = useAppStore.getState()
+      if (!state.outboxSeeded) state.setOutbox([...seedOutbox(state, remote), ...state.outbox], true)
+      const now = useAppStore.getState()
+      now.restoreFromRemote(mergeRemote(now, now.outbox, remote))
+      if (await flush()) markSynced()
+      else setSyncStatus('error', "Some changes haven't reached your account yet")
     } catch (e: unknown) {
       fail(e, 'Restore failed')
     }
-  }, [user, applyRemote, setSyncStatus, markSynced, fail])
+  }, [user, flush, setSyncStatus, markSynced, fail])
 
   return { sync, syncSession, removeSession, pull, isConfigured: !!user }
 }

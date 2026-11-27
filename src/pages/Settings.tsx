@@ -34,6 +34,9 @@ export function Settings() {
   const age = ageFromBirthDate(birthDate)
   const [profileSaved, setProfileSaved] = useState(false)
   const [confirmHealth, setConfirmHealth] = useState(false)
+  const [confirmSignOut, setConfirmSignOut] = useState(false)
+  // Changes made here that haven't reached the account (lib/outbox): signing out would lose them.
+  const pendingChanges = useAppStore((s) => s.outbox.length)
   const healthFlags = profile.goal?.health.flags ?? []
 
   /**
@@ -106,7 +109,7 @@ export function Settings() {
                       <RefreshCw size={14} />
                       Sync now
                     </Button>
-                    <Button variant="secondary" size="sm" onClick={() => signOut()} fullWidth>
+                    <Button variant="secondary" size="sm" onClick={() => (pendingChanges ? setConfirmSignOut(true) : signOut())} fullWidth>
                       <LogOut size={14} />
                       Sign out
                     </Button>
@@ -288,6 +291,20 @@ export function Settings() {
           <DisplayInfo />
         </div>
       </div>
+
+      {confirmSignOut && (
+        <ConfirmDialog
+          icon={<LogOut size={20} />}
+          title="Sign out anyway?"
+          confirmLabel="Sign out"
+          danger
+          onConfirm={() => { setConfirmSignOut(false); void signOut() }}
+          onCancel={() => setConfirmSignOut(false)}
+        >
+          {pendingChanges === 1 ? "1 change hasn't" : `${pendingChanges} changes haven't`} reached your account yet. Signing out
+          now loses {pendingChanges === 1 ? 'it' : 'them'}. Try Sync now first if you're back online.
+        </ConfirmDialog>
+      )}
 
       {confirmHealth && (
         <ConfirmDialog

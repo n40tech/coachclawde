@@ -307,6 +307,17 @@ things are the way they are.
   (push/pull rows), `weekUtils`/`dateUtils`, `cardioUtils`, `units` (kg/lb and km/mi display conversion; data stays metric), `export`, `nanoid`, `programOptions`
   (shared labels for the program preference enums).
   `useAutoSync` (in `src/hooks/`) is the push/pull facade used by pages.
+- **Offline sync (#27):** `lib/outbox` is the rule: a change made on this
+  device and not yet pushed beats the database; everything else follows the
+  database, deletions included. The store's own writes (`setProfile`, plan and
+  log add/update/remove) record an outbox entry; `restoreFromRemote` and demo
+  seeding record nothing. `sync()` / `syncSession()` push every pending entry
+  (`flushOutbox`), and an entry leaves the outbox only once its push succeeds.
+  Every pull merges through it (`mergeRemote`); the first pull after the outbox
+  shipped seeds it with the local records the database doesn't have
+  (`seedOutbox`). It's persisted with the store and cleared on sign-out, which
+  asks first when changes are pending (Settings). Sync can't be tried on
+  previews (demo mode): check it in production.
 - **Runners & athletes (v1.0.2):**
   - `lib/goalFlow` — what's left of the old onboarding goal tree (on the
     `cardio-archive` branch): event labels, `weeksUntil` and

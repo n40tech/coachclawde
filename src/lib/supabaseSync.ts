@@ -118,13 +118,6 @@ function loggedSessionRow(userId: string, s: LoggedSession) {
   }
 }
 
-export async function pushLoggedSessions(userId: string, sessions: LoggedSession[]) {
-  if (sessions.length === 0) return
-  const rows = sessions.map((s) => loggedSessionRow(userId, s))
-  const { error } = await client().from('logged_sessions').upsert(rows, { onConflict: 'user_id,id' })
-  if (error) throw new Error(`Failed to save sessions: ${error.message}`)
-}
-
 /**
  * Upserts a single session row. Used for the in-workout autosave so each
  * completed set pushes only the active session (one row) instead of the whole
@@ -148,16 +141,6 @@ export async function deleteLoggedSession(userId: string, sessionId: string) {
 }
 
 // --- combined ---------------------------------------------------------------
-
-export async function pushAll(
-  userId: string,
-  data: { profile: UserProfile; weekPlans: WeekPlan[]; loggedSessions: LoggedSession[] }
-) {
-  // Profile first (cheap, always present), then the bulkier collections.
-  await pushProfile(userId, data.profile)
-  await pushWeekPlans(userId, data.weekPlans)
-  await pushLoggedSessions(userId, data.loggedSessions)
-}
 
 export async function pullAll(userId: string): Promise<{
   profile: UserProfile | null

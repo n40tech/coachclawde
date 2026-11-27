@@ -6,6 +6,7 @@ import { getProgramProgress } from './programProgress'
 import { ageFromBirthDate } from './dateUtils'
 import { daysPerWeekLabel } from './programOptions'
 import { buildGoalSection } from './goalPrompt'
+import { trainingSetup } from './trainingSetup'
 
 /**
  * Builds the prompt the user pastes into Claude.
@@ -66,7 +67,7 @@ export function promptScope(profile: UserProfile): PromptScope {
             : profile.program?.goals.includes('look-great') ? 'physique' : 'general'
   return {
     cardio: false, mobility, sessionTypes,
-    facilities: profile.program?.facilities ?? [],
+    facilities: trainingSetup(profile).facilities,
     strengthFocus,
     diet: profile.dietaryNotes.length > 0,
   }

@@ -27,6 +27,7 @@ import { latestPlan, orderMethods, repeatPlan, repeatTargetMonday, type PlanMeth
 import { useSettingsStore } from '../store/useSettingsStore'
 import { formatSessionDate } from '../lib/dateUtils'
 import type { LucideIcon } from 'lucide-react'
+import { trainingSetup } from '../lib/trainingSetup'
 
 const SESSION_LENGTH_OPTIONS = [30, 45, 60, 75, 90] as const
 
@@ -56,7 +57,7 @@ export function WeekPlanner() {
   // keeps the same length by default.
   const [sessionMinutes, setSessionMinutes] = useState<number>(() => {
     const mins = seedPlan?.sessions.map((s) => s.estimatedMinutes).filter((m) => m > 0) ?? []
-    if (!mins.length) return profile.goal?.constraints.sessionMinutes ?? 60
+    if (!mins.length) return trainingSetup(profile).sessionMinutes
     const avg = mins.reduce((a, b) => a + b, 0) / mins.length
     return SESSION_LENGTH_OPTIONS.reduce<number>((best, o) => (Math.abs(o - avg) < Math.abs(best - avg) ? o : best), 60)
   })

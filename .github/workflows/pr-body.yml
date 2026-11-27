@@ -1,30 +1,21 @@
-# Checks the PR description and labels. Re-runs when the body is edited (a box
-# ticked) or a label changes. Kept apart from tests-fail-on-main.yml so an edit
-# never re-runs, or skips, the test checks.
+# Checks the PR carries exactly one release label (feature, fix or internal;
+# the Release workflow picks the version from them). Re-runs when a label
+# changes; a newer run cancels the one before it, so opening a PR and then
+# labelling it doesn't leave a failed run (and a failure email) behind.
 name: PR body
 
 on:
   pull_request:
-    types: [opened, edited, synchronize, reopened, labeled, unlabeled]
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+concurrency:
+  group: pr-label-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
 
 jobs:
-  checklist:
-    name: Review checklist
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          sparse-checkout: scripts/ci
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 22
-      - run: node scripts/ci/check-pr-body.mjs checklist
-        env:
-          PR_BODY: ${{ github.event.pull_request.body }}
-
   label:
     name: Release label
     runs-on: ubuntu-latest

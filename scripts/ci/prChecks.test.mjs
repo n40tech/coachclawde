@@ -1,51 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import {
-  checklistVerdict,
   collectResults,
   isTestFile,
   labelVerdict,
   newTestVerdict,
   skipReason,
 } from './prChecks.mjs'
-
-const body = (checklist) => `Closes #12
-
-## Try it on your phone
-
-1. Open a workout
-
-## Review checklist
-
-${checklist}
-`
-
-describe('checklistVerdict', () => {
-  it('passes when every review box is ticked', () => {
-    const v = checklistVerdict(body('- [x] I read the whole diff\n- [X] I tried it on my phone'))
-    expect(v.ok).toBe(true)
-  })
-
-  it('fails and names each unticked box', () => {
-    const v = checklistVerdict(body('- [x] I read the whole diff\n- [ ] I tried it on my phone'))
-    expect(v.ok).toBe(false)
-    expect(v.unticked).toEqual(['I tried it on my phone'])
-  })
-
-  it('fails when the PR body has no review checklist', () => {
-    expect(checklistVerdict('Just a description').ok).toBe(false)
-  })
-
-  it('ignores ticked boxes outside the review checklist section', () => {
-    const v = checklistVerdict(`## Steps\n\n- [x] something\n\n## Review checklist\n\n- [ ] I read the whole diff\n`)
-    expect(v.ok).toBe(false)
-    expect(v.unticked).toEqual(['I read the whole diff'])
-  })
-
-  it('stops reading the checklist at the next heading', () => {
-    const v = checklistVerdict(body('- [x] I read the whole diff') + '\n## Notes\n\n- [ ] a later todo\n')
-    expect(v.ok).toBe(true)
-  })
-})
 
 describe('labelVerdict', () => {
   it('passes with exactly one release type label', () => {

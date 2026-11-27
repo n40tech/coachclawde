@@ -41,10 +41,6 @@ describe('homeInvitation', () => {
     expect(homeInvitation(st({ profile: { ...migrated, goal: { ...migrated.goal!, checkInsOff: true } } }), monday)).toBeNull()
   })
 
-  it('offers pre-v1.0.2 athletes the goal upgrade first', () => {
-    expect(homeInvitation(st({ profile: base }), monday)?.kind).toBe('migration')
-  })
-
   it('reacts to pain noted on two sessions', () => {
     const logs = [done('a', { date: '2026-10-02', painNotes: 'knee' }), done('b', { date: '2026-10-03', painNotes: 'knee again' })]
     expect(homeInvitation(st({ loggedSessions: logs }), monday)?.kind).toBe('reactive')

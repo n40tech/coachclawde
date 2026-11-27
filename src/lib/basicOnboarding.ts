@@ -50,6 +50,17 @@ export function birthDateFromAge(age: number, now: Date): string {
   return `${now.getFullYear() - age}-01-01`
 }
 
+/**
+ * Whether the app sends the athlete to the basics form before anything else:
+ * a new account, or one from a build before goals existed (no goal, or a
+ * legacy goal never upgraded). Saving the form sets an upgraded goal, so it's
+ * asked once.
+ */
+export function needsBasicsForm(p: UserProfile): boolean {
+  if (!p.onboarded) return true
+  return !p.goal || (p.goal.origin === 'legacy' && !p.goal.migrated)
+}
+
 export const injuryLines = (text: string) => text.split(/\n+/).map((l) => l.trim()).filter(Boolean)
 
 /** The answers a returning athlete starts from, read back from their profile. */

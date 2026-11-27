@@ -201,7 +201,9 @@ things are the way they are.
   `Onboarding` is the first-run flow: one short form of basics
   (`lib/basicOnboarding` turns it into the GoalProfile and legacy fields),
   then a finish screen. An onboarded athlete opening it gets the same form
-  pre-filled. `components/onboarding/ChatFlow` renders check-ins.
+  pre-filled. Athletes from builds before goals existed are sent to it once
+  (`needsBasicsForm`, checked by `RequireOnboarded` in `App.tsx`).
+  `components/onboarding/ChatFlow` renders check-ins.
 - `components/shared/BetaFeedbackTile` — the Home tile linking beta testers
   to the WhatsApp feedback group. The invite link is build-time config
   (`VITE_BETA_FEEDBACK_URL`, read in `lib/betaFeedback`), never source, and
@@ -312,8 +314,7 @@ things are the way they are.
   - `lib/goalPrompt` — the prompt's Goal section and the phase skeleton.
     `lib/goalProfile` — zones / measurement helpers and the legacy mapping.
   - `lib/checkIn` (rules C1–C10, budget, actions), `lib/checkInTriggers`
-    (when to suggest one), `lib/migrationFlow` (the three-question upgrade for
-    pre-v1.0.2 athletes), `pages/CheckIn`.
+    (when to suggest one), `pages/CheckIn`.
   - `lib/workout` (reads older plans' structured workouts and converts legacy
     `intervals[]`), `lib/zones` (VDOT pace zones), `lib/audioCues` (Web Audio
     tones, `transient` audio session, Android vibration).

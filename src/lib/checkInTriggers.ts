@@ -20,7 +20,7 @@ export interface TriggerState {
 }
 
 export interface HomeInvitation {
-  kind: 'migration' | 'milestone' | 'reactive' | 'week-end' | 'summary'
+  kind: 'milestone' | 'reactive' | 'week-end' | 'summary'
   trigger: CheckInTrigger
   /** Dismissal key. */
   key: string
@@ -50,11 +50,6 @@ export function wantsCheckIns(profile: UserProfile): boolean {
   return true
 }
 
-/** Pre-v1.0.2 athletes are offered the three-question goal upgrade. */
-export function needsMigration(profile: UserProfile): boolean {
-  return !!profile.onboarded && (!profile.goal || (profile.goal.origin === 'legacy' && !profile.goal.migrated))
-}
-
 function completedIn(logs: LoggedSession[], from: string, to: string) {
   return logs.filter((s) => s.status === 'complete' && s.date >= from && s.date <= to)
 }
@@ -64,14 +59,6 @@ export function homeInvitation(st: TriggerState, now: Date): HomeInvitation | nu
   const { profile, weekPlans, loggedSessions, checkIns, dismissed } = st
   const off = (k: string) => dismissed.includes(k)
   const thisMonday = iso(getMonday(now))
-
-  if (needsMigration(profile) && !off('migration')) {
-    return {
-      kind: 'migration', trigger: 'migration', key: 'migration', weekStart: thisMonday,
-      title: 'Upgrade your goal',
-      text: 'Three quick questions so your plans know what you’re working towards.',
-    }
-  }
 
   const rw = reviewedWeekStart(now)
   const rwEnd = iso(addDays(parseISO(rw), 6))

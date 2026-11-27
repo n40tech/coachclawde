@@ -16,7 +16,7 @@
  */
 
 export interface Release {
-  /** Semver, matching package.json, e.g. "1.0.2". */
+  /** Semver, matching package.json, e.g. "0.3.0". */
   version: string
   /** ISO date the update shipped. */
   date: string
@@ -41,7 +41,7 @@ export interface Release {
 
 export const RELEASES: Release[] = [
   {
-    version: '1.1.4',
+    version: '0.2.4',
     date: '2026-11-21',
     headline: 'Your workout slides up as a sheet',
     fromFeedback: [
@@ -52,7 +52,7 @@ export const RELEASES: Release[] = [
     ],
   },
   {
-    version: '1.1.3',
+    version: '0.2.3',
     date: '2026-11-21',
     headline: 'A steadier Home and a clearer way back to your workout',
     fromFeedback: [
@@ -65,7 +65,7 @@ export const RELEASES: Release[] = [
     ],
   },
   {
-    version: '1.1.2',
+    version: '0.2.2',
     date: '2026-11-20',
     headline: 'Easier to read, and easier to use with a keyboard, screen reader or larger text.',
     fromFeedback: [],
@@ -80,7 +80,7 @@ export const RELEASES: Release[] = [
     ],
   },
   {
-    version: '1.1.1',
+    version: '0.2.1',
     date: '2026-11-20',
     headline: 'Sets that finish themselves, your real workout time, and a timer that follows you.',
     fromFeedback: [
@@ -91,7 +91,7 @@ export const RELEASES: Release[] = [
     ],
   },
   {
-    version: '1.1.0',
+    version: '0.2.0',
     date: '2026-11-20',
     headline: 'Weights-first: a set timer, a workout summary to share, and faster planning.',
     fromFeedback: [
@@ -112,7 +112,7 @@ export const RELEASES: Release[] = [
     ],
   },
   {
-    version: '1.0.7',
+    version: '0.1.7',
     date: '2026-11-17',
     headline: 'Easier with a keyboard, a screen reader or a password manager.',
     fromFeedback: [],
@@ -124,7 +124,7 @@ export const RELEASES: Release[] = [
     ],
   },
   {
-    version: '1.0.6',
+    version: '0.1.6',
     date: '2026-11-17',
     headline: 'Know when rest is over, even with your phone locked.',
     fromFeedback: [
@@ -142,7 +142,7 @@ export const RELEASES: Release[] = [
     },
   },
   {
-    version: '1.0.5',
+    version: '0.1.5',
     date: '2026-10-20',
     headline: 'Pounds and miles, if that’s how you train.',
     fromFeedback: [
@@ -153,7 +153,7 @@ export const RELEASES: Release[] = [
     ],
   },
   {
-    version: '1.0.4',
+    version: '0.1.4',
     date: '2026-10-20',
     headline: 'Opening Claude on iPhone works properly again.',
     fromFeedback: [
@@ -164,7 +164,7 @@ export const RELEASES: Release[] = [
     ],
   },
   {
-    version: '1.0.3',
+    version: '0.1.3',
     date: '2026-10-19',
     headline: 'Plans that look like real gym sessions, with shorter warm-ups and calmer handling of niggles.',
     fromFeedback: [
@@ -181,7 +181,7 @@ export const RELEASES: Release[] = [
     ],
   },
   {
-    version: '1.0.2',
+    version: '0.1.2',
     date: '2026-10-01',
     headline: 'Run Mode, real goals and weekly check-ins, shaped by your feedback.',
     fromFeedback: [
@@ -212,7 +212,7 @@ export const RELEASES: Release[] = [
     },
   },
   {
-    version: '1.0.1',
+    version: '0.1.1',
     date: '2026-09-30',
     headline: 'Faster setup and a better workout screen, shaped by your feedback.',
     fromFeedback: [
@@ -241,6 +241,17 @@ export function compareVersions(a: string, b: string): number {
     if (diff !== 0) return diff
   }
   return 0
+}
+
+/**
+ * Versions were renumbered while the app is in beta: 1.0.x became 0.1.x and
+ * 1.1.x became 0.2.x (1.0.0 is kept for the public launch). Devices still
+ * remember the old number they last saw; this maps it so they neither replay
+ * old notes nor miss new ones.
+ */
+export function fromLegacyVersion(version: string): string {
+  const m = version.match(/^1\.([01])\.(\d+)$/)
+  return m ? `0.${Number(m[1]) + 1}.${m[2]}` : version
 }
 
 /** Releases newer than `lastSeen` (all of them when `lastSeen` is null), newest first. */

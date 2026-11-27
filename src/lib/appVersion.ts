@@ -1,4 +1,4 @@
-import { RELEASES, compareVersions, releasesSince, type Release } from './releaseNotes'
+import { RELEASES, compareVersions, fromLegacyVersion, releasesSince, type Release } from './releaseNotes'
 import { STORAGE_KEYS } from './storageKeys'
 
 /** The running app's version, injected from package.json at build time. */
@@ -10,7 +10,8 @@ const SEEN_KEY = STORAGE_KEYS.seenVersion
 
 function readSeen(): string | null {
   try {
-    return localStorage.getItem(SEEN_KEY)
+    const seen = localStorage.getItem(SEEN_KEY)
+    return seen === null ? null : fromLegacyVersion(seen)
   } catch {
     return null
   }

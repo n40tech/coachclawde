@@ -97,14 +97,15 @@ work out of the box.
 
 ## Shipping a beta update (versions & release notes)
 
-The app version lives in `package.json` (currently **1.1.4**) and is injected
+The app version lives in `package.json` (currently **0.2.4**) and is injected
 into the bundle as `__APP_VERSION__` (read it via `APP_VERSION` in
 `src/lib/appVersion.ts`). The first time a tester opens a new version, a
 "What's new" sheet lists the changes; it's also reachable from Settings →
 What's new. For every beta release:
 
-1. Bump `version` in `package.json` (patch for fixes/feedback rounds, e.g.
-   `1.0.2`; minor for bigger features).
+1. Bump `version` in `package.json`. The app is in beta, so versions are
+   `0.x.y` (renumbered from 1.0.x/1.1.x, see `fromLegacyVersion`); `1.0.0`
+   is kept for the public launch.
 2. Add an entry for that version at the **top** of `RELEASES` in
    `src/lib/releaseNotes.ts`. List everything that came from tester feedback
    under `fromFeedback` (plain language, the tester's point of view), and

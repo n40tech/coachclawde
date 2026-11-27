@@ -7,6 +7,7 @@ import { getMonday, toLocalISODate } from '../lib/weekUtils'
 import { normalizePlan } from '../lib/workout'
 import { IDLE_TIMER, settleRest } from '../lib/restTimer'
 import { scopePlansAndLogs, scopeSessionIds } from '../lib/planIds'
+import { PROFILE_ID, recordChange, type OutboxEntry } from '../lib/outbox'
 
 /**
  * Every plan the store holds is read through this: legacy intervals get a
@@ -36,6 +37,18 @@ interface AppStore extends AppState {
   getCurrentWeekPlan: () => WeekPlan | undefined
   getLastNSessions: (n: number) => LoggedSession[]
   restoreFromRemote: (data: { profile: UserProfile; weekPlans: WeekPlan[]; loggedSessions: LoggedSession[] }) => void
+  /**
+   * Changes made on this device not yet in the database (lib/outbox). The
+   * store's own writes add to it; restoreFromRemote doesn't. Persisted, and
+   * cleared on sign-out with everything else.
+   */
+  outbox: OutboxEntry[]
+  /** The outbox was seeded once from the local records (first pull after it shipped). */
+  outboxSeeded: boolean
+  /** Replaces the outbox (seeding). */
+  setOutbox: (outbox: OutboxEntry[], seeded: boolean) => void
+  /** Clears pushed entries, unless the record changed again since (a newer `seq`). */
+  clearPushed: (pushed: OutboxEntry[]) => void
   /** Wipe in-memory + persisted data (used on sign-out so accounts don't leak on a shared device). */
   reset: () => void
 }
@@ -57,35 +70,56 @@ export const useAppStore = create<AppStore>()(
       activeSessionId: null,
       timer: DEFAULT_TIMER,
       setClock: null,
+      outbox: [],
+      outboxSeeded: false,
+
+      setOutbox: (outbox, seeded) => set({ outbox, outboxSeeded: seeded }),
+
+      clearPushed: (pushed) =>
+        set((s) => ({
+          outbox: s.outbox.filter((e) => !pushed.some((p) => p.collection === e.collection && p.id === e.id && p.seq === e.seq)),
+        })),
 
       startSetClock: (sessionId, at) =>
         set({ setClock: sessionId ? { sessionId, startedAt: at ?? Date.now() } : null }),
 
       setProfile: (updates) =>
-        set((s) => ({ profile: { ...s.profile, ...updates, updatedAt: new Date().toISOString() } })),
+        set((s) => ({
+          profile: { ...s.profile, ...updates, updatedAt: new Date().toISOString() },
+          outbox: recordChange(s.outbox, 'profile', PROFILE_ID, 'upsert'),
+        })),
 
       addWeekPlan: (plan) =>
-        set((s) => ({ weekPlans: [...s.weekPlans, readPlan(plan)] })),
+        set((s) => ({
+          weekPlans: [...s.weekPlans, readPlan(plan)],
+          outbox: recordChange(s.outbox, 'plans', plan.id, 'upsert'),
+        })),
 
       updateWeekPlan: (id, updates) =>
         set((s) => ({
           weekPlans: s.weekPlans.map((p) => (p.id === id ? readPlan({ ...p, ...updates }) : p)),
+          outbox: recordChange(s.outbox, 'plans', id, 'upsert'),
         })),
 
       addLoggedSession: (session) =>
-        set((s) => ({ loggedSessions: [...s.loggedSessions, session] })),
+        set((s) => ({
+          loggedSessions: [...s.loggedSessions, session],
+          outbox: recordChange(s.outbox, 'sessions', session.id, 'upsert'),
+        })),
 
       updateLoggedSession: (id, updates) =>
         set((s) => ({
           loggedSessions: s.loggedSessions.map((s) =>
             s.id === id ? { ...s, ...updates } : s
           ),
+          outbox: recordChange(s.outbox, 'sessions', id, 'upsert'),
         })),
 
       removeLoggedSession: (id) =>
         set((s) => ({
           loggedSessions: s.loggedSessions.filter((l) => l.id !== id),
           activeSessionId: s.activeSessionId === id ? null : s.activeSessionId,
+          outbox: recordChange(s.outbox, 'sessions', id, 'delete'),
         })),
 
       setActiveSession: (id) => set({ activeSessionId: id }),
@@ -133,6 +167,8 @@ export const useAppStore = create<AppStore>()(
         activeSessionId: null,
         timer: DEFAULT_TIMER,
         setClock: null,
+        outbox: [],
+        outboxSeeded: false,
       }),
     }),
     {
@@ -157,6 +193,8 @@ export const useAppStore = create<AppStore>()(
         loggedSessions: state.loggedSessions,
         setClock: state.setClock,
         timer: state.timer,
+        outbox: state.outbox,
+        outboxSeeded: state.outboxSeeded,
       }),
     }
   )

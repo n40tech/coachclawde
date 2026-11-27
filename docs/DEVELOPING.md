@@ -146,6 +146,16 @@ always seen, and caches the hashed `/assets/*` forever.
 
 ## Where things live
 
+**Graphify** (the claude.ai connector) has this repo indexed as
+`n40tech/coachclawde`, rebuilt on every merge to `main`. For questions about
+the code's structure (where a symbol is defined, who calls it, what a change
+would affect, which tests cover it) use its tools (`graphify_find`,
+`graphify_callers`, `graphify_impact`, `graphify_tests_for`) before grepping.
+Its answers describe the commit they report as `commitSha`; on a branch, read
+the current file for anything changed since. Use plain text search for
+strings, config and docs. The map below covers what the graph can't: why
+things are the way they are.
+
 - `src/types/index.ts` — **single source of truth** for all data shapes
   (`WeekPlan`, `PlannedSession`, `LoggedSession`, etc.). The schema documented in
   `CLAUDE.md` mirrors these types; if you change one, update the other so the two
